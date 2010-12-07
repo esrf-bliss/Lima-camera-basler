@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>fr.soleil.lib.Lima</groupId>
+		<artifactId>Camera</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <groupId>fr.soleil.lib.Lima.Camera</groupId>
+    <artifactId>Basler-${aol}-shared-${mode}</artifactId>
+
+    <packaging>nar</packaging>
+	
+    <name>Basler</name>    <!-- use for the name of executable -->
+    <description>This module controls the Basler Camera</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>fr.soleil.lib</groupId>
+            <artifactId>YAT4Tango-${aol}-${library}-${mode}</artifactId>
+        </dependency>
+	</dependencies>
+		
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.freehep</groupId>
+                <artifactId>freehep-nar-plugin</artifactId>
+				<configuration>
+                    <linker>
+                        <libs>
+                            <lib>
+                                <name>pylonbase</name>
+                                <type>shared</type>
+                                <directory>${env.PYLON_ROOT}/lib</directory>
+                            </lib>
+                        </libs>
+                    </linker>
+                    <cpp>
+                        <systemIncludePaths>
+                            <systemIncludePath>${env.PYLON_ROOT}/include</systemIncludePath>
+                            <systemIncludePath>${env.GENICAM_ROOT_V1_1}/include/genicam</systemIncludePath>
+                        </systemIncludePaths>
+						<defines>
+							<define>USE_GIGE</define>
+						</defines>
+                    </cpp>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+		
+</project>
