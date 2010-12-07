@@ -1,6 +1,24 @@
 #ifndef BASLERCAMERA_H
 #define BASLERCAMERA_H
 
+///////////////////////////////////////////////////////////
+// YAT
+///////////////////////////////////////////////////////////
+#include <yat/threading/Task.h>
+#include <yat/network/Address.h>
+
+#define kLO_WATER_MARK      128
+#define kHI_WATER_MARK      512
+
+#define kPOST_MSG_TMO       2
+
+const size_t  DLL_START_MSG		=	(yat::FIRST_USER_MSG + 100);
+const size_t  DLL_STOP_MSG		=	(yat::FIRST_USER_MSG + 101);
+const size_t  DLL_GET_IMAGE_MSG	=	(yat::FIRST_USER_MSG + 102);
+
+///////////////////////////////////////////////////////////
+
+
 #include <pylon/PylonIncludes.h>
 #include <pylon/gige/BaslerGigEDeviceInfo.h>
 #include <stdlib.h>
@@ -52,16 +70,21 @@ class CGrabBuffer
 };
 
 
-class Camera : public HwMaxImageSizeCallbackGen
+/*******************************************************************
+ * \class Camera
+ * \brief object controlling the basler camera via Pylon driver
+ *******************************************************************/
+class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 {
 	DEB_CLASS_NAMESPC(DebModCamera, "Camera", "Basler");
 
  public:
+
 	enum Status {
 		Ready, Exposure, Readout, Latency,
 	};
 	
-	Camera();
+	Camera(const std::string& camera_ip);
 	~Camera();
 
 	void start();
@@ -93,35 +116,34 @@ class Camera : public HwMaxImageSizeCallbackGen
     static const double PixelSize= 55.0;
 	void getFrameRate(double& frame_rate);
 	
-	void checkFlip(Flip& flip);
-	void setFlip(const Flip& flip);
-	void getFlip(Flip& flip);	
   protected:
     virtual void setMaxImageSizeCallbackActive(bool cb_active);	
-
+  //- [yat::Task implementation]
+  protected: 
+    virtual void handle_message( yat::Message& msg )      throw (yat::Exception);
  private:
-	void setFlipMode(int  flip_mode);
-	void getFlipMode(int& flip_mode);	
-	void GetImages(void);
+	void GetImage();
+    void FreeImage();
 	//- lima stuff
 	SoftBufferAllocMgr 			m_buffer_alloc_mgr;
 	StdBufferCbMgr 				m_buffer_cb_mgr;
 	BufferCtrlMgr 				m_buffer_ctrl_mgr;
 	bool 						m_mis_cb_act;
-	bool 						m_stop_request;
-	TrigMode 					m_trig_mode;
 	int 						m_nb_frames;	
 	Camera::Status				m_status;
+    int                         m_image_number;
+    bool                        m_stop_already_done;
+    
+    //- Mutex
+	yat::Mutex 					lock_;
+    
 	//- Pylon stuff
 	ITransportLayer* 			pTl_;
 	DeviceInfoList_t 			devices_;
 	Camera_t* 					Camera_;
 	Camera_t::StreamGrabber_t* 	StreamGrabber_;
 	std::vector<CGrabBuffer*> 	BufferList_;
-	size_t 						ImageSize_;
- 
-	
-	
+	size_t 						ImageSize_;	
 };
 /*
 } // namespace Basler

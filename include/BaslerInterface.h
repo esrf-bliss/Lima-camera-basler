@@ -66,9 +66,6 @@ class BufferCtrlObj : public HwBufferCtrlObj
 	virtual void setNbConcatFrames(int  nb_concat_frames);
 	virtual void getNbConcatFrames(int& nb_concat_frames);
 
-	virtual void setNbAccFrames(int  nb_acc_frames);
-	virtual void getNbAccFrames(int& nb_acc_frames);
-
 	virtual void getMaxNbBuffers(int& max_nb_buffers);
 
 	virtual void *getBufferPtr(int buffer_nb, int concat_frame_nb = 0);
@@ -86,7 +83,7 @@ class BufferCtrlObj : public HwBufferCtrlObj
 
 /*******************************************************************
  * \class SyncCtrlObj
- * \brief Control object providing Maxipix synchronization interface
+ * \brief Control object providing Basler synchronization interface
  *******************************************************************/
 
 class SyncCtrlObj : public HwSyncCtrlObj
@@ -96,7 +93,8 @@ class SyncCtrlObj : public HwSyncCtrlObj
   public:
 	SyncCtrlObj(Camera& cam, HwBufferCtrlObj& buffer_ctrl);
     virtual ~SyncCtrlObj();
-
+	
+	virtual bool checkTrigMode(TrigMode trig_mode);
     virtual void setTrigMode(TrigMode  trig_mode);
     virtual void getTrigMode(TrigMode& trig_mode);
 
@@ -115,28 +113,6 @@ class SyncCtrlObj : public HwSyncCtrlObj
     Camera& m_cam;
 };
 
-
-
-/*******************************************************************
- * \class FlipCtrlObj
- * \brief Control object providing Frelon flip interface
- *******************************************************************/
-
-class FlipCtrlObj : public HwFlipCtrlObj
-{
-	DEB_CLASS_NAMESPC(DebModCamera, "FlipCtrlObj", "Frelon");
-
- public:
-	FlipCtrlObj(Camera& cam);
-	virtual ~FlipCtrlObj();
-
-	virtual void setFlip(const Flip& flip);
-	virtual void getFlip(Flip& flip);
-	virtual void checkFlip(Flip& flip);
-
- private:
-	Camera& m_cam;
-};
 
 
 
@@ -171,7 +147,7 @@ class BaslerInterface : public HwInterface
 	SyncCtrlObj		m_sync;
 	//BinCtrlObj     m_bin;
 	//RoiCtrlObj     m_roi;
-	FlipCtrlObj    m_flip;
+	//FlipCtrlObj    m_flip;
 };
 
 
