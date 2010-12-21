@@ -2,7 +2,7 @@
 #define BASLERCAMERA_H
 
 ///////////////////////////////////////////////////////////
-// YAT
+// YAT::TASK 
 ///////////////////////////////////////////////////////////
 #include <yat/threading/Task.h>
 #include <yat/network/Address.h>
@@ -124,6 +124,7 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
  private:
 	void GetImage();
     void FreeImage();
+	
 	//- lima stuff
 	SoftBufferAllocMgr 			m_buffer_alloc_mgr;
 	StdBufferCbMgr 				m_buffer_cb_mgr;
@@ -133,6 +134,11 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 	Camera::Status				m_status;
     int                         m_image_number;
     bool                        m_stop_already_done;
+	
+	//- basler stuff 
+	string						m_camera_ip;
+	string 						m_detector_model;
+	string 						m_detector_type;	
     
     //- Mutex
 	yat::Mutex 					lock_;

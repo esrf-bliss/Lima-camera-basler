@@ -20,7 +20,7 @@ Camera::Camera(const std::string& camera_ip)
 {
 	DEB_CONSTRUCTOR();
 	cout<<"Camera::Camera() - [BEGIN]"<<endl;
-	
+	m_camera_ip = camera_ip;
 	try
     {		
 		m_stop_already_done = true;
@@ -53,19 +53,24 @@ Camera::Camera(const std::string& camera_ip)
 		
 		// camera_ip is not really necessarily an IP, it may also be a DNS name
 		// pylon_camera_ip IS an IP
-		Pylon::String_t pylon_camera_ip(yat::Address(camera_ip, 0).get_ip_address().c_str());
+		Pylon::String_t pylon_camera_ip(yat::Address(m_camera_ip, 0).get_ip_address().c_str());
 		
 		for (it = devices_.begin(); it != devices_.end(); it++)
 		{
 			const Camera_t::DeviceInfo_t& gige_device_info = static_cast<const Camera_t::DeviceInfo_t&>(*it);
 			Pylon::String_t current_ip = gige_device_info.GetIpAddress();
+			//if Ip camera is found.
 			if (current_ip == pylon_camera_ip)
+			{
+				m_detector_type  = gige_device_info.GetVendorName();
+				m_detector_model = gige_device_info.GetModelName();
 				break;
+			}
 		}
 
 		if (it == devices_.end())
 		{
-			cerr << "Camera " << camera_ip<< " not found."<<endl;
+			cerr << "Camera " << m_camera_ip<< " not found."<<endl;
 			Pylon::PylonTerminate( );
 			throw LIMA_HW_EXC(Error, "Camera not found!");
 		}
@@ -100,7 +105,7 @@ Camera::Camera(const std::string& camera_ip)
         Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
         Camera_->OffsetX.SetValue(0);
         Camera_->OffsetY.SetValue(0);
-        Camera_->Width.SetValue(Camera_->Width.GetMax());
+        Camera_->Width.SetValue(Camera_->Width.GetMax()); 
         Camera_->Height.SetValue(Camera_->Height.GetMax());
 
         // Set the camera to continuous frame mode
@@ -109,6 +114,7 @@ Camera::Camera(const std::string& camera_ip)
         Camera_->TriggerMode.SetValue(TriggerMode_Off);
         Camera_->AcquisitionMode.SetValue(AcquisitionMode_Continuous);
         Camera_->ExposureMode.SetValue(ExposureMode_Timed);
+        Camera_->ExposureTimeRaw.SetValue( Camera_->ExposureTimeRaw.GetMin() );
 
         // Get the image buffer size
 		cout<<"Get the image buffer size"<<endl;
@@ -326,8 +332,10 @@ void Camera::GetImage()
 			
 			{
 				yat::MutexLock scoped_lock(lock_);
+				// if nb acquired image < requested frames
 				if (m_image_number<m_nb_frames)
 				{
+					// get the next image
 					this->post(new yat::Message(DLL_GET_IMAGE_MSG), kPOST_MSG_TMO);	
 				}
 			}
@@ -355,6 +363,7 @@ void Camera::getImageSize(Size& size)
 	DEB_MEMBER_FUNCT();
 	try
 	{
+		// get the max image size of the detector
 		size= Size(Camera_->Width.GetMax(),Camera_->Height.GetMax());
 	}
 	catch (GenICam::GenericException &e)
@@ -417,18 +426,8 @@ void Camera::getImageType(ImageType& type)
 void Camera::getDetectorType(string& type)
 {
 	DEB_MEMBER_FUNCT();
-	ostringstream os;
-	try
-	{
-		os << devices_[0].GetVendorName();
-		type= os.str();
-	}
-	catch (GenICam::GenericException &e)
-    {
-        // Error handling
-        cerr << "An exception occurred!" << endl << e.GetDescription() << endl;
-        throw LIMA_HW_EXC(Error, e.GetDescription());
-    }		
+	type = m_detector_type;
+	return;
 }
 
 //-----------------------------------------------------
@@ -437,18 +436,8 @@ void Camera::getDetectorType(string& type)
 void Camera::getDetectorModel(string& type)
 {
 	DEB_MEMBER_FUNCT();
-	ostringstream os;
-	try
-	{
-		os << devices_[0].GetModelName();
-		type= os.str();
-	}
-	catch (GenICam::GenericException &e)
-    {
-        // Error handling
-        cerr << "An exception occurred!" << endl << e.GetDescription() << endl;
-        throw LIMA_HW_EXC(Error, e.GetDescription());
-    }			
+	type = m_detector_model;
+	return;		
 }
 
 //-----------------------------------------------------
@@ -481,7 +470,7 @@ void Camera::setTrigMode(TrigMode mode)
 		{
 		  //- INTERNAL
 		  this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
-		  ////@@@@ this mode is disabled !! TO DO later
+		  ////@@@@ TODO later this mode is disabled !!
 		  ////this->Camera_->AcquisitionFrameRateEnable.SetValue( true );
 		  //////////////////////////////////////////////////////////////////
 		}
@@ -542,20 +531,10 @@ void Camera::setExpTime(double exp_time_ms)
 	cout<<"Camera::setExpTime("<<exp_time_ms<<")"<<endl;
 	DEB_PARAM() << DEB_VAR1(exp_time_ms);
 
-	// from ImgGrabber !!
-    // For Basler camera, there are 3 GenICam attributes that can be set
-    // for exposure time setup :
-    //    + ExposureTimeAbs      (float, microseconds)
-    //    + ExposureTimeBaseAbs  (float, microsseconds)
-    //    + ExposureTimeRaw      (integer, no unit)
-    //
-    // with : ExposureTimeAbs = ExposureTimeBaseAbs * ExposureTimeRaw
 	try
 	{
-		Camera_->ExposureTimeBaseAbs.SetValue(80);//min allowed
-		double raw = ::ceil( exp_time_ms / 50 );
-		Camera_->ExposureTimeRaw.SetValue(static_cast<uint32_t>(raw));
-		Camera_->ExposureTimeBaseAbs.SetValue(1E3 * exp_time_ms / Camera_->ExposureTimeRaw.GetValue());
+		Camera_->ExposureTimeBaseAbs.SetValue(1E3 * exp_time_ms);
+		
 	}
 	catch (GenICam::GenericException &e)
     {
