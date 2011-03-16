@@ -97,6 +97,7 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 
     void getDetectorType(std::string& type);
     void getDetectorModel(std::string& model);
+	void getDetectorImageSize(Size& size);
 	BufferCtrlMgr& getBufferMgr();
 	
 	void setTrigMode(TrigMode  mode);
@@ -110,6 +111,10 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 
 	void setNbFrames(int  nb_frames);
 	void getNbFrames(int& nb_frames);
+	
+	void checkRoi(const Roi& set_roi, Roi& hw_roi);
+	void setRoi(const Roi& set_roi);
+	void getRoi(Roi& hw_roi);	
 	
 	void getStatus(Camera::Status& status);
 	

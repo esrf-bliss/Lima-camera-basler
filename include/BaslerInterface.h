@@ -113,7 +113,26 @@ class SyncCtrlObj : public HwSyncCtrlObj
     Camera& m_cam;
 };
 
+/*******************************************************************
+ * \class RoiCtrlObj
+ * \brief Control object providing Frelon Roi interface
+ *******************************************************************/
 
+class RoiCtrlObj : public HwRoiCtrlObj
+{
+	DEB_CLASS_NAMESPC(DebModCamera, "RoiCtrlObj", "Basler");
+
+ public:
+	RoiCtrlObj(Camera& cam);
+	virtual ~RoiCtrlObj();
+
+	virtual void setRoi(const Roi& set_roi);
+	virtual void getRoi(Roi& hw_roi);
+	virtual void checkRoi(const Roi& set_roi, Roi& hw_roi);
+
+ private:
+	Camera& m_cam;
+};
 
 
 /*******************************************************************
@@ -146,7 +165,7 @@ class BaslerInterface : public HwInterface
 	BufferCtrlObj	m_buffer;
 	SyncCtrlObj		m_sync;
 	//BinCtrlObj     m_bin;
-	//RoiCtrlObj     m_roi;
+	RoiCtrlObj     	m_roi;
 	//FlipCtrlObj    m_flip;
 };
 

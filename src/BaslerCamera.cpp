@@ -103,18 +103,11 @@ Camera::Camera(const std::string& camera_ip)
         // Set the image format and AOI
 		cout<<"Set the image format and AOI"<<endl;		
         Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
-        Camera_->OffsetX.SetValue(0);
-        Camera_->OffsetY.SetValue(0);
-        Camera_->Width.SetValue(Camera_->Width.GetMax()); 
-        Camera_->Height.SetValue(Camera_->Height.GetMax());
-
+		
         // Set the camera to continuous frame mode
 		cout<<"Set the camera to continuous frame mode"<<endl;
         Camera_->TriggerSelector.SetValue(TriggerSelector_AcquisitionStart);
-        Camera_->TriggerMode.SetValue(TriggerMode_Off);
         Camera_->AcquisitionMode.SetValue(AcquisitionMode_Continuous);
-        Camera_->ExposureMode.SetValue(ExposureMode_Timed);
-        Camera_->ExposureTimeRaw.SetValue( Camera_->ExposureTimeRaw.GetMin() );
 
         // Get the image buffer size
 		cout<<"Get the image buffer size"<<endl;
@@ -155,11 +148,15 @@ Camera::~Camera()
 		// Close camera
 		cout<<"Close camera"<<endl;
 		Camera_->Close();
+		
+		// Free all resources used for grabbing
+		cout<<"Free all resources used for grabbing"<<endl;
+		StreamGrabber_->FinishGrab();		
 	}
 	catch (GenICam::GenericException &e)
     {
         // Error handling
-        cerr << "An exception occurred!" << endl << e.GetDescription() << endl;
+		cerr << "An exception occurred!" << endl << e.GetDescription() << endl;
 		Pylon::PylonTerminate( );
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }
@@ -291,7 +288,7 @@ void Camera::GetImage()
 		if(m_stop_already_done)
 			return;		
 		StdBufferCbMgr& buffer_mgr = m_buffer_cb_mgr;
-		m_buffer_ctrl_mgr.setStartTimestamp(Timestamp::now());
+		
 		// Wait for the grabbed image with timeout of 10 seconds (10 s is the max of exposure time fixed by pylon))
 		if (StreamGrabber_->GetWaitObject().Wait(10000))
 		{
@@ -304,11 +301,13 @@ void Camera::GetImage()
 				// Grabbing was successful, process image
 				m_status = Camera::Readout;
 				cout << "image#" <<m_image_number <<" acquired !" << endl;							
-				int buffer_nb, concat_frame_nb;
+				int buffer_nb, concat_frame_nb;		
 				buffer_mgr.setStartTimestamp(Timestamp::now());
 				buffer_mgr.acqFrameNb2BufferNb(m_image_number, buffer_nb, concat_frame_nb);
+
 				void *ptr = buffer_mgr.getBufferPtr(buffer_nb,   concat_frame_nb);
-				memcpy((uint16_t *)ptr,(uint16_t *)( Result.Buffer()),Camera_->Width.GetMax()*Camera_->Height.GetMax()*2);
+				memcpy((int16_t *)ptr,(uint16_t *)( Result.Buffer()),Camera_->Width()*Camera_->Height()*2);
+				
 				HwFrameInfoType frame_info;
 				frame_info.acq_frame_nb = m_image_number;
 				buffer_mgr.newFrameReady(frame_info);
@@ -363,8 +362,27 @@ void Camera::getImageSize(Size& size)
 	DEB_MEMBER_FUNCT();
 	try
 	{
+		// get the current image size of the detector
+		size= Size(Camera_->Width(),Camera_->Height());
+	}
+	catch (GenICam::GenericException &e)
+    {
+        // Error handling
+        cerr << "An exception occurred!" << endl << e.GetDescription() << endl;
+        throw LIMA_HW_EXC(Error, e.GetDescription());
+    }			
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getDetectorImageSize(Size& size)
+{
+	DEB_MEMBER_FUNCT();
+	try
+	{
 		// get the max image size of the detector
-		size= Size(Camera_->Width.GetMax(),Camera_->Height.GetMax());
+		size= Size(Camera_->WidthMax(),Camera_->HeightMax());
 	}
 	catch (GenICam::GenericException &e)
     {
@@ -470,9 +488,6 @@ void Camera::setTrigMode(TrigMode mode)
 		{
 		  //- INTERNAL
 		  this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
-		  ////@@@@ TODO later this mode is disabled !!
-		  ////this->Camera_->AcquisitionFrameRateEnable.SetValue( true );
-		  //////////////////////////////////////////////////////////////////
 		}
 		else if ( mode == ExtGate )
 		{
@@ -623,7 +638,7 @@ void Camera::getFrameRate(double& frame_rate)
 	DEB_MEMBER_FUNCT();
 	try
 	{
-		frame_rate = static_cast<double>(Camera_->ResultingFrameRateAbs.GetValue());
+		frame_rate = static_cast<double>(Camera_->ResultingFrameRateAbs.GetValue());		
 	}
 	catch (GenICam::GenericException &e)
     {
@@ -632,6 +647,93 @@ void Camera::getFrameRate(double& frame_rate)
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }		
 	DEB_RETURN() << DEB_VAR1(frame_rate);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
+{
+	DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(set_roi);
+	Roi r;
+	getRoi(r);
+	if(!set_roi.isActive())
+	{
+		hw_roi = r;	
+	}
+	else
+	{
+		hw_roi = set_roi;
+	}
+	
+	DEB_RETURN() << DEB_VAR1(hw_roi);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setRoi(const Roi& set_roi)
+{
+	DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(set_roi);
+	Roi r;	
+	try
+	{
+		//- backup old roi, in order to rollback if error
+		getRoi(r);
+		
+		//- first reset the ROI
+		Camera_->OffsetX.SetValue(Camera_->OffsetX.GetMin());
+		Camera_->OffsetY.SetValue(Camera_->OffsetY.GetMin());
+		Camera_->Width.SetValue(Camera_->Width.GetMax());
+		Camera_->Height.SetValue(Camera_->Height.GetMax());
+	
+		//- then fix the new ROI
+		Camera_->Width.SetValue( set_roi.getSize().getWidth());
+		Camera_->Height.SetValue(set_roi.getSize().getHeight());	
+		Camera_->OffsetX.SetValue(set_roi.getTopLeft().x);
+		Camera_->OffsetY.SetValue(set_roi.getTopLeft().y);
+	}
+	catch (GenICam::GenericException &e)
+    {
+        
+		//-  rollback the old roi
+		Camera_->Width.SetValue( r.getSize().getWidth());
+		Camera_->Height.SetValue(r.getSize().getHeight());	
+		Camera_->OffsetX.SetValue(r.getTopLeft().x);
+		Camera_->OffsetY.SetValue(r.getTopLeft().y);		
+		// Error handling
+        cerr << "An exception occurred!" << endl << e.GetDescription() << endl;
+        throw LIMA_HW_EXC(Error, e.GetDescription());
+    }		
+
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getRoi(Roi& hw_roi)
+{
+	DEB_MEMBER_FUNCT();
+	try
+	{
+
+		Roi  r( static_cast<int>(Camera_->OffsetX()),
+				static_cast<int>(Camera_->OffsetY()),
+				static_cast<int>(Camera_->Width())	,
+				static_cast<int>(Camera_->Height())
+			  );
+		hw_roi = r;
+
+	}
+	catch (GenICam::GenericException &e)
+    {
+        // Error handling
+        cerr << "An exception occurred!" << endl << e.GetDescription() << endl;
+        throw LIMA_HW_EXC(Error, e.GetDescription());
+    }	
+	DEB_RETURN() << DEB_VAR1(hw_roi);
 }
 
 

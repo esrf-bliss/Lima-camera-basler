@@ -36,7 +36,7 @@ void DetInfoCtrlObj::getMaxImageSize(Size& size)
 void DetInfoCtrlObj::getDetectorImageSize(Size& size)
 {
     DEB_MEMBER_FUNCT();
-    m_cam.getImageSize(size);
+    m_cam.getDetectorImageSize(size);
 }
 
 //-----------------------------------------------------
@@ -365,15 +365,54 @@ void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
 }
 
 
+
+/*******************************************************************
+ * \brief RoiCtrlObj constructor
+ *******************************************************************/
+
+RoiCtrlObj::RoiCtrlObj(Camera& cam)
+	: m_cam(cam)
+{
+	DEB_CONSTRUCTOR();
+	
+}
+
+RoiCtrlObj::~RoiCtrlObj()
+{
+	DEB_DESTRUCTOR();
+}
+
+void RoiCtrlObj::checkRoi(const Roi& set_roi, Roi& hw_roi)
+{
+	DEB_MEMBER_FUNCT();
+	m_cam.checkRoi(set_roi, hw_roi);
+}
+
+void RoiCtrlObj::setRoi(const Roi& roi)
+{
+	DEB_MEMBER_FUNCT();
+	Roi real_roi;
+	checkRoi(roi,real_roi);
+	m_cam.setRoi(real_roi);
+}
+
+void RoiCtrlObj::getRoi(Roi& roi)
+{
+	DEB_MEMBER_FUNCT();
+	m_cam.getRoi(roi);
+}
+
 /*******************************************************************
  * \brief Hw Interface constructor
  *******************************************************************/
 
 BaslerInterface::BaslerInterface(Camera& cam)
-	: m_cam(cam),m_det_info(cam), m_buffer(cam),m_sync(cam, m_buffer)
+	: m_cam(cam),m_det_info(cam), m_buffer(cam),m_sync(cam, m_buffer),m_roi(cam)
 {
 	DEB_CONSTRUCTOR();
 
+	cout<<"BaslerInterface::BaslerInterface()"<<endl;
+	
 	HwDetInfoCtrlObj *det_info = &m_det_info;
 	m_cap_list.push_back(HwCap(det_info));
 
@@ -382,6 +421,10 @@ BaslerInterface::BaslerInterface(Camera& cam)
 	
 	HwSyncCtrlObj *sync = &m_sync;
 	m_cap_list.push_back(HwCap(sync));
+	
+	HwRoiCtrlObj *roi = &m_roi;
+	m_cap_list.push_back(HwCap(roi));
+
 }
 
 //-----------------------------------------------------
