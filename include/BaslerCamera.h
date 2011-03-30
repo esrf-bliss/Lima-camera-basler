@@ -1,6 +1,7 @@
 #ifndef BASLERCAMERA_H
 #define BASLERCAMERA_H
 
+#ifndef LESSDEPENDENCY
 ///////////////////////////////////////////////////////////
 // YAT::TASK 
 ///////////////////////////////////////////////////////////
@@ -15,6 +16,7 @@
 const size_t  DLL_START_MSG		=	(yat::FIRST_USER_MSG + 100);
 const size_t  DLL_STOP_MSG		=	(yat::FIRST_USER_MSG + 101);
 const size_t  DLL_GET_IMAGE_MSG	=	(yat::FIRST_USER_MSG + 102);
+#endif
 
 ///////////////////////////////////////////////////////////
 
@@ -74,16 +76,24 @@ class CGrabBuffer
  * \class Camera
  * \brief object controlling the basler camera via Pylon driver
  *******************************************************************/
+#ifndef LESSDEPENDENCY
 class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
+#else
+  class Camera : public HwMaxImageSizeCallbackGen, public CmdThread
+#endif
 {
 	DEB_CLASS_NAMESPC(DebModCamera, "Camera", "Basler");
 
  public:
 
 	enum Status {
-		Ready, Exposure, Readout, Latency,
+		Ready = MaxThreadStatus, Exposure, Readout, Latency,
 	};
-	
+#ifdef LESSDEPENDENCY
+	enum { // Cmd
+	  DLL_START_MSG = MaxThreadCmd,DLL_STOP_MSG,DLL_GET_IMAGE_MSG
+	};
+#endif	
 	Camera(const std::string& camera_ip);
 	~Camera();
 
@@ -123,9 +133,14 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 	
   protected:
     virtual void setMaxImageSizeCallbackActive(bool cb_active);	
+#ifndef LESSDEPENDENCY
   //- [yat::Task implementation]
   protected: 
     virtual void handle_message( yat::Message& msg )      throw (yat::Exception);
+#else
+ protected:
+    virtual void execCmd(int);
+#endif
  private:
 	void GetImage();
     void FreeImage();
@@ -136,7 +151,9 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 	BufferCtrlMgr 				m_buffer_ctrl_mgr;
 	bool 						m_mis_cb_act;
 	int 						m_nb_frames;	
+#ifndef LESSDEPENDENCY
 	Camera::Status				m_status;
+#endif
     int                         m_image_number;
     bool                        m_stop_already_done;
 	
@@ -144,10 +161,11 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 	string						m_camera_ip;
 	string 						m_detector_model;
 	string 						m_detector_type;	
-    
+
+#ifndef LESSDEPENDENCY    
     //- Mutex
 	yat::Mutex 					lock_;
-    
+#endif
 	//- Pylon stuff
 	ITransportLayer* 			pTl_;
 	DeviceInfoList_t 			devices_;

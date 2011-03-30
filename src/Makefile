@@ -2,7 +2,7 @@ basler-objs = BaslerCamera.o BaslerInterface.o
 
 SRCS = $(basler-objs:.o=.cpp) 
 
-CXXFLAGS = -I../include -I../../../hardware/include -I../../../common/include \
+CXXFLAGS += -I../include -I../../../hardware/include -I../../../common/include \
 			-I/opt/pylon/include -I/opt/pylon/include/genicam -DUSE_GIGE -Wall -pthread -fPIC -g \
 			-I../../../../YAT/include 
 

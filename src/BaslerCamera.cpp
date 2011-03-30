@@ -9,7 +9,36 @@ using namespace std;
 
 // Buffers for grabbing
 static const uint32_t c_nBuffers 			= 1;
+#ifdef LESSDEPENDENCY
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
+static inline const char* _get_ip_addresse(const char *name_ip)
+{
+  if(inet_addr(name_ip) != INADDR_NONE)
+    return name_ip;
+  else
+    {
+      struct hostent *host = gethostbyname(name_ip);
+      if(!host)
+	{
+	  char buffer[256];
+	  snprintf(buffer,sizeof(buffer),"Can not found ip for host %s ",name_ip);
+	  throw LIMA_HW_EXC(Error,buffer);
+	}
+      return inet_ntoa(*((struct in_addr*)host->h_addr));
+    }
+}
+#endif
+#ifndef LESSDEPENDENCY
+#define SET_STATUS(camera_status) m_status = camera_status
+#define GET_STATUS() m_status
+#else
+#define SET_STATUS(camera_status) setStatus(camera_status)
+#define GET_STATUS() Camera::Status(CmdThread::getStatus())
+#endif 
 
 //---------------------------
 //- Ctor
@@ -24,7 +53,7 @@ Camera::Camera(const std::string& camera_ip)
 	try
     {		
 		m_stop_already_done = true;
-		m_status = Camera::Ready;		
+		SET_STATUS(Camera::Ready);		
 		Pylon::PylonInitialize( );
         // Create the transport layer object needed to enumerate or
         // create a camera object of type Camera_t::DeviceClass()
@@ -53,8 +82,11 @@ Camera::Camera(const std::string& camera_ip)
 		
 		// camera_ip is not really necessarily an IP, it may also be a DNS name
 		// pylon_camera_ip IS an IP
+#ifndef LESSDEPENDENCY
 		Pylon::String_t pylon_camera_ip(yat::Address(m_camera_ip, 0).get_ip_address().c_str());
-		
+#else
+		Pylon::String_t pylon_camera_ip(_get_ip_addresse(m_camera_ip.c_str()));
+#endif
 		for (it = devices_.begin(); it != devices_.end(); it++)
 		{
 			const Camera_t::DeviceInfo_t& gige_device_info = static_cast<const Camera_t::DeviceInfo_t&>(*it);
@@ -121,6 +153,9 @@ Camera::Camera(const std::string& camera_ip)
 		cout<<"We won't queue more than c_nBuffers image buffers at a time"<<endl;
         StreamGrabber_->MaxNumBuffer.SetValue(c_nBuffers);
 
+#ifdef LESSDEPENDENCY
+	start();
+#endif
 	}
 	catch (GenICam::GenericException &e)
     {
@@ -205,10 +240,20 @@ void Camera::start()
 		}
 		
 		// Let the camera acquire images continuously ( Acquisiton mode equals Continuous! )
-		m_status = Camera::Exposure;
+		SET_STATUS(Camera::Exposure);
 		cout<<"Let the camera acquire images continuously"<<endl;	
 		Camera_->AcquisitionStart.Execute();
+#ifndef LESSDEPENDENCY
 		this->post(new yat::Message(DLL_START_MSG), kPOST_MSG_TMO);
+#else
+		sendCmd(DLL_START_MSG);
+		/** Should wait but as with yat part wa are not synchronous with
+		    the acquisition thread status (camera status), we can't wait.
+		    The camera status is set by != thread but not protected and not synchronouse with command.
+		    @todo should look at that more carefully
+		*/
+		//waitNotStatus(Ready); 
+#endif
 	}
 	catch (GenICam::GenericException &e)
     {
@@ -226,8 +271,18 @@ void Camera::stop()
 {
 	DEB_MEMBER_FUNCT();
 	cout<<"Camera::stop() - [BEGIN]"<<endl;
-	{	yat::MutexLock scoped_lock(lock_);	
+	{
+#ifndef LESSDEPENDENCY
+		yat::MutexLock scoped_lock(lock_);	
 		this->post(new yat::Message(DLL_STOP_MSG), kPOST_MSG_TMO);
+#else
+		/** - do we really need to lock before posting the message???
+		    - I really don't like to have an asynchronous stop so put the synchro...
+		      So why we need a message to stop???
+		*/
+		sendCmd(DLL_STOP_MSG);
+		waitStatus(Ready);
+#endif
 	}
 	cout<<"Camera::stop() - [END]"<<endl;
 }
@@ -239,7 +294,7 @@ void Camera::FreeImage()
 	try
 	{
 		m_image_number = 0;
-		m_status = Camera::Ready;
+		SET_STATUS(Camera::Ready);
 		if(!m_stop_already_done)
 		{
 			m_stop_already_done = true;
@@ -299,7 +354,7 @@ void Camera::GetImage()
 			if (Grabbed == Result.Status())
 			{
 				// Grabbing was successful, process image
-				m_status = Camera::Readout;
+				SET_STATUS(Camera::Readout);
 				cout << "image#" <<m_image_number <<" acquired !" << endl;							
 				int buffer_nb, concat_frame_nb;		
 				buffer_mgr.setStartTimestamp(Timestamp::now());
@@ -313,7 +368,7 @@ void Camera::GetImage()
 				buffer_mgr.newFrameReady(frame_info);
 	
 				// Reuse the buffer for grabbing the next image
-				if (m_image_number < m_nb_frames - c_nBuffers)
+				if (m_image_number < int(m_nb_frames - c_nBuffers))
 					StreamGrabber_->QueueBuffer(Result.Handle(), NULL);
 				m_image_number++;
 			}
@@ -325,17 +380,26 @@ void Camera::GetImage()
 				cerr << "Error description : "   << Result.GetErrorDescription() << endl;
 
 				// Reuse the buffer for grabbing the next image
-				if (m_image_number < m_nb_frames - c_nBuffers)
+				if (m_image_number < int(m_nb_frames - c_nBuffers))
 					StreamGrabber_->QueueBuffer(Result.Handle(), NULL);
 			}
 			
 			{
+#ifndef LESSDEPENDENCY
 				yat::MutexLock scoped_lock(lock_);
+#endif
 				// if nb acquired image < requested frames
 				if (m_image_number<m_nb_frames)
 				{
 					// get the next image
+#ifndef LESSDEPENDENCY
 					this->post(new yat::Message(DLL_GET_IMAGE_MSG), kPOST_MSG_TMO);	
+#else
+					/** It's not really optimal to repost a message but!!!
+					    @todo try do it in a better way.
+					*/
+					sendCmd(DLL_GET_IMAGE_MSG);
+#endif
 				}
 			}
 		}
@@ -626,7 +690,7 @@ void Camera::getNbFrames(int& nb_frames)
 void Camera::getStatus(Camera::Status& status)
 {
 	DEB_MEMBER_FUNCT();
-	status = m_status;
+	status = GET_STATUS();
 	DEB_RETURN() << DEB_VAR1(DEB_HEX(status));
 }
 
@@ -740,6 +804,7 @@ void Camera::getRoi(Roi& hw_roi)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
+#ifndef LESSDEPENDENCY
 void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
 {
   try
@@ -765,11 +830,21 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
       }
       break;
       //-----------------------------------------------------    
+#else
+void Camera::execCmd(int cmd)
+{
+  switch(cmd)
+    {
+#endif
       case DLL_START_MSG:	
       {
 		std::cout <<"Camera::->DLL_START_MSG"<<std::endl;
 		m_stop_already_done = false;
+#ifndef LESSDEPENDENCY
 		this->post(new yat::Message(DLL_GET_IMAGE_MSG), kPOST_MSG_TMO);
+#else
+		sendCmd(DLL_GET_IMAGE_MSG);
+#endif
       }
       break;
       //-----------------------------------------------------
@@ -788,12 +863,14 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
       break;
       //-----------------------------------------------------
     }
+#ifndef LESSDEPENDENCY
   }
   catch( yat::Exception& ex )
   {
       std::cout << "Error : " << ex.errors[0].desc;
     throw;
   }
+#endif
 }
 
 //-----------------------------------------------------
