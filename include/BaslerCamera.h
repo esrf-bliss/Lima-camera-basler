@@ -52,10 +52,8 @@ using namespace Basler_GigEStreamParams;
 
 namespace lima
 {
-/*	
 namespace Basler
 {
-*/
 //----------------------------------------------------------------------------------------------------
 class CGrabBuffer
 {
@@ -174,9 +172,7 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 	std::vector<CGrabBuffer*> 	BufferList_;
 	size_t 						ImageSize_;	
 };
-/*
 } // namespace Basler
-*/
 } // namespace lima
 
 

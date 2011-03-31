@@ -4,8 +4,8 @@
 #include <string>
 #include <math.h>
 using namespace lima;
+using namespace lima::Basler;
 using namespace std;
-
 
 // Buffers for grabbing
 static const uint32_t c_nBuffers 			= 1;

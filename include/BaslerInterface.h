@@ -6,10 +6,8 @@
 
 namespace lima
 {
-/*	
 namespace Basler
 {
-*/
 class Interface;
 
 /*******************************************************************
@@ -171,9 +169,7 @@ class BaslerInterface : public HwInterface
 
 
 
-/*
 } // namespace Basler
-*/
 } // namespace lima
 
 #endif // BASLERINTERFACE_H

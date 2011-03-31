@@ -2,7 +2,7 @@
 #include <algorithm>
 
 using namespace lima;
-//using namespace lima::Basler;
+using namespace lima::Basler;
 using namespace std;
 
 /*******************************************************************
