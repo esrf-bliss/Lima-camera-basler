@@ -205,7 +205,11 @@ Camera::~Camera()
 //---------------------------
 //- Camera::start()
 //---------------------------
+#ifndef LESSDEPENDENCY
 void Camera::start()
+#else
+void Camera::startAcq()
+#endif
 {
 	DEB_MEMBER_FUNCT();
 	cout<<"Camera::start() - [BEGIN]"<<endl;
@@ -267,7 +271,11 @@ void Camera::start()
 //---------------------------
 //- Camera::stop()
 //---------------------------
+#ifndef LESSDEPENDENCY
 void Camera::stop()
+#else
+void Camera::stopAcq()
+#endif
 {
 	DEB_MEMBER_FUNCT();
 	cout<<"Camera::stop() - [BEGIN]"<<endl;
@@ -407,7 +415,11 @@ void Camera::GetImage()
 		{
 			// Timeout
 			cerr << "Timeout occurred!" << endl;
+#ifndef LESSDEPENDENCY
 			this->stop();
+#else
+			this->stopAcq();
+#endif
 		}
 	}
 	catch (GenICam::GenericException &e)

@@ -95,9 +95,13 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 	Camera(const std::string& camera_ip);
 	~Camera();
 
+#ifndef LESSDEPENDENCY
 	void start();
 	void stop();
-
+#else
+	void startAcq();
+	void stopAcq();
+#endif
     // -- detector info
     void getImageSize(Size& size);
     void getPixelSize(double& size);
@@ -138,6 +142,7 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 #else
  protected:
     virtual void execCmd(int);
+    virtual void init() {}
 #endif
  private:
 	void GetImage();

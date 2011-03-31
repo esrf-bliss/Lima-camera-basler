@@ -11,9 +11,6 @@ all:	Basler.o
 Basler.o:	$(basler-objs)
 	$(LD) -o $@ -r $+
 
-#FrelonBase.o:	Basler.cpp
-#	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
 clean:
 	rm -f *.o *.P
 

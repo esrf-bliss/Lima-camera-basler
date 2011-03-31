@@ -488,7 +488,11 @@ void Interface::startAcq()
 void Interface::stopAcq()
 {
 	DEB_MEMBER_FUNCT();
+#ifndef LESSDEPENDENCY
 	m_cam.stop();
+#else
+	m_cam.stopAcq();
+#endif
 }
 
 //-----------------------------------------------------
