@@ -138,13 +138,13 @@ class RoiCtrlObj : public HwRoiCtrlObj
  * \brief Basler hardware interface
  *******************************************************************/
 
-class BaslerInterface : public HwInterface
+class Interface : public HwInterface
 {
 	DEB_CLASS_NAMESPC(DebModCamera, "BaslerInterface", "Basler");
 
  public:
-	BaslerInterface(Camera& cam);
-	virtual ~BaslerInterface();
+	Interface(Camera& cam);
+	virtual ~Interface();
 
 	//- From HwInterface
 	virtual void 	getCapList(CapList&) const;

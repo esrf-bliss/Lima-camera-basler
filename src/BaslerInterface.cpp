@@ -406,12 +406,12 @@ void RoiCtrlObj::getRoi(Roi& roi)
  * \brief Hw Interface constructor
  *******************************************************************/
 
-BaslerInterface::BaslerInterface(Camera& cam)
+Interface::Interface(Camera& cam)
 	: m_cam(cam),m_det_info(cam), m_buffer(cam),m_sync(cam, m_buffer),m_roi(cam)
 {
 	DEB_CONSTRUCTOR();
 
-	cout<<"BaslerInterface::BaslerInterface()"<<endl;
+	cout<<"Interface::Interface()"<<endl;
 	
 	HwDetInfoCtrlObj *det_info = &m_det_info;
 	m_cap_list.push_back(HwCap(det_info));
@@ -430,7 +430,7 @@ BaslerInterface::BaslerInterface(Camera& cam)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-BaslerInterface::~BaslerInterface()
+Interface::~Interface()
 {
 	DEB_DESTRUCTOR();
 }
@@ -438,7 +438,7 @@ BaslerInterface::~BaslerInterface()
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void BaslerInterface::getCapList(HwInterface::CapList &cap_list) const
+void Interface::getCapList(HwInterface::CapList &cap_list) const
 {
 	DEB_MEMBER_FUNCT();
 	cap_list = m_cap_list;
@@ -447,7 +447,7 @@ void BaslerInterface::getCapList(HwInterface::CapList &cap_list) const
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void BaslerInterface::reset(ResetLevel reset_level)
+void Interface::reset(ResetLevel reset_level)
 {
 	DEB_MEMBER_FUNCT();
 	DEB_PARAM() << DEB_VAR1(reset_level);
@@ -468,7 +468,7 @@ void BaslerInterface::reset(ResetLevel reset_level)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void BaslerInterface::prepareAcq()
+void Interface::prepareAcq()
 {
 	DEB_MEMBER_FUNCT();
 }
@@ -476,7 +476,7 @@ void BaslerInterface::prepareAcq()
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void BaslerInterface::startAcq()
+void Interface::startAcq()
 {
 	DEB_MEMBER_FUNCT();
 	m_cam.start();
@@ -485,7 +485,7 @@ void BaslerInterface::startAcq()
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void BaslerInterface::stopAcq()
+void Interface::stopAcq()
 {
 	DEB_MEMBER_FUNCT();
 	m_cam.stop();
@@ -494,7 +494,7 @@ void BaslerInterface::stopAcq()
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void BaslerInterface::getStatus(StatusType& status)
+void Interface::getStatus(StatusType& status)
 {
 	Camera::Status basler_status = Camera::Ready;
 	m_cam.getStatus(basler_status);
@@ -523,7 +523,7 @@ void BaslerInterface::getStatus(StatusType& status)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-int BaslerInterface::getNbHwAcquiredFrames()
+int Interface::getNbHwAcquiredFrames()
 {
 	DEB_MEMBER_FUNCT();
 	/*Acq::Status acq_status;
@@ -536,7 +536,7 @@ int BaslerInterface::getNbHwAcquiredFrames()
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void BaslerInterface::getFrameRate(double& frame_rate)
+void Interface::getFrameRate(double& frame_rate)
 {
 	DEB_MEMBER_FUNCT();
 	m_cam.getFrameRate(frame_rate);
