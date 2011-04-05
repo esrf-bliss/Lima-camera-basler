@@ -479,7 +479,7 @@ void Interface::prepareAcq()
 void Interface::startAcq()
 {
 	DEB_MEMBER_FUNCT();
-	m_cam.start();
+	m_cam.startAcq();
 }
 
 //-----------------------------------------------------
@@ -488,11 +488,7 @@ void Interface::startAcq()
 void Interface::stopAcq()
 {
 	DEB_MEMBER_FUNCT();
-#ifndef LESSDEPENDENCY
-	m_cam.stop();
-#else
 	m_cam.stopAcq();
-#endif
 }
 
 //-----------------------------------------------------
@@ -535,6 +531,9 @@ int Interface::getNbHwAcquiredFrames()
 	int nb_hw_acq_frames = acq_status.last_frame_nb + 1;
 	DEB_RETURN() << DEB_VAR1(nb_hw_acq_frames);
 	return nb_hw_acq_frames;*/
+	int acq_frames;
+	m_cam.getNbHwAcquiredFrames(acq_frames);
+	return acq_frames;
 }
 
 //-----------------------------------------------------

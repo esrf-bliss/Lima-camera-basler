@@ -95,13 +95,8 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 	Camera(const std::string& camera_ip);
 	~Camera();
 
-#ifndef LESSDEPENDENCY
-	void start();
-	void stop();
-#else
-	void startAcq();
-	void stopAcq();
-#endif
+    void startAcq();
+    void stopAcq();
     // -- detector info
     void getImageSize(Size& size);
     void getPixelSize(double& size);
@@ -123,7 +118,9 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 
 	void setNbFrames(int  nb_frames);
 	void getNbFrames(int& nb_frames);
-	
+	void getNbHwAcquiredFrames(int &nb_acq_frames)
+	{nb_acq_frames = m_image_number;}
+
 	void checkRoi(const Roi& set_roi, Roi& hw_roi);
 	void setRoi(const Roi& set_roi);
 	void getRoi(Roi& hw_roi);	
