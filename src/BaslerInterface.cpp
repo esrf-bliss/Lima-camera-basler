@@ -411,8 +411,6 @@ Interface::Interface(Camera& cam)
 {
 	DEB_CONSTRUCTOR();
 
-	cout<<"Interface::Interface()"<<endl;
-	
 	HwDetInfoCtrlObj *det_info = &m_det_info;
 	m_cap_list.push_back(HwCap(det_info));
 
@@ -516,6 +514,9 @@ void Interface::getStatus(StatusType& status)
 			status.det = DetLatency;
 			status.acq = AcqRunning;
 			break;
+		case Camera::Fault:
+		  status.det = DetFault;
+		  status.acq = AcqFault;
 	}
 	status.det_mask = DetExposure | DetReadout | DetLatency;
 }

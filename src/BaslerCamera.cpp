@@ -138,7 +138,7 @@ Camera::Camera(const std::string& camera_ip)
 	DEB_TRACE() << "Set the camera to continuous frame mode";
         Camera_->TriggerSelector.SetValue(TriggerSelector_AcquisitionStart);
         Camera_->AcquisitionMode.SetValue(AcquisitionMode_Continuous);
-
+	Camera_->ExposureAuto.SetValue(ExposureAuto_Off);
         // Get the image buffer size
 	DEB_TRACE() << "Get the image buffer size";
 		ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
@@ -176,21 +176,16 @@ Camera::~Camera()
 	
 		// Close camera
 		DEB_TRACE() << "Close camera";
-		Camera_->Close();
-		
-		// Free all resources used for grabbing
-		DEB_TRACE() << "Free all resources used for grabbing";
-		StreamGrabber_->FinishGrab();		
+		delete Camera_;
 	}
 	catch (GenICam::GenericException &e)
     {
         // Error handling
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+      DEB_ERROR() << e.GetDescription();
     }
 	delete pTl_;
-	delete Camera_;
 	delete StreamGrabber_;	
-    Pylon::PylonTerminate( );	// Look like it's call exit function!!!! @todo check that
+	//    Pylon::PylonTerminate( );	// Look like it's call exit function!!!! @todo check that
 }
 
 //---------------------------
@@ -229,19 +224,13 @@ void Camera::startAcq()
 		}
 		
 		// Let the camera acquire images continuously ( Acquisiton mode equals Continuous! )
-		SET_STATUS(Camera::Exposure);
 		DEB_TRACE() << "Let the camera acquire images continuously";
 		Camera_->AcquisitionStart.Execute();
 #ifndef LESSDEPENDENCY
 		this->post(new yat::Message(DLL_START_MSG), kPOST_MSG_TMO);
 #else
 		sendCmd(DLL_START_MSG);
-		/** Should wait but as with yat part wa are not synchronous with
-		    the acquisition thread status (camera status), we can't wait.
-		    The camera status is set by != thread but not protected and not synchronouse with command.
-		    @todo should look at that more carefully
-		*/
-		//waitNotStatus(Ready); 
+		waitNotStatus(Ready); 
 #endif
 	}
 	catch (GenICam::GenericException &e)
@@ -316,7 +305,10 @@ void Camera::FreeImage()
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }	
 }
-		
+static bool acq_continue(int cmd,int status)
+{
+  return cmd != Camera::DLL_STOP_MSG;
+}
 //---------------------------
 //- Camera::GetImage()
 //---------------------------
@@ -329,8 +321,10 @@ void Camera::GetImage()
 			return;		
 		StdBufferCbMgr& buffer_mgr = m_buffer_cb_mgr;
 		
-		// Wait for the grabbed image with timeout of 10 seconds (10 s is the max of exposure time fixed by pylon))
-		if (StreamGrabber_->GetWaitObject().Wait(10000))
+		int local_exp_time = int(m_exp_time + 1.) * 1000;
+		DEB_TRACE() << DEB_VAR1(local_exp_time);
+		SET_STATUS(Camera::Exposure);
+		if (StreamGrabber_->GetWaitObject().Wait(local_exp_time))
 		{
 			// Get the grab result from the grabber's result queue
 			GrabResult Result;
@@ -367,6 +361,8 @@ void Camera::GetImage()
 				// Reuse the buffer for grabbing the next image
 				if (m_image_number < int(m_nb_frames - c_nBuffers))
 					StreamGrabber_->QueueBuffer(Result.Handle(), NULL);
+				SET_STATUS(Camera::Fault);
+				return;
 			}
 			
 			{
@@ -383,7 +379,7 @@ void Camera::GetImage()
 					/** It's not really optimal to repost a message but!!!
 					    @todo try do it in a better way.
 					*/
-					sendCmd(DLL_GET_IMAGE_MSG);
+					sendCmdIf(DLL_GET_IMAGE_MSG,acq_continue);
 #endif
 				}
 				else
@@ -394,7 +390,7 @@ void Camera::GetImage()
 		{
 			// Timeout
 			DEB_ERROR() << "Timeout occurred!";
-			this->stopAcq();
+			SET_STATUS(Camera::Fault);
 		}
 	}
 	catch (GenICam::GenericException &e)
@@ -586,15 +582,15 @@ void Camera::getTrigMode(TrigMode& mode)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::setExpTime(double exp_time_ms)
+void Camera::setExpTime(double exp_time)
 {
 	DEB_MEMBER_FUNCT();
-	DEB_PARAM() << DEB_VAR1(exp_time_ms);
+	DEB_PARAM() << DEB_VAR1(exp_time);
 
 	try
 	{
-	  //		Camera_->ExposureTimeBaseAbs.SetValue(1E3 * exp_time_ms);
-	  Camera_->ExposureTimeRaw.SetValue(int(exp_time_ms * 1000));
+	  Camera_->ExposureTimeAbs.SetValue(int(exp_time * 1e6));
+	  m_exp_time = exp_time;
 	}
 	catch (GenICam::GenericException &e)
     {
@@ -606,20 +602,20 @@ void Camera::setExpTime(double exp_time_ms)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getExpTime(double& exp_time_ms)
+void Camera::getExpTime(double& exp_time)
 {
 	DEB_MEMBER_FUNCT();
 	try
 	{
-		double value = 1.0E-3 * static_cast<double>(Camera_->ExposureTimeAbs.GetValue());	
-		exp_time_ms = value;
+		double value = 1.0E-6 * static_cast<double>(Camera_->ExposureTimeAbs.GetValue());	
+		exp_time = value;
 	}
 	catch (GenICam::GenericException &e)
     {
         // Error handling
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }			
-	DEB_RETURN() << DEB_VAR1(exp_time_ms);
+	DEB_RETURN() << DEB_VAR1(exp_time);
 }
 
 //-----------------------------------------------------

@@ -85,7 +85,7 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
  public:
 
 	enum Status {
-		Ready = MaxThreadStatus, Exposure, Readout, Latency,
+	  Ready = MaxThreadStatus, Exposure, Readout, Latency, Fault
 	};
 #ifdef LESSDEPENDENCY
 	enum { // Cmd
@@ -156,7 +156,7 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 #endif
     int                         m_image_number;
     bool                        m_stop_already_done;
-	
+    double			m_exp_time;
 	//- basler stuff 
 	string						m_camera_ip;
 	string 						m_detector_model;
