@@ -83,6 +83,7 @@ Camera::Camera(const std::string& camera_ip)
 		{
 			const Camera_t::DeviceInfo_t& gige_device_info = static_cast<const Camera_t::DeviceInfo_t&>(*it);
 			Pylon::String_t current_ip = gige_device_info.GetIpAddress();
+			DEB_TRACE() << "Found cam with Ip <" << DEB_VAR1(current_ip) << '>';
 			//if Ip camera is found.
 			if (current_ip == pylon_camera_ip)
 			{
@@ -91,9 +92,12 @@ Camera::Camera(const std::string& camera_ip)
 				break;
 			}
 		}
-		DEB_TRACE() << DEB_VAR2(m_detector_type,m_detector_model);
 		if (it == devices_.end())
+		{
+			DEB_ERROR() << "Camera with ip <" << DEB_VAR1(pylon_camera_ip) << "> not found!";
 			throw LIMA_HW_EXC(Error, "Camera not found!");
+		}
+		DEB_TRACE() << DEB_VAR2(m_detector_type,m_detector_model);
 		
 		// Create the camera object of the first available camera
 		// The camera object is used to set and get all available
@@ -185,7 +189,7 @@ Camera::~Camera()
     }
 	delete pTl_;
 	delete StreamGrabber_;	
-	//    Pylon::PylonTerminate( );	// Look like it's call exit function!!!! @todo check that
+	//Pylon::PylonTerminate( );	// In Fact cause a SEGV
 }
 
 //---------------------------
