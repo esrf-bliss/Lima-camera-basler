@@ -45,13 +45,19 @@ static inline const char* _get_ip_addresse(const char *name_ip)
 //---------------------------
 Camera::Camera(const std::string& camera_ip)
 		: m_buffer_cb_mgr(m_buffer_alloc_mgr),
-		  m_buffer_ctrl_mgr(m_buffer_cb_mgr)
+		  m_buffer_ctrl_mgr(m_buffer_cb_mgr),
+		  m_mis_cb_act(false),
+		  m_image_number(0),
+		  m_stop_already_done(true),
+		  m_exp_time(1.),
+		  pTl_(NULL),
+		  Camera_(NULL),
+		  StreamGrabber_(NULL)
 {
 	DEB_CONSTRUCTOR();
 	m_camera_ip = camera_ip;
 	try
     {		
-		m_stop_already_done = true;
 		SET_STATUS(Camera::Ready);		
 		Pylon::PylonInitialize( );
         // Create the transport layer object needed to enumerate or
@@ -333,7 +339,7 @@ void Camera::GetImage()
 			// Get the grab result from the grabber's result queue
 			GrabResult Result;
 			StreamGrabber_->RetrieveResult(Result);
-
+			bool continueAcq = false;
 			if (Grabbed == Result.Status())
 			{
 				// Grabbing was successful, process image
@@ -348,10 +354,10 @@ void Camera::GetImage()
 				
 				HwFrameInfoType frame_info;
 				frame_info.acq_frame_nb = m_image_number;
-				buffer_mgr.newFrameReady(frame_info);
-	
+				continueAcq = buffer_mgr.newFrameReady(frame_info);
+				DEB_TRACE() << DEB_VAR1(continueAcq);
 				// Reuse the buffer for grabbing the next image
-				if (m_image_number < int(m_nb_frames - c_nBuffers))
+				if (!m_nb_frames || m_image_number < int(m_nb_frames - c_nBuffers))
 					StreamGrabber_->QueueBuffer(Result.Handle(), NULL);
 				m_image_number++;
 			}
@@ -363,7 +369,7 @@ void Camera::GetImage()
 					    << " Error description : " << Result.GetErrorDescription();
 
 				// Reuse the buffer for grabbing the next image
-				if (m_image_number < int(m_nb_frames - c_nBuffers))
+				if (!m_nb_frames || m_image_number < int(m_nb_frames - c_nBuffers))
 					StreamGrabber_->QueueBuffer(Result.Handle(), NULL);
 				SET_STATUS(Camera::Fault);
 				return;
@@ -374,7 +380,7 @@ void Camera::GetImage()
 				yat::MutexLock scoped_lock(lock_);
 #endif
 				// if nb acquired image < requested frames
-				if (m_image_number<m_nb_frames)
+				if (continueAcq &&(!m_nb_frames || m_image_number<m_nb_frames))
 				{
 					// get the next image
 #ifndef LESSDEPENDENCY
