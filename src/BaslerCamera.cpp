@@ -393,7 +393,11 @@ void Camera::GetImage()
 #endif
 				}
 				else
+#ifdef LESSDEPENDENCY
 				  sendCmd(DLL_STOP_MSG);
+#else
+				  this->post(new yat::Message(DLL_STOP_MSG),kPOST_MSG_TMO);
+#endif
 			}
 		}
 		else
