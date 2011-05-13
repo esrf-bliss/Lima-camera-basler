@@ -27,7 +27,7 @@ DetInfoCtrlObj::~DetInfoCtrlObj()
 void DetInfoCtrlObj::getMaxImageSize(Size& size)
 {
     DEB_MEMBER_FUNCT();
-    m_cam.getImageSize(size);
+    m_cam.getDetectorImageSize(size);
 }
 
 //-----------------------------------------------------
@@ -63,10 +63,8 @@ void DetInfoCtrlObj::getCurrImageType(ImageType& image_type)
 void DetInfoCtrlObj::setCurrImageType(ImageType image_type)
 {
     DEB_MEMBER_FUNCT();
-    ImageType valid_image_type;
-    getDefImageType(valid_image_type);
-    if (image_type != valid_image_type)
-	THROW_HW_ERROR(Error) << "Cannot change to "  << DEB_VAR2(image_type, valid_image_type);
+	m_cam.setImageType(image_type);
+
 }
 
 //-----------------------------------------------------
@@ -102,7 +100,7 @@ void DetInfoCtrlObj::getDetectorModel(std::string& model)
 void DetInfoCtrlObj::registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
 {
     DEB_MEMBER_FUNCT();
-    m_cam.registerMaxImageSizeCallback(cb);
+    //m_cam.registerMaxImageSizeCallback(cb);
 }
 
 //-----------------------------------------------------
@@ -111,7 +109,7 @@ void DetInfoCtrlObj::registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
 void DetInfoCtrlObj::unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
 {
     DEB_MEMBER_FUNCT();
-    m_cam.unregisterMaxImageSizeCallback(cb);
+    //m_cam.unregisterMaxImageSizeCallback(cb);
 }
 
 
@@ -356,7 +354,7 @@ void SyncCtrlObj::getNbHwFrames(int& nb_frames)
 //-----------------------------------------------------
 void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
 {
-	double min_time = 10e-9;;
+	double min_time = 10e-9;
 	double max_time = 1e6;
 	valid_ranges.min_exp_time = min_time;
 	valid_ranges.max_exp_time = max_time;
@@ -527,11 +525,6 @@ void Interface::getStatus(StatusType& status)
 int Interface::getNbHwAcquiredFrames()
 {
 	DEB_MEMBER_FUNCT();
-	/*Acq::Status acq_status;
-	m_acq.getStatus(acq_status);
-	int nb_hw_acq_frames = acq_status.last_frame_nb + 1;
-	DEB_RETURN() << DEB_VAR1(nb_hw_acq_frames);
-	return nb_hw_acq_frames;*/
 	int acq_frames;
 	m_cam.getNbHwAcquiredFrames(acq_frames);
 	return acq_frames;
