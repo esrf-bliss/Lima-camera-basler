@@ -257,8 +257,8 @@ void BufferCtrlObj::unregisterFrameCallback(HwFrameCallback& frame_cb)
  * \brief SyncCtrlObj constructor
  *******************************************************************/
 
-SyncCtrlObj::SyncCtrlObj(Camera& cam, HwBufferCtrlObj& buffer_ctrl)
-	: HwSyncCtrlObj(buffer_ctrl), m_cam(cam)
+SyncCtrlObj::SyncCtrlObj(Camera& cam)
+	: HwSyncCtrlObj(), m_cam(cam)
 {
 }
 
@@ -407,7 +407,7 @@ void RoiCtrlObj::getRoi(Roi& roi)
  *******************************************************************/
 
 Interface::Interface(Camera& cam)
-	: m_cam(cam),m_det_info(cam), m_buffer(cam),m_sync(cam, m_buffer),m_roi(cam)
+	: m_cam(cam),m_det_info(cam), m_buffer(cam),m_sync(cam),m_roi(cam)
 {
 	DEB_CONSTRUCTOR();
 

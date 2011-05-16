@@ -89,7 +89,7 @@ class SyncCtrlObj : public HwSyncCtrlObj
     DEB_CLASS_NAMESPC(DebModCamera, "SyncCtrlObj", "Basler");
 
   public:
-	SyncCtrlObj(Camera& cam, HwBufferCtrlObj& buffer_ctrl);
+	SyncCtrlObj(Camera& cam);
     virtual ~SyncCtrlObj();
 	
 	virtual bool checkTrigMode(TrigMode trig_mode);
