@@ -25,7 +25,6 @@ const size_t  BASLER_GET_IMAGE_MSG	=	(yat::FIRST_USER_MSG + 102);
 #include <pylon/gige/BaslerGigEDeviceInfo.h>
 #include <stdlib.h>
 #include <limits>
-
 #include "HwMaxImageSizeCallback.h"
 #include "HwBufferMgr.h"
 
@@ -98,7 +97,6 @@ class Camera : public yat::Task
     void startAcq();
     void stopAcq();
     // -- detector info
-    void getImageSize(Size& size);
     void getPixelSize(double& size);
     void getImageType(ImageType& type);
 	void setImageType(ImageType type);

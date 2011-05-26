@@ -467,25 +467,6 @@ void Camera::GetImage()
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getImageSize(Size& size)
-{
-	DEB_MEMBER_FUNCT();
-	try
-	{
-		// get the current image size of the detector
-		size= Size(Camera_->Width(),Camera_->Height());
-	}
-	catch (GenICam::GenericException &e)
-    {
-        // Error handling
-		DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
-    }			
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
 void Camera::getDetectorImageSize(Size& size)
 {
 	DEB_MEMBER_FUNCT();
