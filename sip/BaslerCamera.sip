@@ -20,7 +20,6 @@ namespace Basler
     void stopAcq();
 
     // -- detector info
-    void getImageSize(Size& size /Out/);
     void getPixelSize(double& size /Out/);
     void getImageType(ImageType& type /Out/);
 
