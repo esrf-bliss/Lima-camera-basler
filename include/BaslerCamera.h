@@ -21,6 +21,11 @@ const size_t  BASLER_GET_IMAGE_MSG	=	(yat::FIRST_USER_MSG + 102);
 ///////////////////////////////////////////////////////////
 
 
+#if defined (__GNUC__) && (__GNUC__ == 3) && defined (__ELF__)
+#   define GENAPI_DECL __attribute__((visibility("default")))
+#   define GENAPI_DECL_ABSTRACT __attribute__((visibility("default")))
+#endif
+
 #include <pylon/PylonIncludes.h>
 #include <pylon/gige/BaslerGigEDeviceInfo.h>
 #include <stdlib.h>
@@ -117,6 +122,9 @@ class Camera : public yat::Task
 
 	void setLatTime(double  lat_time);
 	void getLatTime(double& lat_time);
+
+    void getExposureTimeRange(double& min_expo, double& max_expo) const;
+    void getLatTimeRange(double& min_lat, double& max_lat) const;    
 
 	void setNbFrames(int  nb_frames);
 	void getNbFrames(int& nb_frames);

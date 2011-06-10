@@ -58,126 +58,133 @@ Camera::Camera(const std::string& camera_ip)
 	m_camera_ip = camera_ip;
 	try
     {		
-		SET_STATUS(Camera::Ready);		
-		Pylon::PylonInitialize( );
+	SET_STATUS(Camera::Ready);		
+	Pylon::PylonInitialize( );
         // Create the transport layer object needed to enumerate or
         // create a camera object of type Camera_t::DeviceClass()
-		DEB_TRACE() << "Create a camera object of type Camera_t::DeviceClass()";
+	DEB_TRACE() << "Create a camera object of type Camera_t::DeviceClass()";
         pTl_ = CTlFactory::GetInstance().CreateTl(Camera_t::DeviceClass());
 
         // Exit application if the specific transport layer is not available
         if (! pTl_)
         {
-			DEB_ERROR() << "Failed to create transport layer!";			
-			Pylon::PylonTerminate( );			
-            throw LIMA_HW_EXC(Error, "Failed to create transport layer!");
+		DEB_ERROR() << "Failed to create transport layer!";
+		Pylon::PylonTerminate( );			
+		throw LIMA_HW_EXC(Error, "Failed to create transport layer!");
         }
 
         // Get all attached cameras and exit application if no camera is found
-		DEB_TRACE() << "Get all attached cameras, EnumerateDevices";
+	DEB_TRACE() << "Get all attached cameras, EnumerateDevices";
         if (0 == pTl_->EnumerateDevices(devices_))
         {
-			DEB_ERROR() << "No camera present!";
-			Pylon::PylonTerminate( );			
-            throw LIMA_HW_EXC(Error, "No camera present!");
+		DEB_ERROR() << "No camera present!";
+		Pylon::PylonTerminate( );			
+		throw LIMA_HW_EXC(Error, "No camera present!");
         }
 
-		// Find the device with an IP corresponding to the one given in property
-		Pylon::DeviceInfoList_t::const_iterator it;		
+	// Find the device with an IP corresponding to the one given in property
+	Pylon::DeviceInfoList_t::const_iterator it;		
 		
-		// camera_ip is not really necessarily an IP, it may also be a DNS name
-		// pylon_camera_ip IS an IP
+	// camera_ip is not really necessarily an IP, it may also be a DNS name
+	// pylon_camera_ip IS an IP
 #ifndef LESSDEPENDENCY
-		Pylon::String_t pylon_camera_ip(yat::Address(m_camera_ip, 0).get_ip_address().c_str());
+	Pylon::String_t pylon_camera_ip(yat::Address(m_camera_ip, 0).get_ip_address().c_str());
 #else
-		Pylon::String_t pylon_camera_ip(_get_ip_addresse(m_camera_ip.c_str()));
+	Pylon::String_t pylon_camera_ip(_get_ip_addresse(m_camera_ip.c_str()));
 #endif
-		for (it = devices_.begin(); it != devices_.end(); it++)
+	for (it = devices_.begin(); it != devices_.end(); it++)
+	{
+		const Camera_t::DeviceInfo_t& gige_device_info = static_cast<const Camera_t::DeviceInfo_t&>(*it);
+		Pylon::String_t current_ip = gige_device_info.GetIpAddress();
+		DEB_TRACE() << "Found cam with Ip <" << DEB_VAR1(current_ip) << '>';
+		//if Ip camera is found.
+		if (current_ip == pylon_camera_ip)
 		{
-			const Camera_t::DeviceInfo_t& gige_device_info = static_cast<const Camera_t::DeviceInfo_t&>(*it);
-			Pylon::String_t current_ip = gige_device_info.GetIpAddress();
-			DEB_TRACE() << "Found cam with Ip <" << DEB_VAR1(current_ip) << '>';
-			//if Ip camera is found.
-			if (current_ip == pylon_camera_ip)
-			{
-				m_detector_type  = gige_device_info.GetVendorName();
-				m_detector_model = gige_device_info.GetModelName();
-				break;
-			}
+			m_detector_type  = gige_device_info.GetVendorName();
+			m_detector_model = gige_device_info.GetModelName();
+			break;
 		}
-		if (it == devices_.end())
-		{
-			DEB_ERROR() << "Camera " << m_camera_ip<< " not found.";
-			Pylon::PylonTerminate( );
-			throw LIMA_HW_EXC(Error, "Camera not found!");
-		}
-		DEB_TRACE() << DEB_VAR2(m_detector_type,m_detector_model);
+	}
+	if (it == devices_.end())
+	{
+		DEB_ERROR() << "Camera " << m_camera_ip<< " not found.";
+		Pylon::PylonTerminate( );
+		throw LIMA_HW_EXC(Error, "Camera not found!");
+	}
+	DEB_TRACE() << DEB_VAR2(m_detector_type,m_detector_model);
 		
-		// Create the camera object of the first available camera
-		// The camera object is used to set and get all available
-		// camera features.
-		DEB_TRACE() << "Create the camera object attached to ip address : " << DEB_VAR1(camera_ip);
-		Camera_ = new Camera_t(pTl_->CreateDevice(*it));
+	// Create the camera object of the first available camera
+	// The camera object is used to set and get all available
+	// camera features.
+	DEB_TRACE() << "Create the camera object attached to ip address : " << DEB_VAR1(camera_ip);
+	Camera_ = new Camera_t(pTl_->CreateDevice(*it));
 		
-		if( !Camera_->GetDevice() )
-		{
-			DEB_ERROR() <<"Unable to get the camera from transport_layer!";
-			Pylon::PylonTerminate( );
-			throw LIMA_HW_EXC(Error, "Unable to get the camera from transport_layer!");
-		}
+	if( !Camera_->GetDevice() )
+	{
+		DEB_ERROR() <<"Unable to get the camera from transport_layer!";
+		Pylon::PylonTerminate( );
+		throw LIMA_HW_EXC(Error, "Unable to get the camera from transport_layer!");
+	}
 	  
         
         // Open the camera
         Camera_->Open();
 
         // Get the first stream grabber object of the selected camera
-		DEB_TRACE() << "Get the first stream grabber object of the selected camera";
-		StreamGrabber_ = new Camera_t::StreamGrabber_t(Camera_->GetStreamGrabber(0));
+	DEB_TRACE() << "Get the first stream grabber object of the selected camera";
+	StreamGrabber_ = new Camera_t::StreamGrabber_t(Camera_->GetStreamGrabber(0));
         // Open the stream grabber
-		DEB_TRACE() << "Open the stream grabber";
+	DEB_TRACE() << "Open the stream grabber";
         StreamGrabber_->Open();
-		if(!StreamGrabber_->IsOpen())
-		{
-			DEB_ERROR() <<"Unable to open the steam grabber!";
-			throw LIMA_HW_EXC(Error,"Unable to open the steam grabber!");
-		}
+	if(!StreamGrabber_->IsOpen())
+	{
+		DEB_ERROR() <<"Unable to open the steam grabber!";
+		throw LIMA_HW_EXC(Error,"Unable to open the steam grabber!");
+	}
+
+	// Suppose the eth MTU is set at least to 8192 (Jumbo mode !)
+        // otherwise frame transfer can failed, the package size must but 
+        // correspond to the MTU, see README file under Pylon-3.2.2 installation
+	// directory for for details about network optimization.
+	Camera_->GevSCPSPacketSize.SetValue(8192);
 
         // Set the image format and AOI
-		DEB_TRACE() << "Set the image format and AOI";
-		static const char* PixelFormatStr[] = {"Mono16", "Mono12", "Mono8",NULL};
-		bool formatSetFlag = false;
-		for(const char** pt = PixelFormatStr;*pt;++pt)
+	DEB_TRACE() << "Set the image format and AOI";
+	static const char* PixelFormatStr[] = {"Mono16", "Mono12", "Mono8",NULL};
+	bool formatSetFlag = false;
+	for(const char** pt = PixelFormatStr;*pt;++pt)
+	{
+		GenApi::IEnumEntry *anEntry = Camera_->PixelFormat.GetEntryByName(*pt);
+		if(anEntry && GenApi::IsAvailable(anEntry))
 		{
-			GenApi::IEnumEntry *anEntry = Camera_->PixelFormat.GetEntryByName(*pt);
-			if(anEntry && GenApi::IsAvailable(anEntry))
-			{
-				formatSetFlag = true;
-				Camera_->PixelFormat.SetIntValue(Camera_->PixelFormat.GetEntryByName(*pt)->GetValue());
-				DEB_TRACE() << "Set pixel format to " << *pt;
-				break;
-			}
+			formatSetFlag = true;
+			Camera_->PixelFormat.SetIntValue(Camera_->PixelFormat.GetEntryByName(*pt)->GetValue());
+			DEB_TRACE() << "Set pixel format to " << *pt;
+			break;
 		}
-		if(!formatSetFlag)
-		{
-			DEB_ERROR() << "Unable to set PixelFormat for the camera!";
-			throw LIMA_HW_EXC(Error, "Unable to set PixelFormat for the camera!");
-		}
+	}
+	if(!formatSetFlag)
+	{
+		DEB_ERROR() << "Unable to set PixelFormat for the camera!";
+		throw LIMA_HW_EXC(Error, "Unable to set PixelFormat for the camera!");
+	}
 
         // Set the camera to continuous frame mode
-		DEB_TRACE() << "Set the camera to continuous frame mode";
+	DEB_TRACE() << "Set the camera to continuous frame mode";
         Camera_->TriggerSelector.SetValue(TriggerSelector_AcquisitionStart);
         Camera_->AcquisitionMode.SetValue(AcquisitionMode_Continuous);
-		////Camera_->ExposureAuto.SetValue(ExposureAuto_Off);
+	Camera_->ExposureAuto.SetValue(ExposureAuto_Off);
+
         // Get the image buffer size
-		DEB_TRACE() << "Get the image buffer size";
-		ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
+	DEB_TRACE() << "Get the image buffer size";
+	ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
        
         // We won't use image buffers greater than ImageSize
-		DEB_TRACE() << "We won't use image buffers greater than ImageSize";
+	DEB_TRACE() << "We won't use image buffers greater than ImageSize";
         StreamGrabber_->MaxBufferSize.SetValue((const size_t)ImageSize_);
 
         // We won't queue more than c_nBuffers image buffers at a time
-		DEB_TRACE() << "We won't queue more than c_nBuffers image buffers at a time";
+	DEB_TRACE() << "We won't queue more than c_nBuffers image buffers at a time";
         StreamGrabber_->MaxNumBuffer.SetValue(c_nBuffers);
 
 #ifdef LESSDEPENDENCY
@@ -187,8 +194,8 @@ Camera::Camera(const std::string& camera_ip)
 	catch (GenICam::GenericException &e)
     {
         // Error handling
-		DEB_ERROR() << e.GetDescription();
-		Pylon::PylonTerminate( );
+	DEB_ERROR() << e.GetDescription();
+	Pylon::PylonTerminate( );
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }	
 }
@@ -663,19 +670,29 @@ void Camera::setExpTime(double exp_time)
 
 	try
 	{
-      //see ImageGrabber for more details !!!
-	  Camera_->ExposureTimeBaseAbs.SetValue(100.0); //- to be sure we can set the Raw setting on the full range (1 .. 4095)
-      double raw = ::ceil( exp_time / 50 );
-	  Camera_->ExposureTimeRaw.SetValue(static_cast<int>(raw));
-      raw = static_cast<double>(Camera_->ExposureTimeRaw.GetValue());      
-      Camera_->ExposureTimeBaseAbs.SetValue(1E6 * exp_time / Camera_->ExposureTimeRaw.GetValue());	
+        
+        if (m_detector_model.compare(0,3,"acA")!=0)
+        {
+            //Not a ACE model, if scout or pilot, exposure time has to be adjusted using
+            // the exposure time base + the exposure time raw.
+            //see ImageGrabber for more details !!!
+            Camera_->ExposureTimeBaseAbs.SetValue(100.0); //- to be sure we can set the Raw setting on the full range (1 .. 4095)
+            double raw = ::ceil( exp_time / 50 );
+            Camera_->ExposureTimeRaw.SetValue(static_cast<int>(raw));
+            raw = static_cast<double>(Camera_->ExposureTimeRaw.GetValue());      
+            Camera_->ExposureTimeBaseAbs.SetValue(1E6 * exp_time / Camera_->ExposureTimeRaw.GetValue());	
+        } else {        
+            // this is a ACE camera model, it supports direct programming of the exposure using
+            // the exposure time absolute.
+            Camera_->ExposureTimeAbs.SetValue(1E6 * exp_time );	
+        }
 	  
-	  m_exp_time = exp_time;
+        m_exp_time = exp_time;
 	}
 	catch (GenICam::GenericException &e)
     {
         // Error handling
-		DEB_ERROR() << e.GetDescription();
+        DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }		
 }
@@ -716,8 +733,40 @@ void Camera::getLatTime(double& lat_time)
 {
 	DEB_MEMBER_FUNCT();
 	/////@@@@ TODO if necessary
-	lat_time = 1;
+	lat_time = 0;
 	DEB_RETURN() << DEB_VAR1(lat_time);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getExposureTimeRange(double& min_expo, double& max_expo) const
+{
+    DEB_MEMBER_FUNCT();
+    
+    if (m_detector_model.compare(0,3,"acA")!=0)
+    {
+        min_expo = 1e-6;
+        max_expo = 1e9;
+    }else 
+    {
+        min_expo = Camera_->ExposureTimeAbs.GetMin()*1e-6;
+        max_expo = Camera_->ExposureTimeAbs.GetMax()*1e-6;
+    }
+
+    DEB_RETURN() << DEB_VAR2(min_expo, max_expo);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getLatTimeRange(double& min_lat, double& max_lat) const
+{   
+    DEB_MEMBER_FUNCT();
+	/////@@@@ TODO if necessary
+    min_lat= 0;
+    max_lat= 0;
+    DEB_RETURN() << DEB_VAR2(min_lat, max_lat);
 }
 
 //-----------------------------------------------------

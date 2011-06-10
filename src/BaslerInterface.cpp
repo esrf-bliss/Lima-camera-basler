@@ -354,10 +354,14 @@ void SyncCtrlObj::getNbHwFrames(int& nb_frames)
 //-----------------------------------------------------
 void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
 {
-	double min_time = 10e-9;
-	double max_time = 1e6;
+	double min_time;
+	double max_time;
+    
+    m_cam.getExposureTimeRange(min_time, max_time);
 	valid_ranges.min_exp_time = min_time;
 	valid_ranges.max_exp_time = max_time;
+    
+    m_cam.getLatTimeRange(min_time, max_time);
 	valid_ranges.min_lat_time = min_time;
 	valid_ranges.max_lat_time = max_time;
 }
