@@ -256,7 +256,7 @@ void BufferCtrlObj::unregisterFrameCallback(HwFrameCallback& frame_cb)
  *******************************************************************/
 
 SyncCtrlObj::SyncCtrlObj(Camera& cam)
-	: HwSyncCtrlObj(buffer_ctrl), m_cam(cam)
+	: HwSyncCtrlObj(), m_cam(cam)
 {
 }
 
