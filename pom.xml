@@ -4,7 +4,7 @@
     <parent>
         <groupId>fr.soleil.lib.Lima</groupId>
 		<artifactId>Camera</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>1.0.3-SNAPSHOT</version>
     </parent>
 
     <groupId>fr.soleil.lib.Lima.Camera</groupId>
@@ -14,13 +14,6 @@
 	
     <name>Basler</name>    <!-- use for the name of executable -->
     <description>This module controls the Basler Camera</description>
-
-    <dependencies>
-        <dependency>
-            <groupId>fr.soleil.lib</groupId>
-            <artifactId>YAT4Tango-${aol}-${library}-${mode}</artifactId>
-        </dependency>
-	</dependencies>
 		
     <build>
         <plugins>
@@ -44,7 +37,12 @@
                         </systemIncludePaths>
 						<defines>
 							<define>USE_GIGE</define>
+							<!--<define>LESSDEPENDENCY</define>-->
 						</defines>
+						<!-- define less verbose mode for gcc-->
+						<options>
+							<option>-w</option>
+						</options>
                     </cpp>
                 </configuration>
             </plugin>

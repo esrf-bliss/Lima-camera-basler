@@ -13,9 +13,9 @@
 
 #define kPOST_MSG_TMO       2
 
-const size_t  DLL_START_MSG		=	(yat::FIRST_USER_MSG + 100);
-const size_t  DLL_STOP_MSG		=	(yat::FIRST_USER_MSG + 101);
-const size_t  DLL_GET_IMAGE_MSG	=	(yat::FIRST_USER_MSG + 102);
+const size_t  BASLER_START_MSG		=	(yat::FIRST_USER_MSG + 100);
+const size_t  BASLER_STOP_MSG		=	(yat::FIRST_USER_MSG + 101);
+const size_t  BASLER_GET_IMAGE_MSG	=	(yat::FIRST_USER_MSG + 102);
 #endif
 
 ///////////////////////////////////////////////////////////
@@ -25,7 +25,6 @@ const size_t  DLL_GET_IMAGE_MSG	=	(yat::FIRST_USER_MSG + 102);
 #include <pylon/gige/BaslerGigEDeviceInfo.h>
 #include <stdlib.h>
 #include <limits>
-
 #include "HwMaxImageSizeCallback.h"
 #include "HwBufferMgr.h"
 
@@ -74,10 +73,10 @@ class CGrabBuffer
  * \class Camera
  * \brief object controlling the basler camera via Pylon driver
  *******************************************************************/
-#ifndef LESSDEPENDENCY
-class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
+#ifndef LESSDEPENDENCY		
+class Camera : public yat::Task
 #else
-  class Camera : public HwMaxImageSizeCallbackGen, public CmdThread
+  class Camera : public CmdThread
 #endif
 {
 	DEB_CLASS_NAMESPC(DebModCamera, "Camera", "Basler");
@@ -85,11 +84,11 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
  public:
 
 	enum Status {
-	  Ready = MaxThreadStatus, Exposure, Readout, Latency, Fault
+	  Ready = CmdThread::MaxThreadStatus, Exposure, Readout, Latency, Fault
 	};
 #ifdef LESSDEPENDENCY
 	enum { // Cmd
-	  DLL_START_MSG = MaxThreadCmd,DLL_STOP_MSG,DLL_GET_IMAGE_MSG
+	  BASLER_START_MSG = MaxThreadCmd,BASLER_STOP_MSG,BASLER_GET_IMAGE_MSG
 	};
 #endif	
 	Camera(const std::string& camera_ip);
@@ -98,15 +97,18 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
     void startAcq();
     void stopAcq();
     // -- detector info
-    void getImageSize(Size& size);
     void getPixelSize(double& size);
     void getImageType(ImageType& type);
+	void setImageType(ImageType type);
 
     void getDetectorType(std::string& type);
     void getDetectorModel(std::string& model);
 	void getDetectorImageSize(Size& size);
+	
+	// -- Buffer control bject
 	BufferCtrlMgr& getBufferMgr();
 	
+	//-- Synch control onj
 	void setTrigMode(TrigMode  mode);
 	void getTrigMode(TrigMode& mode);
 	
@@ -118,20 +120,18 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 
 	void setNbFrames(int  nb_frames);
 	void getNbFrames(int& nb_frames);
-	void getNbHwAcquiredFrames(int &nb_acq_frames)
-	{nb_acq_frames = m_image_number;}
+	void getNbHwAcquiredFrames(int &nb_acq_frames);
 
 	void checkRoi(const Roi& set_roi, Roi& hw_roi);
 	void setRoi(const Roi& set_roi);
+	
 	void getRoi(Roi& hw_roi);	
 	
 	void getStatus(Camera::Status& status);
 	
-    static const double PixelSize= 55.0;
+	// -- basler specific, LIMA don't worr'y about it !
 	void getFrameRate(double& frame_rate);
 	
-  protected:
-    virtual void setMaxImageSizeCallbackActive(bool cb_active);	
 #ifndef LESSDEPENDENCY
   //- [yat::Task implementation]
   protected: 
@@ -149,18 +149,18 @@ class Camera : public HwMaxImageSizeCallbackGen, public yat::Task
 	SoftBufferAllocMgr 			m_buffer_alloc_mgr;
 	StdBufferCbMgr 				m_buffer_cb_mgr;
 	BufferCtrlMgr 				m_buffer_ctrl_mgr;
-	bool 						m_mis_cb_act;
 	int 						m_nb_frames;	
 #ifndef LESSDEPENDENCY
 	Camera::Status				m_status;
 #endif
     int                         m_image_number;
     bool                        m_stop_already_done;
-    double			m_exp_time;
+    double						m_exp_time;
 	//- basler stuff 
 	string						m_camera_ip;
 	string 						m_detector_model;
-	string 						m_detector_type;	
+	string 						m_detector_type;
+	static const double 		PixelSize= 55.0;
 
 #ifndef LESSDEPENDENCY    
     //- Mutex

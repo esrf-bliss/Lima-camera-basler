@@ -17,6 +17,7 @@ static const uint32_t c_nBuffers 			= 1;
 
 static inline const char* _get_ip_addresse(const char *name_ip)
 {
+  
   if(inet_addr(name_ip) != INADDR_NONE)
     return name_ip;
   else
@@ -46,7 +47,6 @@ static inline const char* _get_ip_addresse(const char *name_ip)
 Camera::Camera(const std::string& camera_ip)
 		: m_buffer_cb_mgr(m_buffer_alloc_mgr),
 		  m_buffer_ctrl_mgr(m_buffer_cb_mgr),
-		  m_mis_cb_act(false),
 		  m_image_number(0),
 		  m_stop_already_done(true),
 		  m_exp_time(1.),
@@ -67,13 +67,20 @@ Camera::Camera(const std::string& camera_ip)
 
         // Exit application if the specific transport layer is not available
         if (! pTl_)
+        {
+			DEB_ERROR() << "Failed to create transport layer!";			
+			Pylon::PylonTerminate( );			
             throw LIMA_HW_EXC(Error, "Failed to create transport layer!");
+        }
 
         // Get all attached cameras and exit application if no camera is found
-	DEB_TRACE() << "Get all attached cameras, EnumerateDevices";
+		DEB_TRACE() << "Get all attached cameras, EnumerateDevices";
         if (0 == pTl_->EnumerateDevices(devices_))
-	  throw LIMA_HW_EXC(Error, "No camera present!");
-
+        {
+			DEB_ERROR() << "No camera present!";
+			Pylon::PylonTerminate( );			
+            throw LIMA_HW_EXC(Error, "No camera present!");
+        }
 
 		// Find the device with an IP corresponding to the one given in property
 		Pylon::DeviceInfoList_t::const_iterator it;		
@@ -100,7 +107,8 @@ Camera::Camera(const std::string& camera_ip)
 		}
 		if (it == devices_.end())
 		{
-			DEB_ERROR() << "Camera with ip <" << DEB_VAR1(pylon_camera_ip) << "> not found!";
+			DEB_ERROR() << "Camera " << m_camera_ip<< " not found.";
+			Pylon::PylonTerminate( );
 			throw LIMA_HW_EXC(Error, "Camera not found!");
 		}
 		DEB_TRACE() << DEB_VAR2(m_detector_type,m_detector_model);
@@ -112,7 +120,12 @@ Camera::Camera(const std::string& camera_ip)
 		Camera_ = new Camera_t(pTl_->CreateDevice(*it));
 		
 		if( !Camera_->GetDevice() )
+		{
+			DEB_ERROR() <<"Unable to get the camera from transport_layer!";
+			Pylon::PylonTerminate( );
 			throw LIMA_HW_EXC(Error, "Unable to get the camera from transport_layer!");
+		}
+	  
         
         // Open the camera
         Camera_->Open();
@@ -123,42 +136,48 @@ Camera::Camera(const std::string& camera_ip)
         // Open the stream grabber
 		DEB_TRACE() << "Open the stream grabber";
         StreamGrabber_->Open();
-	if(!StreamGrabber_->IsOpen())
-	  throw LIMA_HW_EXC(Error,"Unable to open the steam grabber");
+		if(!StreamGrabber_->IsOpen())
+		{
+			DEB_ERROR() <<"Unable to open the steam grabber!";
+			throw LIMA_HW_EXC(Error,"Unable to open the steam grabber!");
+		}
 
         // Set the image format and AOI
-	DEB_TRACE() << "Set the image format and AOI";
-	static const char* PixelFormatStr[] = {"Mono16", "Mono12", "Mono8",NULL};
-	bool formatSetFlag = false;
-	for(const char** pt = PixelFormatStr;*pt;++pt)
-	  {
-	    GenApi::IEnumEntry *anEntry = Camera_->PixelFormat.GetEntryByName(*pt);
- 	    if(anEntry && GenApi::IsAvailable(anEntry))
-	      {
-		formatSetFlag = true;
-		Camera_->PixelFormat.SetIntValue(Camera_->PixelFormat.GetEntryByName(*pt)->GetValue());
-		DEB_TRACE() << "Set pixel format to " << *pt;
-		break;
-	      }
-	  }
-	if(!formatSetFlag)
-	  throw LIMA_HW_EXC(Error, "Unable to set PixelFormat for the camera!");
+		DEB_TRACE() << "Set the image format and AOI";
+		static const char* PixelFormatStr[] = {"Mono16", "Mono12", "Mono8",NULL};
+		bool formatSetFlag = false;
+		for(const char** pt = PixelFormatStr;*pt;++pt)
+		{
+			GenApi::IEnumEntry *anEntry = Camera_->PixelFormat.GetEntryByName(*pt);
+			if(anEntry && GenApi::IsAvailable(anEntry))
+			{
+				formatSetFlag = true;
+				Camera_->PixelFormat.SetIntValue(Camera_->PixelFormat.GetEntryByName(*pt)->GetValue());
+				DEB_TRACE() << "Set pixel format to " << *pt;
+				break;
+			}
+		}
+		if(!formatSetFlag)
+		{
+			DEB_ERROR() << "Unable to set PixelFormat for the camera!";
+			throw LIMA_HW_EXC(Error, "Unable to set PixelFormat for the camera!");
+		}
 
         // Set the camera to continuous frame mode
-	DEB_TRACE() << "Set the camera to continuous frame mode";
+		DEB_TRACE() << "Set the camera to continuous frame mode";
         Camera_->TriggerSelector.SetValue(TriggerSelector_AcquisitionStart);
         Camera_->AcquisitionMode.SetValue(AcquisitionMode_Continuous);
-	Camera_->ExposureAuto.SetValue(ExposureAuto_Off);
+		////Camera_->ExposureAuto.SetValue(ExposureAuto_Off);
         // Get the image buffer size
-	DEB_TRACE() << "Get the image buffer size";
+		DEB_TRACE() << "Get the image buffer size";
 		ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
        
         // We won't use image buffers greater than ImageSize
-	DEB_TRACE() << "We won't use image buffers greater than ImageSize";
+		DEB_TRACE() << "We won't use image buffers greater than ImageSize";
         StreamGrabber_->MaxBufferSize.SetValue((const size_t)ImageSize_);
 
         // We won't queue more than c_nBuffers image buffers at a time
-	DEB_TRACE() << "We won't queue more than c_nBuffers image buffers at a time";
+		DEB_TRACE() << "We won't queue more than c_nBuffers image buffers at a time";
         StreamGrabber_->MaxNumBuffer.SetValue(c_nBuffers);
 
 #ifdef LESSDEPENDENCY
@@ -168,6 +187,8 @@ Camera::Camera(const std::string& camera_ip)
 	catch (GenICam::GenericException &e)
     {
         // Error handling
+		DEB_ERROR() << e.GetDescription();
+		Pylon::PylonTerminate( );
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }	
 }
@@ -181,21 +202,33 @@ Camera::~Camera()
 	try
 	{
 		// Close stream grabber
-		DEB_TRACE() << "Close stream grabber";
-		StreamGrabber_->Close();
+		if(StreamGrabber_->IsOpen())
+		{	DEB_TRACE() << "Close stream grabber";
+			StreamGrabber_->Close();
+		}
 	
-		// Close camera
-		DEB_TRACE() << "Close camera";
-		delete Camera_;
+		if(Camera_->IsOpen())
+		{
+			// Close camera
+			DEB_TRACE() << "Close camera";
+			Camera_->Close();
+		}
+		
+		// Free all resources used for grabbing
+		DEB_TRACE() << "Free all resources used for grabbing";
+		StreamGrabber_->FinishGrab();
 	}
 	catch (GenICam::GenericException &e)
     {
         // Error handling
-      DEB_ERROR() << e.GetDescription();
+		DEB_ERROR() << e.GetDescription();
+		Pylon::PylonTerminate( );
+        throw LIMA_HW_EXC(Error, e.GetDescription());
     }
 	delete pTl_;
+	delete Camera_;
 	delete StreamGrabber_;	
-	//Pylon::PylonTerminate( );	// In Fact cause a SEGV
+	Pylon::PylonTerminate( );
 }
 
 //---------------------------
@@ -237,15 +270,16 @@ void Camera::startAcq()
 		DEB_TRACE() << "Let the camera acquire images continuously";
 		Camera_->AcquisitionStart.Execute();
 #ifndef LESSDEPENDENCY
-		this->post(new yat::Message(DLL_START_MSG), kPOST_MSG_TMO);
+		this->post(new yat::Message(BASLER_START_MSG), kPOST_MSG_TMO);
 #else
-		sendCmd(DLL_START_MSG);
+		sendCmd(BASLER_START_MSG);
 		waitNotStatus(Ready); 
 #endif
 	}
 	catch (GenICam::GenericException &e)
     {
         // Error handling
+		DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }
 }
@@ -258,14 +292,13 @@ void Camera::stopAcq()
 	DEB_MEMBER_FUNCT();
 	{
 #ifndef LESSDEPENDENCY
-		yat::MutexLock scoped_lock(lock_);	
-		this->post(new yat::Message(DLL_STOP_MSG), kPOST_MSG_TMO);
+		this->post(new yat::Message(BASLER_STOP_MSG), kPOST_MSG_TMO);
 #else
 		/** - do we really need to lock before posting the message???
 		    - I really don't like to have an asynchronous stop so put the synchro...
 		      So why we need a message to stop???
 		*/
-		sendCmd(DLL_STOP_MSG);
+		sendCmd(BASLER_STOP_MSG);
 		waitStatus(Ready);
 #endif
 	}
@@ -312,13 +345,21 @@ void Camera::FreeImage()
 	catch (GenICam::GenericException &e)
     {
         // Error handling
+		DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }	
 }
+
+//---------------------------
+//- static bool acq_continue()
+//---------------------------
+#ifdef LESSDEPENDENCY
 static bool acq_continue(int cmd,int status)
 {
-  return cmd != Camera::DLL_STOP_MSG;
+  return cmd != Camera::BASLER_STOP_MSG;
 }
+#endif
+
 //---------------------------
 //- Camera::GetImage()
 //---------------------------
@@ -348,7 +389,6 @@ void Camera::GetImage()
 				int buffer_nb, concat_frame_nb;		
 				buffer_mgr.setStartTimestamp(Timestamp::now());
 				buffer_mgr.acqFrameNb2BufferNb(m_image_number, buffer_nb, concat_frame_nb);
-
 				void *ptr = buffer_mgr.getBufferPtr(buffer_nb,   concat_frame_nb);
 				memcpy((int16_t *)ptr,(uint16_t *)( Result.Buffer()),Camera_->Width()*Camera_->Height()*2);
 				
@@ -365,14 +405,23 @@ void Camera::GetImage()
 			{
 				// Error handling
 				DEB_ERROR() << "No image acquired!"
-					    << " Error code : 0x" << DEB_VAR1(hex) << " " << Result.GetErrorCode()
-					    << " Error description : " << Result.GetErrorDescription();
+							<< " Error code : 0x" << DEB_VAR1(hex) << " " << Result.GetErrorCode()
+						    << " Error description : " << Result.GetErrorDescription();
 
 				// Reuse the buffer for grabbing the next image
 				if (!m_nb_frames || m_image_number < int(m_nb_frames - c_nBuffers))
 					StreamGrabber_->QueueBuffer(Result.Handle(), NULL);
-				SET_STATUS(Camera::Fault);
-				return;
+			
+				
+				if(!m_nb_frames) //Do not stop acquisition in "live" mode, just IGNORE  error
+				{
+					continueAcq = true;
+				}
+				else			//in "snap" mode , acquisition must be stopped
+				{
+					SET_STATUS(Camera::Fault);
+					return;
+				}
 			}
 			
 			{
@@ -384,19 +433,19 @@ void Camera::GetImage()
 				{
 					// get the next image
 #ifndef LESSDEPENDENCY
-					this->post(new yat::Message(DLL_GET_IMAGE_MSG), kPOST_MSG_TMO);	
+					this->post(new yat::Message(BASLER_GET_IMAGE_MSG), kPOST_MSG_TMO);	
 #else
 					/** It's not really optimal to repost a message but!!!
 					    @todo try do it in a better way.
 					*/
-					sendCmdIf(DLL_GET_IMAGE_MSG,acq_continue);
+					sendCmdIf(BASLER_GET_IMAGE_MSG,acq_continue);
 #endif
 				}
 				else
 #ifdef LESSDEPENDENCY
-				  sendCmd(DLL_STOP_MSG);
+				  sendCmd(BASLER_STOP_MSG);
 #else
-				  this->post(new yat::Message(DLL_STOP_MSG),kPOST_MSG_TMO);
+				  this->post(new yat::Message(BASLER_STOP_MSG),kPOST_MSG_TMO);
 #endif
 			}
 		}
@@ -410,24 +459,7 @@ void Camera::GetImage()
 	catch (GenICam::GenericException &e)
     {
         // Error handling
-        throw LIMA_HW_EXC(Error, e.GetDescription());
-    }			
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::getImageSize(Size& size)
-{
-	DEB_MEMBER_FUNCT();
-	try
-	{
-		// get the current image size of the detector
-		size= Size(Camera_->Width(),Camera_->Height());
-	}
-	catch (GenICam::GenericException &e)
-    {
-        // Error handling
+		DEB_ERROR() << "GeniCam Error! "<< e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }			
 }
@@ -446,6 +478,7 @@ void Camera::getDetectorImageSize(Size& size)
 	catch (GenICam::GenericException &e)
     {
         // Error handling
+		DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }			
 }
@@ -490,11 +523,44 @@ void Camera::getImageType(ImageType& type)
 	catch (GenICam::GenericException &e)
     {
         // Error handling
+		DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }		
 
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setImageType(ImageType type)
+{
+	DEB_MEMBER_FUNCT();
+	try
+	{
+		switch( type )
+		{
+			case Bpp8:
+				this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
+			break;
+		
+			case Bpp12:
+			case Bpp16:
+				this->Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
+			break;
+		
+			default:
+				throw LIMA_HW_EXC(Error, "Cannot change the format of the camera !");
+			break;
+		}
+	}
+	catch (GenICam::GenericException &e)
+    {
+        // Error handling
+		DEB_ERROR() << e.GetDescription();
+        throw LIMA_HW_EXC(Error, e.GetDescription());
+    }		
+
+}
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -513,14 +579,6 @@ void Camera::getDetectorModel(string& type)
 	DEB_MEMBER_FUNCT();
 	type = m_detector_model;
 	return;		
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::setMaxImageSizeCallbackActive(bool cb_active)
-{  
-	m_mis_cb_act = cb_active;
 }
 
 //-----------------------------------------------------
@@ -565,6 +623,7 @@ void Camera::setTrigMode(TrigMode mode)
 	catch (GenICam::GenericException &e)
     {
         // Error handling
+		DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }		
 }
@@ -587,6 +646,7 @@ void Camera::getTrigMode(TrigMode& mode)
 	catch (GenICam::GenericException &e)
     {
         // Error handling
+		DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }		
     DEB_RETURN() << DEB_VAR1(mode);
@@ -603,12 +663,19 @@ void Camera::setExpTime(double exp_time)
 
 	try
 	{
-	  Camera_->ExposureTimeAbs.SetValue(int(exp_time * 1e6));
+      //see ImageGrabber for more details !!!
+	  Camera_->ExposureTimeBaseAbs.SetValue(100.0); //- to be sure we can set the Raw setting on the full range (1 .. 4095)
+      double raw = ::ceil( exp_time / 50 );
+	  Camera_->ExposureTimeRaw.SetValue(static_cast<int>(raw));
+      raw = static_cast<double>(Camera_->ExposureTimeRaw.GetValue());      
+      Camera_->ExposureTimeBaseAbs.SetValue(1E6 * exp_time / Camera_->ExposureTimeRaw.GetValue());	
+	  
 	  m_exp_time = exp_time;
 	}
 	catch (GenICam::GenericException &e)
     {
         // Error handling
+		DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }		
 }
@@ -673,6 +740,15 @@ void Camera::getNbFrames(int& nb_frames)
 	DEB_RETURN() << DEB_VAR1(nb_frames);
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getNbHwAcquiredFrames(int &nb_acq_frames)
+{ 
+	DEB_MEMBER_FUNCT();	
+	nb_acq_frames = m_image_number;
+}
+	
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -749,19 +825,21 @@ void Camera::setRoi(const Roi& set_roi)
 	}
 	catch (GenICam::GenericException &e)
     {
-      try
-	{
-		//-  rollback the old roi
-		Camera_->Width.SetValue( r.getSize().getWidth());
-		Camera_->Height.SetValue(r.getSize().getHeight());	
-		Camera_->OffsetX.SetValue(r.getTopLeft().x);
-		Camera_->OffsetY.SetValue(r.getTopLeft().y);		
-		// Error handling
-	}
-      catch (GenICam::GenericException &e2)
-	{
-	  throw LIMA_HW_EXC(Error,e2.GetDescription());
-	}
+		try
+		{
+			//-  rollback the old roi
+			Camera_->Width.SetValue( r.getSize().getWidth());
+			Camera_->Height.SetValue(r.getSize().getHeight());	
+			Camera_->OffsetX.SetValue(r.getTopLeft().x);
+			Camera_->OffsetY.SetValue(r.getTopLeft().y);		
+			// Error handling
+		}
+		catch (GenICam::GenericException &e2)
+		{
+			DEB_ERROR() << e2.GetDescription();
+			throw LIMA_HW_EXC(Error,e2.GetDescription());
+		}
+		DEB_ERROR() << e.GetDescription();		
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }		
 
@@ -787,6 +865,7 @@ void Camera::getRoi(Roi& hw_roi)
 	catch (GenICam::GenericException &e)
     {
         // Error handling
+		DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }	
 	DEB_RETURN() << DEB_VAR1(hw_roi);
@@ -799,6 +878,7 @@ void Camera::getRoi(Roi& hw_roi)
 #ifndef LESSDEPENDENCY
 void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
 {
+  DEB_MEMBER_FUNCT();  
   try
   {
     switch ( msg.type() )
@@ -806,19 +886,19 @@ void Camera::handle_message( yat::Message& msg )  throw( yat::Exception )
       //-----------------------------------------------------	
       case yat::TASK_INIT:
       {
-        std::cout <<"Camera::->TASK_INIT"<<std::endl;          
+        DEB_TRACE() <<"Camera::->TASK_INIT";
       }
       break;
       //-----------------------------------------------------    
       case yat::TASK_EXIT:
       {
-        std::cout <<"Camera::->TASK_EXIT"<<std::endl;                
+        DEB_TRACE() <<"Camera::->TASK_EXIT";
       }
       break;
       //-----------------------------------------------------    
       case yat::TASK_TIMEOUT:
       {
-		std::cout <<"Camera::->TASK_TIMEOUT"<<std::endl;       
+		DEB_TRACE() <<"Camera::->TASK_TIMEOUT";
       }
       break;
       //-----------------------------------------------------    
@@ -829,38 +909,38 @@ void Camera::execCmd(int cmd)
   switch(cmd)
     {
 #endif
-      case DLL_START_MSG:	
+      case BASLER_START_MSG:	
       {
-		DEB_TRACE() << "Camera::->DLL_START_MSG";
+		DEB_TRACE() << "Camera::->BASLER_START_MSG";
 		m_stop_already_done = false;
 #ifndef LESSDEPENDENCY
-		this->post(new yat::Message(DLL_GET_IMAGE_MSG), kPOST_MSG_TMO);
+		this->post(new yat::Message(BASLER_GET_IMAGE_MSG), kPOST_MSG_TMO);
 #else
-		sendCmd(DLL_GET_IMAGE_MSG);
+		sendCmd(BASLER_GET_IMAGE_MSG);
 #endif
       }
       break;
       //-----------------------------------------------------
-      case DLL_GET_IMAGE_MSG:
+      case BASLER_GET_IMAGE_MSG:
       {
-		DEB_TRACE() << "Camera::->DLL_GET_IMAGE_MSG";
+		DEB_TRACE() << "Camera::->BASLER_GET_IMAGE_MSG";
 		GetImage();
       }
       break;	
       //-----------------------------------------------------
-      case DLL_STOP_MSG:
+      case BASLER_STOP_MSG:
       {
-		DEB_TRACE() << "Camera::->DLL_STOP_MSG";
+		DEB_TRACE() << "Camera::->BASLER_STOP_MSG";
 		FreeImage();
       }
       break;
       //-----------------------------------------------------
     }
 #ifndef LESSDEPENDENCY
-  }
+}
   catch( yat::Exception& ex )
   {
-      std::cout << "Error : " << ex.errors[0].desc;
+    DEB_ERROR() <<"Error : " << ex.errors[0].desc;
     throw;
   }
 #endif
