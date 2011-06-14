@@ -168,6 +168,8 @@ Camera::Camera(const std::string& camera_ip)
 		DEB_ERROR() << "Unable to set PixelFormat for the camera!";
 		throw LIMA_HW_EXC(Error, "Unable to set PixelFormat for the camera!");
 	}
+	Roi aFullFrame(0,0,Camera_->WidthMax(),Camera_->HeightMax());
+	setRoi(aFullFrame);
 
         // Set the camera to continuous frame mode
 	DEB_TRACE() << "Set the camera to continuous frame mode";
