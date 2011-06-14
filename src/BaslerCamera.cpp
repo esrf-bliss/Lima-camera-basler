@@ -170,6 +170,9 @@ Camera::Camera(const std::string& camera_ip)
 	}
 	Roi aFullFrame(0,0,Camera_->WidthMax(),Camera_->HeightMax());
 	setRoi(aFullFrame);
+	// Set Binning to 1
+	Camera_->BinningVertical.SetValue(1);
+	Camera_->BinningHorizontal.SetValue(1);
 
         // Set the camera to continuous frame mode
 	DEB_TRACE() << "Set the camera to continuous frame mode";
