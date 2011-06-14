@@ -16,7 +16,8 @@ And for now It's only work with monochrome cameras
 
 Module configuration
 ````````````````````
-Previously to this you have to install the Basler SDK *Pylon* to the default path (/opt/pylon)
+Previously to this you have to install the Basler SDK *Pylon* to the default path (/opt/pylon).
+The version of *Pylon* used by LImA is now **2.3.3**
 
 Basler python module need at least the lima core module.
 
