@@ -58,22 +58,6 @@ namespace lima
 {
 namespace Basler
 {
-//----------------------------------------------------------------------------------------------------
-class CGrabBuffer
-{
-    public:
-        CGrabBuffer( size_t ImageSize);
-        ~CGrabBuffer();
-        uint8_t* GetBufferPointer(void) { return m_pBuffer; }
-        StreamBufferHandle GetBufferHandle(void) { return m_hBuffer; }
-        void SetBufferHandle(StreamBufferHandle hBuffer) { m_hBuffer = hBuffer; }
-
-    protected:
-        uint8_t *m_pBuffer;
-        StreamBufferHandle m_hBuffer;
-};
-
-
 /*******************************************************************
  * \class Camera
  * \brief object controlling the basler camera via Pylon driver
@@ -179,7 +163,6 @@ class Camera : public yat::Task
 	DeviceInfoList_t 			devices_;
 	Camera_t* 					Camera_;
 	Camera_t::StreamGrabber_t* 	StreamGrabber_;
-	std::vector<CGrabBuffer*> 	BufferList_;
 	size_t 						ImageSize_;	
 };
 } // namespace Basler

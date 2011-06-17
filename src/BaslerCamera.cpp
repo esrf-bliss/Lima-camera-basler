@@ -7,8 +7,6 @@ using namespace lima;
 using namespace lima::Basler;
 using namespace std;
 
-// Buffers for grabbing
-static const uint32_t c_nBuffers 			= 1;
 #ifdef LESSDEPENDENCY
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -188,9 +186,6 @@ Camera::Camera(const std::string& camera_ip)
 	DEB_TRACE() << "We won't use image buffers greater than ImageSize";
         StreamGrabber_->MaxBufferSize.SetValue((const size_t)ImageSize_);
 
-        // We won't queue more than c_nBuffers image buffers at a time
-	DEB_TRACE() << "We won't queue more than c_nBuffers image buffers at a time";
-        StreamGrabber_->MaxNumBuffer.SetValue(c_nBuffers);
 
 #ifdef LESSDEPENDENCY
 	start();
@@ -252,34 +247,36 @@ void Camera::startAcq()
     try
     {
 		m_image_number=0;		
+
+		StdBufferCbMgr& buffer_mgr = m_buffer_cb_mgr;
+		// We won't queue more than c_nBuffers image buffers at a time
+		int nb_buffers;
+		buffer_mgr.getNbBuffers(nb_buffers);
+		DEB_TRACE() << "We'll queue " << nb_buffers << " image buffers";
+		StreamGrabber_->MaxNumBuffer.SetValue(nb_buffers);
+
 		// Allocate all resources for grabbing. Critical parameters like image
 		// size now must not be changed until FinishGrab() is called.
 		DEB_TRACE() << "Allocate all resources for grabbing, PrepareGrab";
 		StreamGrabber_->PrepareGrab();
-	
-		// Buffers used for grabbing must be registered at the stream grabber.
-		// The registration returns a handle to be used for queuing the buffer.
-		DEB_TRACE() << "Buffers used for grabbing must be registered at the stream grabber";
-		for (uint32_t i = 0; i < c_nBuffers; ++i)
-		{
-			CGrabBuffer *pGrabBuffer = new CGrabBuffer((const size_t)ImageSize_);
-			pGrabBuffer->SetBufferHandle(StreamGrabber_->RegisterBuffer(pGrabBuffer->GetBufferPointer(), (const size_t)ImageSize_));
-	
-			// Put the grab buffer object into the buffer list
-			DEB_TRACE() << "Put the grab buffer object into the buffer list";
-			BufferList_.push_back(pGrabBuffer);
-		}
-	
-		DEB_TRACE() << "Handle to be used for queuing the buffer";
-		for (vector<CGrabBuffer*>::const_iterator x = BufferList_.begin(); x != BufferList_.end(); ++x)
-		{
-			// Put buffer into the grab queue for grabbing
-			DEB_TRACE() << "Put buffer into the grab queue for grabbing";
-			StreamGrabber_->QueueBuffer((*x)->GetBufferHandle(), NULL);
-		}
+
+		// Put buffer into the grab queue for grabbing
+		DEB_TRACE() << "Put buffer into the grab queue for grabbing";
+		for(int i = 0;i < nb_buffers;++i)
+		  {
+		    int buffer_nb,concat_frame_nb;
+		    buffer_mgr.acqFrameNb2BufferNb(i,buffer_nb,concat_frame_nb);
+		    void *ptr = buffer_mgr.getBufferPtr(buffer_nb,concat_frame_nb);
+		    // The registration returns a handle to be used for queuing the buffer.
+		    DEB_TRACE() << "RegisterBuffer" << DEB_VAR1(ptr);
+		    StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(ptr,(const size_t)ImageSize_);
+		    DEB_TRACE() << "Queue buffer" << DEB_VAR1(bufferId);
+		    StreamGrabber_->QueueBuffer(bufferId, NULL);
+		  }
 		
 		// Let the camera acquire images continuously ( Acquisiton mode equals Continuous! )
 		DEB_TRACE() << "Let the camera acquire images continuously";
+		buffer_mgr.setStartTimestamp(Timestamp::now());
 		Camera_->AcquisitionStart.Execute();
 #ifndef LESSDEPENDENCY
 		this->post(new yat::Message(BASLER_START_MSG), kPOST_MSG_TMO);
@@ -332,23 +329,13 @@ void Camera::FreeImage()
 			StreamGrabber_->CancelGrab();
 	
 			// Get all buffers back
-			for (GrabResult r; StreamGrabber_->RetrieveResult(r););
+			for (GrabResult r; StreamGrabber_->RetrieveResult(r);)
+			  StreamGrabber_->DeregisterBuffer(r.Handle());
 			
 			// Stop acquisition
 			DEB_TRACE() << "Stop acquisition";
 			Camera_->AcquisitionStop.Execute();
-			
-			// Clean up
-		
-			// You must deregister the buffers before freeing the memory
-			DEB_TRACE() << "Must deregister the buffers before freeing the memory";
-			for (vector<CGrabBuffer*>::iterator it = BufferList_.begin(); it != BufferList_.end(); it++)
-			{
-				StreamGrabber_->DeregisterBuffer((*it)->GetBufferHandle());
-				delete *it;
-				*it = NULL;
-			}
-			BufferList_.clear();
+
 			// Free all resources used for grabbing
 			DEB_TRACE() << "Free all resources used for grabbing";
 			StreamGrabber_->FinishGrab();
@@ -398,19 +385,16 @@ void Camera::GetImage()
 				// Grabbing was successful, process image
 				SET_STATUS(Camera::Readout);
 				DEB_TRACE()  << "image#" << DEB_VAR1(m_image_number) <<" acquired !";
-				int buffer_nb, concat_frame_nb;		
-				buffer_mgr.setStartTimestamp(Timestamp::now());
-				buffer_mgr.acqFrameNb2BufferNb(m_image_number, buffer_nb, concat_frame_nb);
-				void *ptr = buffer_mgr.getBufferPtr(buffer_nb,   concat_frame_nb);
-				memcpy((int16_t *)ptr,(uint16_t *)( Result.Buffer()),Camera_->Width()*Camera_->Height()*2);
+				int nb_buffers;
+				buffer_mgr.getNbBuffers(nb_buffers);
+				if (!m_nb_frames || m_image_number < int(m_nb_frames - nb_buffers))
+				  StreamGrabber_->QueueBuffer(Result.Handle(),NULL);
+
 				
 				HwFrameInfoType frame_info;
 				frame_info.acq_frame_nb = m_image_number;
 				continueAcq = buffer_mgr.newFrameReady(frame_info);
 				DEB_TRACE() << DEB_VAR1(continueAcq);
-				// Reuse the buffer for grabbing the next image
-				if (!m_nb_frames || m_image_number < int(m_nb_frames - c_nBuffers))
-					StreamGrabber_->QueueBuffer(Result.Handle(), NULL);
 				m_image_number++;
 			}
 			else if (Failed == Result.Status())
@@ -419,21 +403,19 @@ void Camera::GetImage()
 				DEB_ERROR() << "No image acquired!"
 							<< " Error code : 0x" << DEB_VAR1(hex) << " " << Result.GetErrorCode()
 						    << " Error description : " << Result.GetErrorDescription();
-
-				// Reuse the buffer for grabbing the next image
-				if (!m_nb_frames || m_image_number < int(m_nb_frames - c_nBuffers))
-					StreamGrabber_->QueueBuffer(Result.Handle(), NULL);
-			
 				
 				if(!m_nb_frames) //Do not stop acquisition in "live" mode, just IGNORE  error
 				{
 					continueAcq = true;
+					StreamGrabber_->QueueBuffer(Result.Handle(), NULL);
 				}
 				else			//in "snap" mode , acquisition must be stopped
 				{
 					SET_STATUS(Camera::Fault);
-					return;
+					continueAcq = false;
 				}
+
+			
 			}
 			
 			{
@@ -999,26 +981,3 @@ void Camera::execCmd(int cmd)
   }
 #endif
 }
-
-//-----------------------------------------------------
-// Constructor allocates the image buffer
-//-----------------------------------------------------
-CGrabBuffer::CGrabBuffer(size_t ImageSize)
-{
-    m_pBuffer = new uint8_t[ ImageSize ];
-    if (NULL == m_pBuffer)
-    {
-        GenICam::GenericException e("Not enough memory to allocate image buffer", __FILE__, __LINE__);
-        throw e;
-    }
-}
-
-//-----------------------------------------------------
-// Freeing the memory
-//-----------------------------------------------------
-CGrabBuffer::~CGrabBuffer()
-{
-    if (NULL != m_pBuffer)
-        delete[] m_pBuffer;
-}
-//-----------------------------------------------------
