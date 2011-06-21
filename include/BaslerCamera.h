@@ -51,7 +51,7 @@ class Camera
 	enum Status {
 	  Ready, Exposure, Readout, Latency, Fault
 	};
-	Camera(const std::string& camera_ip);
+	Camera(const std::string& camera_ip,int packet_size = -1);
 	~Camera();
 
     void startAcq();

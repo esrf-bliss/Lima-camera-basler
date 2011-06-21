@@ -13,7 +13,7 @@ namespace Basler
       Ready, Exposure, Readout, Latency,
     };
 
-    Camera(const std::string& camera_ip);
+    Camera(const std::string& camera_ip,int mtu_size = -1);
     ~Camera();
 
     void startAcq();

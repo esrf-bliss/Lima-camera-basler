@@ -46,7 +46,7 @@ private:
 //---------------------------
 //- Ctor
 //---------------------------
-Camera::Camera(const std::string& camera_ip)
+Camera::Camera(const std::string& camera_ip,int packet_size)
 		: m_buffer_cb_mgr(m_buffer_alloc_mgr),
 		  m_buffer_ctrl_mgr(m_buffer_cb_mgr),
 		  m_nb_frames(1),
@@ -131,11 +131,9 @@ Camera::Camera(const std::string& camera_ip)
         // Open the camera
         Camera_->Open();
 
-	// Suppose the eth MTU is set at least to 8192 (Jumbo mode !)
-        // otherwise frame transfer can failed, the package size must but 
-        // correspond to the MTU, see README file under Pylon-3.2.2 installation
-	// directory for for details about network optimization.
-	Camera_->GevSCPSPacketSize.SetValue(8000);
+	
+	if(packet_size > 0)
+	  Camera_->GevSCPSPacketSize.SetValue(packet_size);
 
         // Set the image format and AOI
 	DEB_TRACE() << "Set the image format and AOI";
