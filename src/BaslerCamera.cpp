@@ -50,6 +50,7 @@ Camera::Camera(const std::string& camera_ip)
 		  m_image_number(0),
 		  m_stop_already_done(true),
 		  m_exp_time(1.),
+		  m_timeout(11000),
 		  pTl_(NULL),
 		  Camera_(NULL),
 		  StreamGrabber_(NULL)
@@ -371,9 +372,11 @@ void Camera::GetImage()
 		if(m_stop_already_done)
 			return;		
 		StdBufferCbMgr& buffer_mgr = m_buffer_cb_mgr;
-		
+#ifndef LESSDEPENDENCY
+		int local_exp_time = m_timeout;
+#else		
 		int local_exp_time = int(m_exp_time + 1.) * 1000;
-		DEB_TRACE() << DEB_VAR1(local_exp_time);
+#endif
 		SET_STATUS(Camera::Exposure);
 		if (StreamGrabber_->GetWaitObject().Wait(local_exp_time))
 		{
@@ -391,9 +394,10 @@ void Camera::GetImage()
 				buffer_mgr.acqFrameNb2BufferNb(m_image_number, buffer_nb, concat_frame_nb);
 				void *ptr = buffer_mgr.getBufferPtr(buffer_nb,   concat_frame_nb);
 				memcpy((int16_t *)ptr,(uint16_t *)( Result.Buffer()),Camera_->Width()*Camera_->Height()*2);
-				
+
 				HwFrameInfoType frame_info;
 				frame_info.acq_frame_nb = m_image_number;
+	
 				continueAcq = buffer_mgr.newFrameReady(frame_info);
 				DEB_TRACE() << DEB_VAR1(continueAcq);
 				// Reuse the buffer for grabbing the next image
@@ -549,7 +553,7 @@ void Camera::setImageType(ImageType type)
 			break;
 		
 			default:
-				throw LIMA_HW_EXC(Error, "Cannot change the format of the camera !");
+				throw LIMA_HW_EXC(InvalidValue, "Invalid Pixel format");
 			break;
 		}
 	}
@@ -598,26 +602,30 @@ void Camera::setTrigMode(TrigMode mode)
     DEB_PARAM() << DEB_VAR1(mode);
 	
 	try
-	{
+	{	
 		if ( mode == IntTrig )
 		{
-		  //- INTERNAL
+		  //- INTERNAL-TRIGGER -> OFF
 		  this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
 		  this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
 		}
 		else if ( mode == ExtGate )
 		{
-		  //- EXTERNAL - TRIGGER WIDTH
+		  //- EXTERNAL-GATE -> TRIGGER WIDTH
 		  this->Camera_->TriggerMode.SetValue( TriggerMode_On );
 		  this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
 		  this->Camera_->ExposureMode.SetValue( ExposureMode_TriggerWidth );
 		}		
-		else //ExtTrigSingle
+		else if(mode == ExtTrigSingle)//ExtTrigSingle
 		{
-		  //- EXTERNAL - TIMED
+		  //- EXTERNAL-TRIGGER -> TIMED
 		  this->Camera_->TriggerMode.SetValue( TriggerMode_On );
 		  this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
 		  this->Camera_->ExposureMode.SetValue( ExposureMode_Timed );
+		}
+		else
+		{
+		  throw LIMA_HW_EXC(InvalidValue, "Invalid trigger mode");
 		}
 	}
 	catch (GenICam::GenericException &e)
@@ -637,11 +645,16 @@ void Camera::getTrigMode(TrigMode& mode)
 	try
 	{
 		if (this->Camera_->TriggerMode.GetValue() == TriggerMode_Off)
-			mode = IntTrig;
-		else if (this->Camera_->ExposureMode.GetValue() == ExposureMode_TriggerWidth)
+		{
+		  mode = IntTrig;
+		}
+		else
+		{
+		  if (this->Camera_->ExposureMode.GetValue() == ExposureMode_TriggerWidth)
 			mode = ExtGate;
-		else //ExposureMode_Timed
+		  else// if (this->Camera_->ExposureMode.GetValue() == ExposureMode_Timed)
 			mode = ExtTrigSingle;
+		}
 	}
 	catch (GenICam::GenericException &e)
     {
@@ -780,8 +793,19 @@ void Camera::getFrameRate(double& frame_rate)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
+void Camera::setTimeout(int TO)
+{
+	DEB_MEMBER_FUNCT();
+	DEB_PARAM() << DEB_VAR1(TO);	
+	m_timeout = TO;
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
 void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
 {
+	
 	DEB_MEMBER_FUNCT();
 	DEB_PARAM() << DEB_VAR1(set_roi);
 	Roi r;

@@ -132,6 +132,8 @@ class Camera : public yat::Task
 	// -- basler specific, LIMA don't worr'y about it !
 	void getFrameRate(double& frame_rate);
 	
+	void setTimeout(int TO);
+	
 #ifndef LESSDEPENDENCY
   //- [yat::Task implementation]
   protected: 
@@ -156,6 +158,7 @@ class Camera : public yat::Task
     int                         m_image_number;
     bool                        m_stop_already_done;
     double						m_exp_time;
+	int 						m_timeout;
 	//- basler stuff 
 	string						m_camera_ip;
 	string 						m_detector_model;

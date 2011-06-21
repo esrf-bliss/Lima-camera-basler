@@ -307,6 +307,9 @@ void SyncCtrlObj::getTrigMode(TrigMode& trig_mode)
 	m_cam.getTrigMode(trig_mode);
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
 void SyncCtrlObj::setExpTime(double exp_time)
 {
 	m_cam.setExpTime(exp_time);
@@ -328,6 +331,9 @@ void SyncCtrlObj::setLatTime(double lat_time)
 	m_cam.setLatTime(lat_time);
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
 void SyncCtrlObj::getLatTime(double& lat_time)
 {
 	m_cam.getLatTime(lat_time);
@@ -392,6 +398,7 @@ void RoiCtrlObj::setRoi(const Roi& roi)
 	Roi real_roi;
 	checkRoi(roi,real_roi);
 	m_cam.setRoi(real_roi);
+
 }
 
 void RoiCtrlObj::getRoi(Roi& roi)
@@ -456,7 +463,6 @@ void Interface::reset(ResetLevel reset_level)
 	m_det_info.getDefImageType(image_type);
 	FrameDim frame_dim(image_size, image_type);
 	m_buffer.setFrameDim(frame_dim);
-
 	m_buffer.setNbConcatFrames(1);
 	m_buffer.setNbBuffers(1);
 }
@@ -539,3 +545,13 @@ void Interface::getFrameRate(double& frame_rate)
 	m_cam.getFrameRate(frame_rate);
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Interface::setTimeout(int TO)
+{
+    m_cam.setTimeout(TO);
+}
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
