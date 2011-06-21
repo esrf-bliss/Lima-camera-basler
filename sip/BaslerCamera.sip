@@ -10,7 +10,7 @@ namespace Basler
   public:
 
     enum Status {
-      Ready = MaxThreadStatus, Exposure, Readout, Latency,
+      Ready, Exposure, Readout, Latency,
     };
 
     Camera(const std::string& camera_ip);

@@ -463,6 +463,7 @@ void Interface::reset(ResetLevel reset_level)
 
 	m_buffer.setNbConcatFrames(1);
 	m_buffer.setNbBuffers(1);
+	m_cam._setStatus(Camera::Ready,true);
 }
 
 //-----------------------------------------------------
