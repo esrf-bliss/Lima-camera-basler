@@ -6,7 +6,6 @@ CXXFLAGS += -I../include -I../../../hardware/include -I../../../common/include \
 			-I/opt/pylon/include \
 			-I/opt/pylon/include/genicam \
 			-I/opt/pylon/genicam/library/CPP/include \
-			-I../../../../YAT/include \
 			-DUSE_GIGE -Wall -pthread -fPIC -g
 
 all:	Basler.o
