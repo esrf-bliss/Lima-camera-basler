@@ -814,16 +814,7 @@ Camera::_AcqThread::~_AcqThread()
   {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(set_roi);
-    Roi r;
-    getRoi(r);
-    if(!set_roi.isActive())
-      {
-	hw_roi = r;	
-      }
-    else
-      {
-	hw_roi = set_roi;
-      }
+    hw_roi = set_roi;
 	
     DEB_RETURN() << DEB_VAR1(hw_roi);
   }
@@ -840,18 +831,21 @@ Camera::_AcqThread::~_AcqThread()
       {
 	//- backup old roi, in order to rollback if error
 	getRoi(r);
-		
+	if(r == set_roi) return;
 	//- first reset the ROI
 	Camera_->OffsetX.SetValue(Camera_->OffsetX.GetMin());
 	Camera_->OffsetY.SetValue(Camera_->OffsetY.GetMin());
 	Camera_->Width.SetValue(Camera_->Width.GetMax());
 	Camera_->Height.SetValue(Camera_->Height.GetMax());
-	
-	//- then fix the new ROI
-	Camera_->Width.SetValue( set_roi.getSize().getWidth());
-	Camera_->Height.SetValue(set_roi.getSize().getHeight());	
-	Camera_->OffsetX.SetValue(set_roi.getTopLeft().x);
-	Camera_->OffsetY.SetValue(set_roi.getTopLeft().y);
+
+	if(set_roi.isActive())
+	  {
+	    //- then fix the new ROI
+	    Camera_->Width.SetValue( set_roi.getSize().getWidth());
+	    Camera_->Height.SetValue(set_roi.getSize().getHeight());
+	    Camera_->OffsetX.SetValue(set_roi.getTopLeft().x);
+	    Camera_->OffsetY.SetValue(set_roi.getTopLeft().y);
+	  }
       }
     catch (GenICam::GenericException &e)
       {
