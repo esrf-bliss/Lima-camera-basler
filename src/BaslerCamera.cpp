@@ -377,8 +377,7 @@ void Camera::_AcqThread::threadFunction()
         waitset.Add(m_cam.StreamGrabber_->GetWaitObject());
 
 	bool continueAcq = true;
-	while(!m_cam.m_wait_flag && 
-	      continueAcq &&(!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
+	while(continueAcq && (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
 	  {
 	    unsigned int event_number;
 	    if(waitset.WaitForAny(600000,&event_number)) // Wait 10 minutes
@@ -386,9 +385,9 @@ void Camera::_AcqThread::threadFunction()
 		switch(event_number)
 		  {
 		  case 0:	// event
-		    DEB_ALWAYS() << "Receive Event";
 		    DEB_TRACE() << "Receive Event";
 		    m_cam.WaitObject_.Reset();
+		    continueAcq = false;
 		    break;
 		  case 1:
 		    // Get the grab result from the grabber's result queue
@@ -446,6 +445,7 @@ void Camera::_AcqThread::threadFunction()
 	DEB_ERROR() << "GeniCam Error! "<< e.GetDescription();
 	m_cam.m_wait_flag = true;
       }			
+    aLock.lock();
     }
 }
 //-----------------------------------------------------
@@ -456,6 +456,7 @@ Camera::_AcqThread::~_AcqThread()
 {
   AutoMutex aLock(m_cam.m_cond.mutex());
   m_cam.m_quit = true;
+  m_cam.WaitObject_.Signal();
   m_cam.m_cond.broadcast();
   aLock.unlock();
 
