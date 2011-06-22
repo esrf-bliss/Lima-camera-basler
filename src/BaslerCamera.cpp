@@ -171,7 +171,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size)
 	DEB_TRACE() << "Get the image buffer size";
 	ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
        
-
+	WaitObject_ = WaitObjectEx::Create();
 
 	m_acq_thread = new _AcqThread(*this);
 	m_acq_thread->start();
@@ -305,7 +305,10 @@ void Camera::_stopAcq(bool internalFlag)
 		{
 			m_wait_flag = true;
 			while(!internalFlag && m_thread_running)
-			  m_cond.wait();
+			  {
+			    WaitObject_.Signal();
+			    m_cond.wait();
+			  }
 			aLock.unlock();
 
 			//Let the acq thread stop the acquisition
@@ -369,47 +372,62 @@ void Camera::_AcqThread::threadFunction()
 
     try
       {
+	WaitObjects waitset;
+        waitset.Add(m_cam.WaitObject_);
+        waitset.Add(m_cam.StreamGrabber_->GetWaitObject());
+
 	bool continueAcq = true;
 	while(!m_cam.m_wait_flag && 
 	      continueAcq &&(!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
 	  {
-	    int local_exp_time = int(m_cam.m_exp_time + 1.) * 1000;
-	    if (m_cam.StreamGrabber_->GetWaitObject().Wait(local_exp_time))
+	    unsigned int event_number;
+	    if(waitset.WaitForAny(600000,&event_number)) // Wait 10 minutes
 	      {
-		// Get the grab result from the grabber's result queue
-		GrabResult Result;
-		m_cam.StreamGrabber_->RetrieveResult(Result);
-		if (Grabbed == Result.Status())
+		switch(event_number)
 		  {
-		    // Grabbing was successful, process image
-		    m_cam._setStatus(Camera::Readout,false);
-		    DEB_TRACE()  << "image#" << DEB_VAR1(m_cam.m_image_number) <<" acquired !";
-		    int nb_buffers;
-		    buffer_mgr.getNbBuffers(nb_buffers);
-		    if (!m_cam.m_nb_frames || m_cam.m_image_number < int(m_cam.m_nb_frames - nb_buffers))
-		      m_cam.StreamGrabber_->QueueBuffer(Result.Handle(),NULL);
-
-				
-		    HwFrameInfoType frame_info;
-		    frame_info.acq_frame_nb = m_cam.m_image_number;
-		    continueAcq = buffer_mgr.newFrameReady(frame_info);
-		    DEB_TRACE() << DEB_VAR1(continueAcq);
-		    ++m_cam.m_image_number;
-		  }
-		else if (Failed == Result.Status())
-		  {
-		    // Error handling
-		    DEB_ERROR() << "No image acquired!"
-				<< " Error code : 0x" << DEB_VAR1(hex) << " " << Result.GetErrorCode()
-				<< " Error description : " << Result.GetErrorDescription();
-				
-		    if(!m_cam.m_nb_frames) //Do not stop acquisition in "live" mode, just IGNORE  error
-		      m_cam.StreamGrabber_->QueueBuffer(Result.Handle(), NULL);
-		    else			//in "snap" mode , acquisition must be stopped
+		  case 0:	// event
+		    DEB_ALWAYS() << "Receive Event";
+		    DEB_TRACE() << "Receive Event";
+		    m_cam.WaitObject_.Reset();
+		    break;
+		  case 1:
+		    // Get the grab result from the grabber's result queue
+		    GrabResult Result;
+		    m_cam.StreamGrabber_->RetrieveResult(Result);
+		    if (Grabbed == Result.Status())
 		      {
-			m_cam._setStatus(Camera::Fault,false);
-			continueAcq = false;
+			// Grabbing was successful, process image
+			m_cam._setStatus(Camera::Readout,false);
+			DEB_TRACE()  << "image#" << DEB_VAR1(m_cam.m_image_number) <<" acquired !";
+			int nb_buffers;
+			buffer_mgr.getNbBuffers(nb_buffers);
+			if (!m_cam.m_nb_frames || m_cam.m_image_number < int(m_cam.m_nb_frames -
+									     nb_buffers))
+			  m_cam.StreamGrabber_->QueueBuffer(Result.Handle(),NULL);
+
+
+			HwFrameInfoType frame_info;
+			frame_info.acq_frame_nb = m_cam.m_image_number;
+			continueAcq = buffer_mgr.newFrameReady(frame_info);
+			DEB_TRACE() << DEB_VAR1(continueAcq);
+			++m_cam.m_image_number;
 		      }
+		    else if (Failed == Result.Status())
+		      {
+			// Error handling
+			DEB_ERROR() << "No image acquired!"
+				    << " Error code : 0x" << DEB_VAR1(hex) << " " << Result.GetErrorCode()
+				    << " Error description : " << Result.GetErrorDescription();
+
+			if(!m_cam.m_nb_frames) //Do not stop acquisition in "live" mode, just IGNORE  error
+			  m_cam.StreamGrabber_->QueueBuffer(Result.Handle(), NULL);
+			else			//in "snap" mode , acquisition must be stopped
+			  {
+			    m_cam._setStatus(Camera::Fault,false);
+			    continueAcq = false;
+			  }
+		      }
+		    break;
 		  }
 	      }
 	    else
