@@ -855,8 +855,13 @@ Camera::_AcqThread::~_AcqThread()
 	Camera_->OffsetY.SetValue(Camera_->OffsetY.GetMin());
 	Camera_->Width.SetValue(Camera_->Width.GetMax());
 	Camera_->Height.SetValue(Camera_->Height.GetMax());
+	
+	Roi fullFrame(Camera_->OffsetX.GetMin(),
+		      Camera_->OffsetY.GetMin(),
+		      Camera_->Width.GetMax(),
+		      Camera_->Height.GetMax());
 
-	if(set_roi.isActive())
+	if(set_roi.isActive() && fullFrame != set_roi)
 	  {
 	    //- then fix the new ROI
 	    Camera_->Width.SetValue( set_roi.getSize().getWidth());
