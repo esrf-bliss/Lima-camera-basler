@@ -56,6 +56,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size)
 		  m_thread_running(true),
 		  m_image_number(0),
 		  m_exp_time(1.),
+		  m_latency_time(0.),
 		  pTl_(NULL),
 		  Camera_(NULL),
 		  StreamGrabber_(NULL)
@@ -182,7 +183,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size)
 	DEB_ERROR() << e.GetDescription();
 	Pylon::PylonTerminate( );
         throw LIMA_HW_EXC(Error, e.GetDescription());
-    }	
+    }
 }
 
 //---------------------------
@@ -303,9 +304,9 @@ void Camera::_stopAcq(bool internalFlag)
 		AutoMutex aLock(m_cond.mutex());
 		if(m_status != Camera::Ready)
 		{
-			m_wait_flag = true;
 			while(!internalFlag && m_thread_running)
 			  {
+			    m_wait_flag = true;
 			    WaitObject_.Signal();
 			    m_cond.wait();
 			  }
@@ -387,7 +388,9 @@ void Camera::_AcqThread::threadFunction()
 		  case 0:	// event
 		    DEB_TRACE() << "Receive Event";
 		    m_cam.WaitObject_.Reset();
-		    continueAcq = false;
+		    aLock.lock();
+		    continueAcq = !m_cam.m_wait_flag;
+		    aLock.unlock();
 		    break;
 		  case 1:
 		    // Get the grab result from the grabber's result queue
@@ -443,9 +446,9 @@ void Camera::_AcqThread::threadFunction()
       {
         // Error handling
 	DEB_ERROR() << "GeniCam Error! "<< e.GetDescription();
-	m_cam.m_wait_flag = true;
       }			
     aLock.lock();
+    m_cam.m_wait_flag = true;
     }
 }
 
@@ -695,6 +698,16 @@ Camera::_AcqThread::~_AcqThread()
         DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
       }		
+    // set the frame rate useing expo time + latency
+    if(m_latency_time < 1e-6) // Max camera speed
+      Camera_->AcquisitionFrameRateEnable.SetValue(false);
+    else
+      {
+	double periode = m_latency_time + m_exp_time;
+	Camera_->AcquisitionFrameRateEnable.SetValue(true);
+	Camera_->AcquisitionFrameRateAbs.SetValue(1/periode);
+	DEB_TRACE() << DEB_VAR1(Camera_->AcquisitionFrameRateAbs.GetValue());
+      }
   }
 
   //-----------------------------------------------------
@@ -723,8 +736,8 @@ Camera::_AcqThread::~_AcqThread()
   {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(lat_time);
-    /////@@@@ TODO if necessary
-      }
+    m_latency_time = lat_time;
+  }
 
   //-----------------------------------------------------
   //
@@ -732,9 +745,8 @@ Camera::_AcqThread::~_AcqThread()
   void Camera::getLatTime(double& lat_time)
   {
     DEB_MEMBER_FUNCT();
-    /////@@@@ TODO if necessary
-      lat_time = 0;
-      DEB_RETURN() << DEB_VAR1(lat_time);
+    lat_time = m_latency_time;
+    DEB_RETURN() << DEB_VAR1(lat_time);
   }
 
   //-----------------------------------------------------
@@ -763,10 +775,13 @@ Camera::_AcqThread::~_AcqThread()
   void Camera::getLatTimeRange(double& min_lat, double& max_lat) const
   {   
     DEB_MEMBER_FUNCT();
-    /////@@@@ TODO if necessary
-      min_lat= 0;
-      max_lat= 0;
-      DEB_RETURN() << DEB_VAR2(min_lat, max_lat);
+    min_lat= 0;
+    double minAcqFrameRate = Camera_->AcquisitionFrameRateAbs.GetMin();
+    if(minAcqFrameRate > 0)
+      max_lat = 1 / minAcqFrameRate;
+    else
+      max_lat = 0;
+    DEB_RETURN() << DEB_VAR2(min_lat, max_lat);
   }
 
   //-----------------------------------------------------

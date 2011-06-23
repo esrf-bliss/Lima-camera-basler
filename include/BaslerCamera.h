@@ -111,6 +111,7 @@ class Camera
 	volatile bool			m_thread_running;
 	int                         	m_image_number;
 	double				m_exp_time;
+	double				m_latency_time;
 	//- basler stuff 
 	string				m_camera_ip;
 	string 				m_detector_model;
