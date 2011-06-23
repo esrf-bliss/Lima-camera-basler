@@ -34,7 +34,7 @@ class Camera::_AcqThread : public Thread
 {
   DEB_CLASS_NAMESPC(DebModCamera, "Camera", "_AcqThread");
 public:
-  _AcqThread(Camera &aCam) : m_cam(aCam) {}
+  _AcqThread(Camera &aCam);
   virtual ~_AcqThread();
 
 protected:
@@ -447,6 +447,15 @@ void Camera::_AcqThread::threadFunction()
       }			
     aLock.lock();
     }
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+Camera::_AcqThread::_AcqThread(Camera &aCam) :
+  m_cam(aCam)
+{
+  pthread_attr_setscope(&m_thread_attr,PTHREAD_SCOPE_PROCESS);
 }
 //-----------------------------------------------------
 //
