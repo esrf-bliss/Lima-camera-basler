@@ -87,9 +87,11 @@ class Camera
 
 	void checkRoi(const Roi& set_roi, Roi& hw_roi);
 	void setRoi(const Roi& set_roi);
-	
 	void getRoi(Roi& hw_roi);	
-	
+
+	void setBin(const Bin&);
+	void getBin(Bin&);
+
 	void getStatus(Camera::Status& status);
 	// -- basler specific, LIMA don't worr'y about it !
 	void getFrameRate(double& frame_rate);

@@ -942,3 +942,22 @@ Camera::_AcqThread::~_AcqThread()
       }	
     DEB_RETURN() << DEB_VAR1(hw_roi);
   }
+
+void Camera::setBin(const Bin &aBin)
+{
+  DEB_MEMBER_FUNCT();
+  DEB_PARAM() << DEB_VAR1(aBin);
+
+  Camera_->BinningVertical.SetValue(aBin.getX());
+  Camera_->BinningHorizontal.SetValue(aBin.getY());
+}
+
+void Camera::getBin(Bin &aBin)
+{
+  DEB_MEMBER_FUNCT();
+
+  aBin = Bin(Camera_->BinningVertical.GetValue(),
+	     Camera_->BinningHorizontal.GetValue());
+
+  DEB_RETURN() << DEB_VAR1(aBin);
+}

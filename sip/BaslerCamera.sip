@@ -46,6 +46,9 @@ namespace Basler
     void checkRoi(const Roi& set_roi, Roi& hw_roi /Out/);
     void setRoi(const Roi& set_roi);
     void getRoi(Roi& hw_roi /Out/);	
+
+    void setBin(const Bin&);
+    void getBin(Bin& /Out/);
 	
     void getStatus(Basler::Camera::Status& status /Out/);
 	

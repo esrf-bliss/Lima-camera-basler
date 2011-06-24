@@ -113,7 +113,7 @@ class SyncCtrlObj : public HwSyncCtrlObj
 
 /*******************************************************************
  * \class RoiCtrlObj
- * \brief Control object providing Frelon Roi interface
+ * \brief Control object providing Basler Roi interface
  *******************************************************************/
 
 class RoiCtrlObj : public HwRoiCtrlObj
@@ -132,7 +132,24 @@ class RoiCtrlObj : public HwRoiCtrlObj
 	Camera& m_cam;
 };
 
+/*******************************************************************
+ * \class BinCtrlObj
+ * \brief Control object providing Basler Bin interface
+ *******************************************************************/
+class BinCtrlObj : public HwBinCtrlObj
+{
+ public:
+  BinCtrlObj(Camera& cam);
+  virtual ~BinCtrlObj() {}
+  
+  virtual void setBin(const Bin& bin);
+  virtual void getBin(Bin& bin);
+  //allow all binning
+  virtual void checkBin(Bin& bin) {}
+ private:
+  Camera& m_cam;
 
+};
 /*******************************************************************
  * \class Interface
  * \brief Basler hardware interface
@@ -162,7 +179,7 @@ class Interface : public HwInterface
 	DetInfoCtrlObj	m_det_info;
 	BufferCtrlObj	m_buffer;
 	SyncCtrlObj		m_sync;
-	//BinCtrlObj     m_bin;
+	BinCtrlObj     m_bin;
 	RoiCtrlObj     	m_roi;
 	//FlipCtrlObj    m_flip;
 };

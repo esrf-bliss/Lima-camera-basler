@@ -405,11 +405,27 @@ void RoiCtrlObj::getRoi(Roi& roi)
 }
 
 /*******************************************************************
+ * \brief BinCtrlObj constructor
+ *******************************************************************/
+BinCtrlObj::BinCtrlObj(Camera &cam) : m_cam(cam) {}
+
+void BinCtrlObj::setBin(const Bin& aBin)
+{
+  m_cam.setBin(aBin);
+}
+
+void BinCtrlObj::getBin(Bin &aBin)
+{
+  m_cam.getBin(aBin);
+}
+
+/*******************************************************************
  * \brief Hw Interface constructor
  *******************************************************************/
 
 Interface::Interface(Camera& cam)
-	: m_cam(cam),m_det_info(cam), m_buffer(cam),m_sync(cam),m_roi(cam)
+  : m_cam(cam),m_det_info(cam),m_buffer(cam),
+    m_sync(cam),m_bin(cam),m_roi(cam)
 {
 	DEB_CONSTRUCTOR();
 
@@ -425,6 +441,9 @@ Interface::Interface(Camera& cam)
 	HwRoiCtrlObj *roi = &m_roi;
 	m_cap_list.push_back(HwCap(roi));
 
+
+	HwBinCtrlObj *bin = &m_bin;
+	m_cap_list.push_back(HwCap(bin));
 }
 
 //-----------------------------------------------------
