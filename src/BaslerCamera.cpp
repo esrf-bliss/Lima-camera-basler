@@ -12,6 +12,7 @@ using namespace std;
 #include <arpa/inet.h>
 #include <netdb.h>
 
+const static int DEFAULT_TIME_OUT = 600000; // 10 minutes
 static inline const char* _get_ip_addresse(const char *name_ip)
 {
   
@@ -56,7 +57,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size)
 		  m_thread_running(true),
 		  m_image_number(0),
 		  m_exp_time(1.),
-		  m_timeout(11000),
+		  m_timeout(DEFAULT_TIME_OUT),
 		  m_latency_time(0.),
 		  pTl_(NULL),
 		  Camera_(NULL),
