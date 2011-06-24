@@ -1,25 +1,10 @@
 #ifndef BASLERCAMERA_H
 #define BASLERCAMERA_H
 
-#ifndef LESSDEPENDENCY
-///////////////////////////////////////////////////////////
-// YAT::TASK 
-///////////////////////////////////////////////////////////
-#include <yat/threading/Task.h>
-#include <yat/network/Address.h>
-
-#define kLO_WATER_MARK      128
-#define kHI_WATER_MARK      512
-
-#define kPOST_MSG_TMO       2
-
-const size_t  BASLER_START_MSG		=	(yat::FIRST_USER_MSG + 100);
-const size_t  BASLER_STOP_MSG		=	(yat::FIRST_USER_MSG + 101);
-const size_t  BASLER_GET_IMAGE_MSG	=	(yat::FIRST_USER_MSG + 102);
+#if defined (__GNUC__) && (__GNUC__ == 3) && defined (__ELF__)
+#   define GENAPI_DECL __attribute__((visibility("default")))
+#   define GENAPI_DECL_ABSTRACT __attribute__((visibility("default")))
 #endif
-
-///////////////////////////////////////////////////////////
-
 
 #include <pylon/PylonIncludes.h>
 #include <pylon/gige/BaslerGigEDeviceInfo.h>
@@ -53,45 +38,20 @@ namespace lima
 {
 namespace Basler
 {
-//----------------------------------------------------------------------------------------------------
-class CGrabBuffer
-{
-    public:
-        CGrabBuffer( size_t ImageSize);
-        ~CGrabBuffer();
-        uint8_t* GetBufferPointer(void) { return m_pBuffer; }
-        StreamBufferHandle GetBufferHandle(void) { return m_hBuffer; }
-        void SetBufferHandle(StreamBufferHandle hBuffer) { m_hBuffer = hBuffer; }
-
-    protected:
-        uint8_t *m_pBuffer;
-        StreamBufferHandle m_hBuffer;
-};
-
-
 /*******************************************************************
  * \class Camera
  * \brief object controlling the basler camera via Pylon driver
  *******************************************************************/
-#ifndef LESSDEPENDENCY		
-class Camera : public yat::Task
-#else
-  class Camera : public CmdThread
-#endif
+class Camera
 {
 	DEB_CLASS_NAMESPC(DebModCamera, "Camera", "Basler");
-
+	friend class Interface;
  public:
 
 	enum Status {
-	  Ready = CmdThread::MaxThreadStatus, Exposure, Readout, Latency, Fault
+	  Ready, Exposure, Readout, Latency, Fault
 	};
-#ifdef LESSDEPENDENCY
-	enum { // Cmd
-	  BASLER_START_MSG = MaxThreadCmd,BASLER_STOP_MSG,BASLER_GET_IMAGE_MSG
-	};
-#endif	
-	Camera(const std::string& camera_ip);
+	Camera(const std::string& camera_ip,int packet_size = -1);
 	~Camera();
 
     void startAcq();
@@ -118,6 +78,9 @@ class Camera : public yat::Task
 	void setLatTime(double  lat_time);
 	void getLatTime(double& lat_time);
 
+    void getExposureTimeRange(double& min_expo, double& max_expo) const;
+    void getLatTimeRange(double& min_lat, double& max_lat) const;    
+
 	void setNbFrames(int  nb_frames);
 	void getNbFrames(int& nb_frames);
 	void getNbHwAcquiredFrames(int &nb_acq_frames);
@@ -128,54 +91,41 @@ class Camera : public yat::Task
 	void getRoi(Roi& hw_roi);	
 	
 	void getStatus(Camera::Status& status);
-	
 	// -- basler specific, LIMA don't worr'y about it !
 	void getFrameRate(double& frame_rate);
 	
-	void setTimeout(int TO);
-	
-#ifndef LESSDEPENDENCY
-  //- [yat::Task implementation]
-  protected: 
-    virtual void handle_message( yat::Message& msg )      throw (yat::Exception);
-#else
- protected:
-    virtual void execCmd(int);
-    virtual void init() {}
-#endif
  private:
-	void GetImage();
-    void FreeImage();
-	
-	//- lima stuff
-	SoftBufferAllocMgr 			m_buffer_alloc_mgr;
-	StdBufferCbMgr 				m_buffer_cb_mgr;
-	BufferCtrlMgr 				m_buffer_ctrl_mgr;
-	int 						m_nb_frames;	
-#ifndef LESSDEPENDENCY
-	Camera::Status				m_status;
-#endif
-    int                         m_image_number;
-    bool                        m_stop_already_done;
-    double						m_exp_time;
-	int 						m_timeout;
-	//- basler stuff 
-	string						m_camera_ip;
-	string 						m_detector_model;
-	string 						m_detector_type;
-	static const double 		PixelSize= 55.0;
+	class _AcqThread;
+	friend class _AcqThread;
+	void _stopAcq(bool);
+	void _setStatus(Camera::Status status,bool force);
 
-#ifndef LESSDEPENDENCY    
-    //- Mutex
-	yat::Mutex 					lock_;
-#endif
+	//- lima stuff
+	SoftBufferAllocMgr 		m_buffer_alloc_mgr;
+	StdBufferCbMgr 			m_buffer_cb_mgr;
+	BufferCtrlMgr 			m_buffer_ctrl_mgr;
+	int 				m_nb_frames;	
+	Camera::Status			m_status;
+	volatile bool			m_wait_flag;
+	volatile bool			m_quit;
+	volatile bool			m_thread_running;
+	int                         	m_image_number;
+	double				m_exp_time;
+	double				m_latency_time;
+	//- basler stuff 
+	string				m_camera_ip;
+	string 				m_detector_model;
+	string 				m_detector_type;
+	static const double 		PixelSize= 55.0;
 	//- Pylon stuff
-	ITransportLayer* 			pTl_;
-	DeviceInfoList_t 			devices_;
-	Camera_t* 					Camera_;
+	ITransportLayer* 		pTl_;
+	DeviceInfoList_t 		devices_;
+	Camera_t* 			Camera_;
 	Camera_t::StreamGrabber_t* 	StreamGrabber_;
-	std::vector<CGrabBuffer*> 	BufferList_;
-	size_t 						ImageSize_;	
+	WaitObjectEx			WaitObject_;
+	size_t 				ImageSize_;
+	_AcqThread*			m_acq_thread;
+	Cond				m_cond;
 };
 } // namespace Basler
 } // namespace lima
