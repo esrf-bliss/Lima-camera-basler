@@ -3,24 +3,24 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>fr.soleil.lib.Lima</groupId>
-		<artifactId>Camera</artifactId>
-        <version>1.0.3-SNAPSHOT</version>
+        <artifactId>Camera</artifactId>
+        <version>1.0.4-SNAPSHOT</version>
     </parent>
 
     <groupId>fr.soleil.lib.Lima.Camera</groupId>
-    <artifactId>Basler-${aol}-shared-${mode}</artifactId>
+    <artifactId>LimaBasler-${aol}-shared-${mode}</artifactId>
 
     <packaging>nar</packaging>
-	
-    <name>Basler</name>    <!-- use for the name of executable -->
+
+    <name>LimaBasler</name>    <!-- use for the name of executable -->
     <description>This module controls the Basler Camera</description>
-		
+
     <build>
         <plugins>
             <plugin>
                 <groupId>org.freehep</groupId>
                 <artifactId>freehep-nar-plugin</artifactId>
-				<configuration>
+                <configuration>
                     <linker>
                         <libs>
                             <lib>
@@ -35,17 +35,18 @@
                             <systemIncludePath>${env.PYLON_ROOT}/include</systemIncludePath>
                             <systemIncludePath>${env.GENICAM_ROOT_V1_1}/include/genicam</systemIncludePath>
                         </systemIncludePaths>
-						<defines>
-							<define>USE_GIGE</define>
-						</defines>
-						<!-- define less verbose mode for gcc-->
-						<options>
-							<option>-w</option>
-						</options>
+                        <defines>
+                            <define>USE_GIGE</define>
+                            <!--<define>LESSDEPENDENCY</define>-->
+                        </defines>
+                        <!-- define less verbose mode for gcc-->
+                        <options>
+                            <option>-w</option>
+                        </options>
                     </cpp>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-		
+
 </project>

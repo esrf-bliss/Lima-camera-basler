@@ -89,7 +89,7 @@ class SyncCtrlObj : public HwSyncCtrlObj
     DEB_CLASS_NAMESPC(DebModCamera, "SyncCtrlObj", "Basler");
 
   public:
-	SyncCtrlObj(Camera& cam);
+    SyncCtrlObj(Camera& cam);
     virtual ~SyncCtrlObj();
 	
 	virtual bool checkTrigMode(TrigMode trig_mode);
@@ -173,6 +173,7 @@ class Interface : public HwInterface
 	virtual int 	getNbHwAcquiredFrames();
 
 	void 			getFrameRate(double& frame_rate);
+	void 			setTimeout(int TO);
  private:
 	Camera&			m_cam;
 	CapList 		m_cap_list;

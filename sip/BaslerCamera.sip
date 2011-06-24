@@ -53,6 +53,7 @@ namespace Basler
     void getStatus(Basler::Camera::Status& status /Out/);
 	
     void getFrameRate(double& frame_rate /Out/);
+    void setTimeout(int TO);
   };
 
 };

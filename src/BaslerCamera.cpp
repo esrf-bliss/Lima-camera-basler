@@ -56,6 +56,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size)
 		  m_thread_running(true),
 		  m_image_number(0),
 		  m_exp_time(1.),
+		  m_timeout(11000),
 		  m_latency_time(0.),
 		  pTl_(NULL),
 		  Camera_(NULL),
@@ -381,7 +382,7 @@ void Camera::_AcqThread::threadFunction()
 	while(continueAcq && (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
 	  {
 	    unsigned int event_number;
-	    if(waitset.WaitForAny(600000,&event_number)) // Wait 10 minutes
+	    if(waitset.WaitForAny(m_cam.m_timeout,&event_number)) // Wait m_timeout
 	      {
 		switch(event_number)
 		  {
@@ -849,7 +850,15 @@ Camera::_AcqThread::~_AcqThread()
       }		
     DEB_RETURN() << DEB_VAR1(frame_rate);
   }
-
+  //-----------------------------------------------------
+  //
+  //-----------------------------------------------------
+  void Camera::setTimeout(int TO)
+  {
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(TO);	
+    m_timeout = TO;
+  }
   //-----------------------------------------------------
   //
   //-----------------------------------------------------

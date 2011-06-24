@@ -95,7 +95,8 @@ class Camera
 	void getStatus(Camera::Status& status);
 	// -- basler specific, LIMA don't worr'y about it !
 	void getFrameRate(double& frame_rate);
-	
+
+	void setTimeout(int TO);
  private:
 	class _AcqThread;
 	friend class _AcqThread;
@@ -113,6 +114,7 @@ class Camera
 	volatile bool			m_thread_running;
 	int                         	m_image_number;
 	double				m_exp_time;
+	int				m_timeout;
 	double				m_latency_time;
 	//- basler stuff 
 	string				m_camera_ip;
