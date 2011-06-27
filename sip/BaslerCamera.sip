@@ -10,10 +10,10 @@ namespace Basler
   public:
 
     enum Status {
-      Ready = MaxThreadStatus, Exposure, Readout, Latency,
+      Ready, Exposure, Readout, Latency,
     };
 
-    Camera(const std::string& camera_ip);
+    Camera(const std::string& camera_ip,int mtu_size = -1);
     ~Camera();
 
     void startAcq();
@@ -37,16 +37,23 @@ namespace Basler
     void setLatTime(double  lat_time);
     void getLatTime(double& lat_time /Out/);
 
+    void getExposureTimeRange(double& min_expo /Out/, double& max_expo /Out/) const;
+    void getLatTimeRange(double& min_lat /Out/, double& max_lat /Out/) const;
+
     void setNbFrames(int  nb_frames);
     void getNbFrames(int& nb_frames /Out/);
 	
     void checkRoi(const Roi& set_roi, Roi& hw_roi /Out/);
     void setRoi(const Roi& set_roi);
     void getRoi(Roi& hw_roi /Out/);	
+
+    void setBin(const Bin&);
+    void getBin(Bin& /Out/);
 	
     void getStatus(Basler::Camera::Status& status /Out/);
 	
     void getFrameRate(double& frame_rate /Out/);
+    void setTimeout(int TO);
   };
 
 };
