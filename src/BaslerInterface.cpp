@@ -256,7 +256,7 @@ void BufferCtrlObj::unregisterFrameCallback(HwFrameCallback& frame_cb)
  *******************************************************************/
 
 SyncCtrlObj::SyncCtrlObj(Camera& cam, HwBufferCtrlObj& buffer_ctrl)
-	: HwSyncCtrlObj(buffer_ctrl), m_cam(cam)
+	: HwSyncCtrlObj(), m_cam(cam)
 {
 }
 
@@ -550,7 +550,7 @@ void Interface::getFrameRate(double& frame_rate)
 //-----------------------------------------------------
 void Interface::setTimeout(int TO)
 {
-    m_cam.setTimeout(TO);
+    //m_cam.setTimeout(TO);
 }
 //-----------------------------------------------------
 //
