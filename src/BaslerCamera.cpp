@@ -958,8 +958,8 @@ void Camera::setBin(const Bin &aBin)
   DEB_MEMBER_FUNCT();
   DEB_PARAM() << DEB_VAR1(aBin);
 
-  Camera_->BinningVertical.SetValue(aBin.getX());
-  Camera_->BinningHorizontal.SetValue(aBin.getY());
+  Camera_->BinningVertical.SetValue(aBin.getY());
+  Camera_->BinningHorizontal.SetValue(aBin.getX());
 }
 
 void Camera::getBin(Bin &aBin)
