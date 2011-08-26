@@ -245,6 +245,8 @@ void Camera::startAcq()
 		// We won't queue more than c_nBuffers image buffers at a time
 		int nb_buffers;
 		buffer_mgr.getNbBuffers(nb_buffers);
+		if(m_nb_frames && nb_buffers > m_nb_frames)
+		  nb_buffers = m_nb_frames;
 		DEB_TRACE() << "We'll queue " << nb_buffers << " image buffers";
 		StreamGrabber_->MaxNumBuffer.SetValue(nb_buffers);
 
