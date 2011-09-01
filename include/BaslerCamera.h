@@ -22,6 +22,7 @@ using namespace std;
 typedef Pylon::CBasler1394Camera Camera_t;
 using namespace Basler_IIDC1394CameraParams;
 using namespace Basler_IIDC1394StreamParams;
+
 #elif defined ( USE_GIGE )
 // settings to use Basler GigE cameras
 #include <pylon/gige/BaslerGigECamera.h>
@@ -31,6 +32,7 @@ using namespace Basler_GigEStreamParams;
 #else
 #error Camera type is not specified. For example, define USE_GIGE for using GigE cameras
 #endif
+
 
 
 
@@ -44,92 +46,95 @@ namespace Basler
  *******************************************************************/
 class Camera
 {
-	DEB_CLASS_NAMESPC(DebModCamera, "Camera", "Basler");
-	friend class Interface;
+    DEB_CLASS_NAMESPC(DebModCamera, "Camera", "Basler");
+    friend class Interface;
  public:
 
-	enum Status {
-	  Ready, Exposure, Readout, Latency, Fault
-	};
-	Camera(const std::string& camera_ip,int packet_size = -1);
-	~Camera();
+    enum Status {
+      Ready, Exposure, Readout, Latency, Fault
+    };
+
+    Camera(const std::string& camera_ip,int packet_size = -1);
+    ~Camera();
 
     void startAcq();
     void stopAcq();
-    // -- detector info
-    void getPixelSize(double& size);
+    
+    // -- detector info object
     void getImageType(ImageType& type);
-	void setImageType(ImageType type);
+    void setImageType(ImageType type);
 
     void getDetectorType(std::string& type);
     void getDetectorModel(std::string& model);
-	void getDetectorImageSize(Size& size);
-	
-	// -- Buffer control bject
-	BufferCtrlMgr& getBufferMgr();
-	
-	//-- Synch control onj
-	void setTrigMode(TrigMode  mode);
-	void getTrigMode(TrigMode& mode);
-	
-	void setExpTime(double  exp_time);
-	void getExpTime(double& exp_time);
+    void getDetectorImageSize(Size& size);
+    
+    // -- Buffer control object
+    BufferCtrlMgr& getBufferMgr();
+    
+    //-- Synch control object
+    void setTrigMode(TrigMode  mode);
+    void getTrigMode(TrigMode& mode);
+    
+    void setExpTime(double  exp_time);
+    void getExpTime(double& exp_time);
 
-	void setLatTime(double  lat_time);
-	void getLatTime(double& lat_time);
+    void setLatTime(double  lat_time);
+    void getLatTime(double& lat_time);
 
     void getExposureTimeRange(double& min_expo, double& max_expo) const;
     void getLatTimeRange(double& min_lat, double& max_lat) const;    
 
-	void setNbFrames(int  nb_frames);
-	void getNbFrames(int& nb_frames);
-	void getNbHwAcquiredFrames(int &nb_acq_frames);
+    void setNbFrames(int  nb_frames);
+    void getNbFrames(int& nb_frames);
+    void getNbHwAcquiredFrames(int &nb_acq_frames);
 
-	void checkRoi(const Roi& set_roi, Roi& hw_roi);
-	void setRoi(const Roi& set_roi);
-	void getRoi(Roi& hw_roi);	
+    void checkRoi(const Roi& set_roi, Roi& hw_roi);
+    void setRoi(const Roi& set_roi);
+    void getRoi(Roi& hw_roi);    
 
-	void setBin(const Bin&);
-	void getBin(Bin&);
+    void setBin(const Bin&);
+    void getBin(Bin&);
 
-	void getStatus(Camera::Status& status);
-	// -- basler specific, LIMA don't worr'y about it !
-	void getFrameRate(double& frame_rate);
+    void getStatus(Camera::Status& status);
+    // -- basler specific, LIMA don't worry about it !
+    void getFrameRate(double& frame_rate);
+    bool isBinnigAvailable(void);
+    void setTimeout(int TO);
+    void reset(void);
 
-	void setTimeout(int TO);
  private:
-	class _AcqThread;
-	friend class _AcqThread;
-	void _stopAcq(bool);
-	void _setStatus(Camera::Status status,bool force);
+    class _AcqThread;
+    friend class _AcqThread;
+    void _stopAcq(bool);
+    void _setStatus(Camera::Status status,bool force);
 
-	//- lima stuff
-	SoftBufferAllocMgr 		m_buffer_alloc_mgr;
-	StdBufferCbMgr 			m_buffer_cb_mgr;
-	BufferCtrlMgr 			m_buffer_ctrl_mgr;
-	int 				m_nb_frames;	
-	Camera::Status			m_status;
-	volatile bool			m_wait_flag;
-	volatile bool			m_quit;
-	volatile bool			m_thread_running;
-	int                         	m_image_number;
-	double				m_exp_time;
-	int				m_timeout;
-	double				m_latency_time;
-	//- basler stuff 
-	string				m_camera_ip;
-	string 				m_detector_model;
-	string 				m_detector_type;
-	static const double 		PixelSize= 55.0;
-	//- Pylon stuff
-	ITransportLayer* 		pTl_;
-	DeviceInfoList_t 		devices_;
-	Camera_t* 			Camera_;
-	Camera_t::StreamGrabber_t* 	StreamGrabber_;
-	WaitObjectEx			WaitObject_;
-	size_t 				ImageSize_;
-	_AcqThread*			m_acq_thread;
-	Cond				m_cond;
+    //- lima stuff
+    SoftBufferAllocMgr          m_buffer_alloc_mgr;
+    StdBufferCbMgr              m_buffer_cb_mgr;
+    BufferCtrlMgr               m_buffer_ctrl_mgr;
+    int                         m_nb_frames;    
+    Camera::Status              m_status;
+    volatile bool               m_wait_flag;
+    volatile bool               m_quit;
+    volatile bool               m_thread_running;
+    int                         m_image_number;
+    double                      m_exp_time;
+    int                         m_timeout;
+    double                      m_latency_time;
+    
+    //- basler stuff 
+    string                      m_camera_ip;
+    string                      m_detector_model;
+    string                      m_detector_type;
+    
+    //- Pylon stuff
+    DeviceInfoList_t              devices_;
+    Camera_t*                     Camera_;
+    Camera_t::StreamGrabber_t*    StreamGrabber_;
+    WaitObjectEx                  WaitObject_;
+    size_t                        ImageSize_;
+    _AcqThread*                   m_acq_thread;
+    Cond                          m_cond;
 };
 } // namespace Basler
 } // namespace lima

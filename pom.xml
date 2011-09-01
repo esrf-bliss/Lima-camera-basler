@@ -37,7 +37,6 @@
                         </systemIncludePaths>
                         <defines>
                             <define>USE_GIGE</define>
-                            <!--<define>LESSDEPENDENCY</define>-->
                         </defines>
                         <!-- define less verbose mode for gcc-->
                         <options>
