@@ -133,145 +133,6 @@ void DetInfoCtrlObj::unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
     //m_cam.unregisterMaxImageSizeCallback(cb);
 }
 
-
-
-/*******************************************************************
- * \brief BufferCtrlObj constructor
- *******************************************************************/
-
-BufferCtrlObj::BufferCtrlObj(Camera& cam)
-    : m_buffer_mgr(cam.getBufferMgr())
-{
-    DEB_CONSTRUCTOR();
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-BufferCtrlObj::~BufferCtrlObj()
-{
-    DEB_DESTRUCTOR();
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void BufferCtrlObj::setFrameDim(const FrameDim& frame_dim)
-{
-    DEB_MEMBER_FUNCT();
-    m_buffer_mgr.setFrameDim(frame_dim);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void BufferCtrlObj::getFrameDim(FrameDim& frame_dim)
-{
-    DEB_MEMBER_FUNCT();
-    m_buffer_mgr.getFrameDim(frame_dim);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void BufferCtrlObj::setNbBuffers(int nb_buffers)
-{
-    DEB_MEMBER_FUNCT();
-    m_buffer_mgr.setNbBuffers(nb_buffers);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void BufferCtrlObj::getNbBuffers(int& nb_buffers)
-{
-    DEB_MEMBER_FUNCT();
-    m_buffer_mgr.getNbBuffers(nb_buffers);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void BufferCtrlObj::setNbConcatFrames(int nb_concat_frames)
-{
-    DEB_MEMBER_FUNCT();
-    m_buffer_mgr.setNbConcatFrames(nb_concat_frames);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void BufferCtrlObj::getNbConcatFrames(int& nb_concat_frames)
-{
-    DEB_MEMBER_FUNCT();
-    m_buffer_mgr.getNbConcatFrames(nb_concat_frames);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void BufferCtrlObj::getMaxNbBuffers(int& max_nb_buffers)
-{
-    DEB_MEMBER_FUNCT();
-    m_buffer_mgr.getMaxNbBuffers(max_nb_buffers);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void *BufferCtrlObj::getBufferPtr(int buffer_nb, int concat_frame_nb)
-{
-    DEB_MEMBER_FUNCT();
-    return m_buffer_mgr.getBufferPtr(buffer_nb, concat_frame_nb);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void *BufferCtrlObj::getFramePtr(int acq_frame_nb)
-{
-    DEB_MEMBER_FUNCT();
-    return m_buffer_mgr.getFramePtr(acq_frame_nb);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void BufferCtrlObj::getStartTimestamp(Timestamp& start_ts)
-{
-    DEB_MEMBER_FUNCT();
-    m_buffer_mgr.getStartTimestamp(start_ts);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void BufferCtrlObj::getFrameInfo(int acq_frame_nb, HwFrameInfoType& info)
-{
-    DEB_MEMBER_FUNCT();
-    m_buffer_mgr.getFrameInfo(acq_frame_nb, info);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void BufferCtrlObj::registerFrameCallback(HwFrameCallback& frame_cb)
-{
-    DEB_MEMBER_FUNCT();
-    m_buffer_mgr.registerFrameCallback(frame_cb);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void BufferCtrlObj::unregisterFrameCallback(HwFrameCallback& frame_cb)
-{
-    DEB_MEMBER_FUNCT();
-    m_buffer_mgr.unregisterFrameCallback(frame_cb);
-}
-
-
-
 /*******************************************************************
  * \brief SyncCtrlObj constructor
  *******************************************************************/
@@ -456,7 +317,7 @@ void BinCtrlObj::getBin(Bin &aBin)
  *******************************************************************/
 
 Interface::Interface(Camera& cam)
-  : m_cam(cam),m_det_info(cam),m_buffer(cam),
+  : m_cam(cam),m_det_info(cam),
     m_sync(cam),m_bin(cam),m_roi(cam)
 {
     DEB_CONSTRUCTOR();
@@ -464,8 +325,7 @@ Interface::Interface(Camera& cam)
     HwDetInfoCtrlObj *det_info = &m_det_info;
     m_cap_list.push_back(HwCap(det_info));
 
-    HwBufferCtrlObj *buffer = &m_buffer;
-    m_cap_list.push_back(HwCap(buffer));
+    m_cap_list.push_back(HwCap(cam.getBufferMgr()));
     
     HwSyncCtrlObj *sync = &m_sync;
     m_cap_list.push_back(HwCap(sync));
@@ -509,12 +369,6 @@ void Interface::reset(ResetLevel reset_level)
 
     Size image_size;
     m_det_info.getMaxImageSize(image_size);
-    ImageType image_type;
-    m_det_info.getDefImageType(image_type);
-    FrameDim frame_dim(image_size, image_type);
-    m_buffer.setFrameDim(frame_dim);
-    m_buffer.setNbConcatFrames(1);
-    m_buffer.setNbBuffers(1);
     m_cam._setStatus(Camera::Ready,true);
 }
 

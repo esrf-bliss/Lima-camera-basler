@@ -81,9 +81,7 @@ class Camera::_AcqThread : public Thread
 //- Ctor
 //---------------------------
 Camera::Camera(const std::string& camera_ip,int packet_size)
-        : m_buffer_cb_mgr(m_buffer_alloc_mgr),
-          m_buffer_ctrl_mgr(m_buffer_cb_mgr),
-          m_nb_frames(1),
+        : m_nb_frames(1),
           m_status(Ready),
           m_wait_flag(true),
           m_quit(false),
@@ -291,7 +289,7 @@ void Camera::startAcq()
         DEB_TRACE() << "We won't use image buffers greater than ImageSize";
         StreamGrabber_->MaxBufferSize.SetValue((const size_t)ImageSize_);
 
-        StdBufferCbMgr& buffer_mgr = m_buffer_cb_mgr;
+        StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_mgr.getBuffer();
         // We won't queue more than c_nBuffers image buffers at a time
         int nb_buffers;
         buffer_mgr.getNbBuffers(nb_buffers);
@@ -307,9 +305,7 @@ void Camera::startAcq()
         DEB_TRACE() << "Put buffer into the grab queue for grabbing";
         for(int i = 0;i < nb_buffers;++i)
         {
-            int buffer_nb,concat_frame_nb;
-            buffer_mgr.acqFrameNb2BufferNb(i,buffer_nb,concat_frame_nb);
-            void *ptr = buffer_mgr.getBufferPtr(buffer_nb,concat_frame_nb);
+            void *ptr = buffer_mgr.getFrameBufferPtr(i);
             // The registration returns a handle to be used for queuing the buffer.
             StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(ptr,(const size_t)ImageSize_);
             StreamGrabber_->QueueBuffer(bufferId, NULL);
@@ -400,7 +396,7 @@ void Camera::_AcqThread::threadFunction()
 {
   DEB_MEMBER_FUNCT();
   AutoMutex aLock(m_cam.m_cond.mutex());
-  StdBufferCbMgr& buffer_mgr = m_cam.m_buffer_cb_mgr;
+  StdBufferCbMgr& buffer_mgr = m_cam.m_buffer_ctrl_mgr.getBuffer();
 
     while(!m_cam.m_quit)
     {
@@ -638,9 +634,9 @@ void Camera::getDetectorModel(string& type)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-BufferCtrlMgr& Camera::getBufferMgr()
+HwBufferCtrlObj* Camera::getBufferMgr()
 {
-    return m_buffer_ctrl_mgr;
+    return &m_buffer_ctrl_mgr;
 }
 
 //-----------------------------------------------------

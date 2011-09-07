@@ -90,7 +90,7 @@ class Camera
     void getDetectorImageSize(Size& size);
     
     // -- Buffer control object
-    BufferCtrlMgr& getBufferMgr();
+    HwBufferCtrlObj* getBufferMgr();
     
     //-- Synch control object
     void setTrigMode(TrigMode  mode);
@@ -130,9 +130,7 @@ class Camera
     void _setStatus(Camera::Status status,bool force);
 
     //- lima stuff
-    SoftBufferAllocMgr          m_buffer_alloc_mgr;
-    StdBufferCbMgr              m_buffer_cb_mgr;
-    BufferCtrlMgr               m_buffer_ctrl_mgr;
+    SoftBufferCtrlMgr		m_buffer_ctrl_mgr;
     int                         m_nb_frames;    
     Camera::Status              m_status;
     volatile bool               m_wait_flag;
