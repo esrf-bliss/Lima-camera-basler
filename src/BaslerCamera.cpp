@@ -395,6 +395,14 @@ void Camera::_stopAcq(bool internalFlag)
 void Camera::_AcqThread::threadFunction()
 {
   DEB_MEMBER_FUNCT();
+  sched_param param;
+  param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+  if(pthread_setschedparam(pthread_self(),SCHED_FIFO,
+			   &param))
+    {
+      DEB_TRACE() << "Could not set Fifo scheduling for Acquisition thread";
+    }
+
   AutoMutex aLock(m_cam.m_cond.mutex());
   StdBufferCbMgr& buffer_mgr = m_cam.m_buffer_ctrl_mgr.getBuffer();
 
