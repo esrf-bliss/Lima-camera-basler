@@ -46,6 +46,7 @@ namespace Basler
     void setRoi(const Roi& set_roi);
     void getRoi(Roi& hw_roi /Out/);	
 
+    void checkBin(Bin& /In,Out/);
     void setBin(const Bin&);
     void getBin(Bin& /Out/);
 	

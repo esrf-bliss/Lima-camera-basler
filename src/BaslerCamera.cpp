@@ -1005,6 +1005,23 @@ void Camera::getRoi(Roi& hw_roi)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
+void Camera::checkBin(Bin &aBin)
+{
+  DEB_MEMBER_FUNCT();
+  int x = aBin.getX();
+  if(x > Camera_->BinningHorizontal.GetMax())
+    x = Camera_->BinningHorizontal.GetMax();
+
+  int y = aBin.getY();
+  if(y > Camera_->BinningVertical.GetMax())
+    y = Camera_->BinningVertical.GetMax();
+
+  aBin = Bin(x,y);
+  DEB_RETURN() << DEB_VAR1(aBin);
+}
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
 void Camera::setBin(const Bin &aBin)
 {
     DEB_MEMBER_FUNCT();

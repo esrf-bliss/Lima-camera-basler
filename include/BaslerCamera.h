@@ -113,6 +113,7 @@ class Camera
     void setRoi(const Roi& set_roi);
     void getRoi(Roi& hw_roi);    
 
+    void checkBin(Bin&);
     void setBin(const Bin&);
     void getBin(Bin&);
 
