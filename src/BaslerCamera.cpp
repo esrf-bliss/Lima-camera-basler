@@ -941,10 +941,10 @@ void Camera::setRoi(const Roi& set_roi)
         Camera_->Width.SetValue(Camera_->Width.GetMax());
         Camera_->Height.SetValue(Camera_->Height.GetMax());
         
-        Roi fullFrame(Camera_->OffsetX.GetMin(),
-        Camera_->OffsetY.GetMin(),
-        Camera_->Width.GetMax(),
-        Camera_->Height.GetMax());
+        Roi fullFrame(  Camera_->OffsetX.GetMin(),
+						Camera_->OffsetY.GetMin(),
+						Camera_->Width.GetMax(),
+						Camera_->Height.GetMax());
         
         if(set_roi.isActive() && fullFrame != set_roi)
         {
@@ -1028,7 +1028,16 @@ void Camera::setBin(const Bin &aBin)
 void Camera::getBin(Bin &aBin)
 {
     DEB_MEMBER_FUNCT();
-    aBin = Bin(Camera_->BinningVertical.GetValue(), Camera_->BinningHorizontal.GetValue());
+    try
+    {
+    	aBin = Bin(Camera_->BinningVertical.GetValue(), Camera_->BinningHorizontal.GetValue());
+    }
+    catch (GenICam::GenericException &e)
+    {
+        // Error handling
+        DEB_ERROR() << e.GetDescription();
+        throw LIMA_HW_EXC(Error, e.GetDescription());
+    }
     DEB_RETURN() << DEB_VAR1(aBin);
 }
 

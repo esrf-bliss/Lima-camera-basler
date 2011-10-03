@@ -279,6 +279,9 @@ void RoiCtrlObj::checkRoi(const Roi& set_roi, Roi& hw_roi)
     m_cam.checkRoi(set_roi, hw_roi);
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
 void RoiCtrlObj::setRoi(const Roi& roi)
 {
     DEB_MEMBER_FUNCT();
@@ -333,11 +336,11 @@ Interface::Interface(Camera& cam)
     HwRoiCtrlObj *roi = &m_roi;
     m_cap_list.push_back(HwCap(roi));
 
-		if(m_cam.isBinnigAvailable())
-		{
-			HwBinCtrlObj *bin = &m_bin;
-			m_cap_list.push_back(HwCap(bin));
-		}
+	if(m_cam.isBinnigAvailable())
+	{
+		HwBinCtrlObj *bin = &m_bin;
+		m_cap_list.push_back(HwCap(bin));
+	}
 }
 
 //-----------------------------------------------------
