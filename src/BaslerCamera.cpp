@@ -1071,9 +1071,9 @@ bool Camera::isBinnigAvailable(void)
     
     // If the binning mode is not supported, return false
     if ( !GenApi::IsAvailable(  Camera_->BinningHorizontal) )
-        return false;    
-    return isAvailable;
+        return false;
     DEB_RETURN() << DEB_VAR1(isAvailable);
+    return isAvailable;
 }
 
 //---------------------------

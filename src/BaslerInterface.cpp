@@ -164,6 +164,7 @@ bool SyncCtrlObj::checkTrigMode(TrigMode trig_mode)
 
         default:
             valid_mode = false;
+        break;
     }
     return valid_mode;
 }
