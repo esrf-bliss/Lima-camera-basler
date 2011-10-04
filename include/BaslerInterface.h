@@ -128,7 +128,7 @@ class BinCtrlObj : public HwBinCtrlObj
   virtual void setBin(const Bin& bin);
   virtual void getBin(Bin& bin);
   //allow all binning
-  virtual void checkBin(Bin& bin) {}
+  virtual void checkBin(Bin& bin);
  private:
   Camera& m_cam;
 

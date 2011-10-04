@@ -315,6 +315,10 @@ void BinCtrlObj::getBin(Bin &aBin)
   m_cam.getBin(aBin);
 }
 
+void BinCtrlObj::checkBin(Bin &aBin)
+{
+  m_cam.checkBin(aBin);
+}
 /*******************************************************************
  * \brief Hw Interface constructor
  *******************************************************************/
