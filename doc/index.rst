@@ -53,7 +53,7 @@ Configuration
 
 - First you have to setup ip addresse of the Basler Camera by using *IpConfigurator* (/opt/pylon/bin/IpConfigurator)
 
-- Then in the Basler Tango device set the property *cam_ip_addresse* to the addresse previously set.
+- Then in the Basler Tango device set the property *cam_ip_address* to the address previously set.
 
 That's all....
 
