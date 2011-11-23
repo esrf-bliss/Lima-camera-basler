@@ -55,5 +55,8 @@ Configuration
 
 - Then in the Basler Tango device set the property *cam_ip_address* to the address previously set.
 
-That's all....
+- If you are running the server with linux kernel >= 2.6.13, you should add this line into *etc/security/limits.conf*. With this line, the acquisition thread will be in real time mode.
 
+.. code-block:: sh
+
+  USER_RUNNING_DEVICE_SERVER	-	rtprio	99
