@@ -375,8 +375,6 @@ void Interface::reset(ResetLevel reset_level)
 
     stopAcq();
 
-    Size image_size;
-    m_det_info.getMaxImageSize(image_size);
     m_cam._setStatus(Camera::Ready,true);
 }
 
