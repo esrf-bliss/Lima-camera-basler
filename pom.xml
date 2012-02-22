@@ -4,7 +4,7 @@
     <parent>
         <groupId>fr.soleil.lib.Lima</groupId>
         <artifactId>Camera</artifactId>
-        <version>1.1.5</version>
+        <version>1.1.6</version>>
     </parent>
 
     <groupId>fr.soleil.lib.Lima.Camera</groupId>
@@ -28,12 +28,43 @@
                                 <type>shared</type>
                                 <directory>${env.PYLON_ROOT}/lib</directory>
                             </lib>
+
+							<lib>
+                                <name>GenApi_gcc40_v2_1</name>
+                                <type>shared</type>
+                                <directory>${env.PYLON_ROOT}/genicam/bin/Linux32_i86</directory>
+                            </lib>
+                          
+                            <lib>
+                                <name>GCBase_gcc40_v2_1</name>
+                                <type>shared</type>
+                                <directory>${env.PYLON_ROOT}/genicam/bin/Linux32_i86</directory>
+                            </lib>
+
+                            <lib>
+                                <name>MathParser_gcc40_v2_1</name>
+                                <type>shared</type>
+                                <directory>${env.PYLON_ROOT}/genicam/bin/Linux32_i86</directory>
+                            </lib>
+                            
+                            <lib>
+                                <name>log4cpp_gcc40_v2_1</name>
+                                <type>shared</type>
+                                <directory>${env.PYLON_ROOT}/genicam/bin/Linux32_i86</directory>
+                            </lib>
+                            
+                            <lib>
+                                <name>pylongigesupp</name>
+                                <type>shared</type>
+                                <directory>${env.PYLON_ROOT}/lib</directory>
+                            </lib>                
                         </libs>
                     </linker>
                     <cpp>
                         <systemIncludePaths>
+                        	<systemIncludePath>${env.PYLON_ROOT}</systemIncludePath>
                             <systemIncludePath>${env.PYLON_ROOT}/include</systemIncludePath>
-                            <systemIncludePath>${env.GENICAM_ROOT_V1_1}/include/genicam</systemIncludePath>
+                            <systemIncludePath>${env.PYLON_ROOT}/genicam/library/CPP/include</systemIncludePath>
                         </systemIncludePaths>
                         <defines>
                             <define>USE_GIGE</define>
