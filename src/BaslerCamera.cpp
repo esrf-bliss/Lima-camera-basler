@@ -713,9 +713,9 @@ void Camera::setExpTime(double exp_time)
     
     try
     {
-        if (m_detector_model.compare(0,3,"acA")!=0)
+        if (m_detector_model.compare(0,3,"piA")==0 || m_detector_model.compare(0,3,"scA")==0)
         {
-            //Not a ACE model, if scout or pilot, exposure time has to be adjusted using
+            //If scout or pilot, exposure time has to be adjusted using
             // the exposure time base + the exposure time raw.
             //see ImageGrabber for more details !!!
             Camera_->ExposureTimeBaseAbs.SetValue(100.0); //- to be sure we can set the Raw setting on the full range (1 .. 4095)
@@ -726,7 +726,7 @@ void Camera::setExpTime(double exp_time)
         }
         else
         {        
-            // this is a ACE camera model, it supports direct programming of the exposure using
+            // More recent model like ACE and AVIATOR support direct programming of the exposure using
             // the exposure time absolute.
             Camera_->ExposureTimeAbs.SetValue(1E6 * exp_time );    
         }
@@ -796,7 +796,8 @@ void Camera::getLatTime(double& lat_time)
 void Camera::getExposureTimeRange(double& min_expo, double& max_expo) const
 {
     DEB_MEMBER_FUNCT();
-    if (m_detector_model.compare(0,3,"acA")!=0)
+    // Pilot and and Scout do not have TimeAbs capability
+    if (m_detector_model.compare(0,3,"piA")==0 || m_detector_model.compare(0,3,"scA")==0)
     {
         min_expo = 1e-6;
         max_expo = 1e9;
