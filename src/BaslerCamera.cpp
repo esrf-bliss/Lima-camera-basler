@@ -289,7 +289,7 @@ void Camera::startAcq()
         DEB_TRACE() << "We won't use image buffers greater than ImageSize";
         StreamGrabber_->MaxBufferSize.SetValue((const size_t)ImageSize_);
 
-        StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_mgr.getBuffer();
+        StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
         // We won't queue more than c_nBuffers image buffers at a time
         int nb_buffers;
         buffer_mgr.getNbBuffers(nb_buffers);
@@ -396,7 +396,7 @@ void Camera::_AcqThread::threadFunction()
 {
   DEB_MEMBER_FUNCT();
   AutoMutex aLock(m_cam.m_cond.mutex());
-  StdBufferCbMgr& buffer_mgr = m_cam.m_buffer_ctrl_mgr.getBuffer();
+  StdBufferCbMgr& buffer_mgr = m_cam.m_buffer_ctrl_obj.getBuffer();
 
     while(!m_cam.m_quit)
     {
@@ -634,9 +634,9 @@ void Camera::getDetectorModel(string& type)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-HwBufferCtrlObj* Camera::getBufferMgr()
+HwBufferCtrlObj* Camera::getBufferCtrlObj()
 {
-    return &m_buffer_ctrl_mgr;
+    return &m_buffer_ctrl_obj;
 }
 
 //-----------------------------------------------------

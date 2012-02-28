@@ -333,7 +333,8 @@ Interface::Interface(Camera& cam)
     HwDetInfoCtrlObj *det_info = &m_det_info;
     m_cap_list.push_back(HwCap(det_info));
 
-    m_cap_list.push_back(HwCap(cam.getBufferMgr()));
+    HwBufferCtrlObj *buffer = cam.getBufferCtrlObj();
+    m_cap_list.push_back(HwCap(buffer));
     
     HwSyncCtrlObj *sync = &m_sync;
     m_cap_list.push_back(HwCap(sync));

@@ -25,7 +25,7 @@ namespace Basler
     void getDetectorType(std::string& type /Out/);
     void getDetectorModel(std::string& model /Out/);
     void getDetectorImageSize(Size& size /Out/);
-    HwBufferCtrlObj* getBufferMgr();
+    HwBufferCtrlObj* getBufferCtrlObj();
 	
     void setTrigMode(TrigMode  mode);
     void getTrigMode(TrigMode& mode /Out/);
