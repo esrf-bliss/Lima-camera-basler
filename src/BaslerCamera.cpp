@@ -80,7 +80,7 @@ class Camera::_AcqThread : public Thread
 //---------------------------
 //- Ctor
 //---------------------------
-Camera::Camera(const std::string& camera_ip,int packet_size)
+Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority)
         : m_nb_frames(1),
           m_status(Ready),
           m_wait_flag(true),
@@ -91,7 +91,8 @@ Camera::Camera(const std::string& camera_ip,int packet_size)
           m_timeout(DEFAULT_TIME_OUT),
           m_latency_time(0.),
           Camera_(NULL),
-          StreamGrabber_(NULL)
+          StreamGrabber_(NULL),
+          m_receive_priority(receive_priority)
 {
     DEB_CONSTRUCTOR();
     m_camera_ip = camera_ip;
@@ -275,6 +276,12 @@ void Camera::startAcq()
         // Get the first stream grabber object of the selected camera
         DEB_TRACE() << "Get the first stream grabber object of the selected camera";
         StreamGrabber_ = new Camera_t::StreamGrabber_t(Camera_->GetStreamGrabber(0));
+	//Change priority to m_receive_priority
+	if(m_receive_priority > 0)
+	  {
+	    StreamGrabber_->ReceiveThreadPriorityOverride.SetValue(true);
+	    StreamGrabber_->ReceiveThreadPriority.SetValue(m_receive_priority);
+	  }
         // Open the stream grabber
         DEB_TRACE() << "Open the stream grabber";
         StreamGrabber_->Open();

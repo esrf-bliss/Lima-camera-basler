@@ -75,7 +75,7 @@ class Camera
       Ready, Exposure, Readout, Latency, Fault
     };
 
-    Camera(const std::string& camera_ip,int packet_size = -1);
+    Camera(const std::string& camera_ip,int packet_size = -1,int received_priority = 0);
     ~Camera();
 
     void startAcq();
@@ -155,6 +155,7 @@ class Camera
     size_t                        ImageSize_;
     _AcqThread*                   m_acq_thread;
     Cond                          m_cond;
+    int                           m_receive_priority;
 };
 } // namespace Basler
 } // namespace lima
