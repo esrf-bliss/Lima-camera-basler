@@ -49,7 +49,11 @@ namespace Basler
     void checkBin(Bin& /In,Out/);
     void setBin(const Bin&);
     void getBin(Bin& /Out/);
-	
+
+    void setInterPacketDelay(int ipd);
+
+    void setFrameTransmissionDelay(int ftd);
+
     void getStatus(Basler::Camera::Status& status /Out/);
 	
     void getFrameRate(double& frame_rate /Out/);

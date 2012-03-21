@@ -1076,6 +1076,25 @@ bool Camera::isBinnigAvailable(void)
     return isAvailable;
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setInterPacketDelay(int ipd)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(ipd);
+    Camera_->GevSCPD.SetValue(ipd);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setFrameTransmissionDelay(int ftd)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(ftd);
+    Camera_->GevSCFTD.SetValue(ftd);
+}
 //---------------------------
 //- Camera::reset()
 //---------------------------

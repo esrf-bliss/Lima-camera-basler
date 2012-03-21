@@ -117,6 +117,10 @@ class Camera
     void setBin(const Bin&);
     void getBin(Bin&);
 
+    void setInterPacketDelay(int ipd);
+
+    void setFrameTransmissionDelay(int ftd);
+
     void getStatus(Camera::Status& status);
     // -- basler specific, LIMA don't worry about it !
     void getFrameRate(double& frame_rate);
