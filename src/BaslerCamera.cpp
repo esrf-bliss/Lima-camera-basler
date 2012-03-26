@@ -440,7 +440,7 @@ void Camera::_AcqThread::threadFunction()
                             DEB_TRACE() << "Receive Event";
                             m_cam.WaitObject_.Reset();
                             aLock.lock();
-                            continueAcq = !m_cam.m_wait_flag;
+                            continueAcq = !m_cam.m_wait_flag && !m_cam.m_quit;
                             aLock.unlock();
                         break;
                         case 1:
