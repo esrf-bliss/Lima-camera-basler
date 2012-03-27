@@ -720,7 +720,7 @@ void Camera::setExpTime(double exp_time)
     
     try
     {
-        if (m_detector_model.compare(0,3,"piA")==0 || m_detector_model.compare(0,3,"scA")==0)
+        if(!GenApi::IsAvailable(Camera_->ExposureTimeAbs))
         {
             //If scout or pilot, exposure time has to be adjusted using
             // the exposure time base + the exposure time raw.
@@ -804,7 +804,7 @@ void Camera::getExposureTimeRange(double& min_expo, double& max_expo) const
 {
     DEB_MEMBER_FUNCT();
     // Pilot and and Scout do not have TimeAbs capability
-    if (m_detector_model.compare(0,3,"piA")==0 || m_detector_model.compare(0,3,"scA")==0)
+    if(!GenApi::IsAvailable(Camera_->ExposureTimeAbs))
     {
         min_expo = 1e-6;
         max_expo = 1e9;
@@ -1067,11 +1067,12 @@ bool Camera::isBinnigAvailable(void)
     bool isAvailable = true;
     // If the binning mode is not supported, return false
    if ( !GenApi::IsAvailable(Camera_->BinningVertical ) )
-        return false;
+        isAvailable = false;
     
     // If the binning mode is not supported, return false
     if ( !GenApi::IsAvailable(  Camera_->BinningHorizontal) )
-        return false;
+        isAvailable = false;
+
     DEB_RETURN() << DEB_VAR1(isAvailable);
     return isAvailable;
 }
