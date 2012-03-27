@@ -320,15 +320,14 @@ void Camera::startAcq()
         
         // Let the camera acquire images continuously ( Acquisiton mode equals Continuous! )
         DEB_TRACE() << "Let the camera acquire images continuously";
-        // Wait running stat of acquisition thread
-        AutoMutex aLock(m_cond.mutex());
-        m_wait_flag = false;
-        m_cond.broadcast();
-        while(!m_thread_running)
-            m_cond.wait();
 
         buffer_mgr.setStartTimestamp(Timestamp::now());
         Camera_->AcquisitionStart.Execute();
+
+	//Start acqusition thread
+	AutoMutex aLock(m_cond.mutex());
+        m_wait_flag = false;
+        m_cond.broadcast();
     }
     catch (GenICam::GenericException &e)
     {
