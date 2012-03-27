@@ -263,16 +263,13 @@ Camera::~Camera()
     }
 }
 
-//---------------------------
-//- Camera::start()
-//---------------------------
-void Camera::startAcq()
+void Camera::prepareAcq()
 {
     DEB_MEMBER_FUNCT();
     try
     {
         m_image_number=0;
-        
+	_freeStreamGrabber();
         // Get the first stream grabber object of the selected camera
         DEB_TRACE() << "Get the first stream grabber object of the selected camera";
         StreamGrabber_ = new Camera_t::StreamGrabber_t(Camera_->GetStreamGrabber(0));
@@ -317,10 +314,26 @@ void Camera::startAcq()
             StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(ptr,(const size_t)ImageSize_);
             StreamGrabber_->QueueBuffer(bufferId, NULL);
         }
-        
+    }
+    catch (GenICam::GenericException &e)
+    {
+        // Error handling
+        DEB_ERROR() << e.GetDescription();
+        throw LIMA_HW_EXC(Error, e.GetDescription());
+    }
+}
+//---------------------------
+//- Camera::start()
+//---------------------------
+void Camera::startAcq()
+{
+    DEB_MEMBER_FUNCT();
+    try
+    {
         // Let the camera acquire images continuously ( Acquisiton mode equals Continuous! )
         DEB_TRACE() << "Let the camera acquire images continuously";
 
+        StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
         buffer_mgr.setStartTimestamp(Timestamp::now());
         Camera_->AcquisitionStart.Execute();
 
@@ -369,22 +382,7 @@ void Camera::_stopAcq(bool internalFlag)
             // Stop acquisition
             DEB_TRACE() << "Stop acquisition";
             Camera_->AcquisitionStop.Execute();
-            if(StreamGrabber_)
-            {
-                // Get the pending buffer back (You are not allowed to deregister
-                // buffers when they are still queued)
-                StreamGrabber_->CancelGrab();
-    
-                // Get all buffers back
-                for (GrabResult r; StreamGrabber_->RetrieveResult(r););
-    
-                // Free all resources used for grabbing
-                DEB_TRACE() << "Free all resources used for grabbing";
-                StreamGrabber_->FinishGrab();
-                StreamGrabber_->Close();
-                delete StreamGrabber_;
-                StreamGrabber_ = NULL;         
-            }
+	    _freeStreamGrabber();
             _setStatus(Camera::Ready,false);
         }
     }
@@ -394,6 +392,27 @@ void Camera::_stopAcq(bool internalFlag)
         DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }    
+}
+
+void Camera::_freeStreamGrabber()
+{
+  DEB_MEMBER_FUNCT();
+  if(StreamGrabber_)
+    {
+      // Get the pending buffer back (You are not allowed to deregister
+      // buffers when they are still queued)
+      StreamGrabber_->CancelGrab();
+    
+      // Get all buffers back
+      for (GrabResult r; StreamGrabber_->RetrieveResult(r););
+    
+      // Free all resources used for grabbing
+      DEB_TRACE() << "Free all resources used for grabbing";
+      StreamGrabber_->FinishGrab();
+      StreamGrabber_->Close();
+      delete StreamGrabber_;
+      StreamGrabber_ = NULL;         
+    }
 }
 //---------------------------
 //- Camera::_AcqThread::threadFunction()
@@ -1024,6 +1043,7 @@ void Camera::checkBin(Bin &aBin)
 void Camera::setBin(const Bin &aBin)
 {
     DEB_MEMBER_FUNCT();
+    _freeStreamGrabber();
     try
     {
         Camera_->BinningVertical.SetValue(aBin.getY());

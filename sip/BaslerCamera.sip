@@ -16,6 +16,7 @@ namespace Basler
     Camera(const std::string& camera_ip,int mtu_size = -1,int received_priority = 0);
     ~Camera();
 
+    void prepareAcq();
     void startAcq();
     void stopAcq();
 
