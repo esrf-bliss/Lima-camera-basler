@@ -263,16 +263,13 @@ Camera::~Camera()
     }
 }
 
-//---------------------------
-//- Camera::start()
-//---------------------------
-void Camera::startAcq()
+void Camera::prepareAcq()
 {
     DEB_MEMBER_FUNCT();
     try
     {
         m_image_number=0;
-        
+	_freeStreamGrabber();
         // Get the first stream grabber object of the selected camera
         DEB_TRACE() << "Get the first stream grabber object of the selected camera";
         StreamGrabber_ = new Camera_t::StreamGrabber_t(Camera_->GetStreamGrabber(0));
@@ -317,18 +314,33 @@ void Camera::startAcq()
             StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(ptr,(const size_t)ImageSize_);
             StreamGrabber_->QueueBuffer(bufferId, NULL);
         }
-        
+    }
+    catch (GenICam::GenericException &e)
+    {
+        // Error handling
+        DEB_ERROR() << e.GetDescription();
+        throw LIMA_HW_EXC(Error, e.GetDescription());
+    }
+}
+//---------------------------
+//- Camera::start()
+//---------------------------
+void Camera::startAcq()
+{
+    DEB_MEMBER_FUNCT();
+    try
+    {
         // Let the camera acquire images continuously ( Acquisiton mode equals Continuous! )
         DEB_TRACE() << "Let the camera acquire images continuously";
-        // Wait running stat of acquisition thread
-        AutoMutex aLock(m_cond.mutex());
-        m_wait_flag = false;
-        m_cond.broadcast();
-        while(!m_thread_running)
-            m_cond.wait();
 
+        StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
         buffer_mgr.setStartTimestamp(Timestamp::now());
         Camera_->AcquisitionStart.Execute();
+
+	//Start acqusition thread
+	AutoMutex aLock(m_cond.mutex());
+        m_wait_flag = false;
+        m_cond.broadcast();
     }
     catch (GenICam::GenericException &e)
     {
@@ -370,22 +382,7 @@ void Camera::_stopAcq(bool internalFlag)
             // Stop acquisition
             DEB_TRACE() << "Stop acquisition";
             Camera_->AcquisitionStop.Execute();
-            if(StreamGrabber_)
-            {
-                // Get the pending buffer back (You are not allowed to deregister
-                // buffers when they are still queued)
-                StreamGrabber_->CancelGrab();
-    
-                // Get all buffers back
-                for (GrabResult r; StreamGrabber_->RetrieveResult(r););
-    
-                // Free all resources used for grabbing
-                DEB_TRACE() << "Free all resources used for grabbing";
-                StreamGrabber_->FinishGrab();
-                StreamGrabber_->Close();
-                delete StreamGrabber_;
-                StreamGrabber_ = NULL;         
-            }
+	    _freeStreamGrabber();
             _setStatus(Camera::Ready,false);
         }
     }
@@ -395,6 +392,27 @@ void Camera::_stopAcq(bool internalFlag)
         DEB_ERROR() << e.GetDescription();
         throw LIMA_HW_EXC(Error, e.GetDescription());
     }    
+}
+
+void Camera::_freeStreamGrabber()
+{
+  DEB_MEMBER_FUNCT();
+  if(StreamGrabber_)
+    {
+      // Get the pending buffer back (You are not allowed to deregister
+      // buffers when they are still queued)
+      StreamGrabber_->CancelGrab();
+    
+      // Get all buffers back
+      for (GrabResult r; StreamGrabber_->RetrieveResult(r););
+    
+      // Free all resources used for grabbing
+      DEB_TRACE() << "Free all resources used for grabbing";
+      StreamGrabber_->FinishGrab();
+      StreamGrabber_->Close();
+      delete StreamGrabber_;
+      StreamGrabber_ = NULL;         
+    }
 }
 //---------------------------
 //- Camera::_AcqThread::threadFunction()
@@ -440,7 +458,7 @@ void Camera::_AcqThread::threadFunction()
                             DEB_TRACE() << "Receive Event";
                             m_cam.WaitObject_.Reset();
                             aLock.lock();
-                            continueAcq = !m_cam.m_wait_flag;
+                            continueAcq = !m_cam.m_wait_flag && !m_cam.m_quit;
                             aLock.unlock();
                         break;
                         case 1:
@@ -720,7 +738,7 @@ void Camera::setExpTime(double exp_time)
     
     try
     {
-        if (m_detector_model.compare(0,3,"piA")==0 || m_detector_model.compare(0,3,"scA")==0)
+        if(!GenApi::IsAvailable(Camera_->ExposureTimeAbs))
         {
             //If scout or pilot, exposure time has to be adjusted using
             // the exposure time base + the exposure time raw.
@@ -804,7 +822,7 @@ void Camera::getExposureTimeRange(double& min_expo, double& max_expo) const
 {
     DEB_MEMBER_FUNCT();
     // Pilot and and Scout do not have TimeAbs capability
-    if (m_detector_model.compare(0,3,"piA")==0 || m_detector_model.compare(0,3,"scA")==0)
+    if(!GenApi::IsAvailable(Camera_->ExposureTimeAbs))
     {
         min_expo = 1e-6;
         max_expo = 1e9;
@@ -1025,6 +1043,7 @@ void Camera::checkBin(Bin &aBin)
 void Camera::setBin(const Bin &aBin)
 {
     DEB_MEMBER_FUNCT();
+    _freeStreamGrabber();
     try
     {
         Camera_->BinningVertical.SetValue(aBin.getY());
@@ -1067,11 +1086,12 @@ bool Camera::isBinnigAvailable(void)
     bool isAvailable = true;
     // If the binning mode is not supported, return false
    if ( !GenApi::IsAvailable(Camera_->BinningVertical ) )
-        return false;
+        isAvailable = false;
     
     // If the binning mode is not supported, return false
     if ( !GenApi::IsAvailable(  Camera_->BinningHorizontal) )
-        return false;
+        isAvailable = false;
+
     DEB_RETURN() << DEB_VAR1(isAvailable);
     return isAvailable;
 }

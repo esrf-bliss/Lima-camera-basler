@@ -78,6 +78,7 @@ class Camera
     Camera(const std::string& camera_ip,int packet_size = -1,int received_priority = 0);
     ~Camera();
 
+    void prepareAcq();
     void startAcq();
     void stopAcq();
     
@@ -133,6 +134,7 @@ class Camera
     friend class _AcqThread;
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
+    void _freeStreamGrabber();
 
     //- lima stuff
     SoftBufferCtrlObj		m_buffer_ctrl_obj;
