@@ -55,6 +55,12 @@ namespace Basler
 
     void setFrameTransmissionDelay(int ftd);
 
+    void setAutoGain(bool auto_gain);
+    void getAutoGain(bool& auto_gain /Out/) const;
+
+    void setGain(double gain);
+    void getGain(double& gain /Out/) const;
+
     void getStatus(Basler::Camera::Status& status /Out/);
 	
     void getFrameRate(double& frame_rate /Out/);

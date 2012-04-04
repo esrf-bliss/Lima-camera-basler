@@ -1109,6 +1109,89 @@ void Camera::setInterPacketDelay(int ipd)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
+void Camera::setAutoGain(bool auto_gain)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(auto_gain);
+    if (!auto_gain){
+	try{
+	    Camera_->GainAuto.SetValue( GainAuto_Off );
+	    Camera_->GainSelector.SetValue( GainSelector_All );
+	}
+	catch (GenICam::GenericException &e){
+	  DEB_WARNING() << e.GetDescription();
+	}
+    }
+    else{
+	Camera_->GainAuto.SetValue( GainAuto_Continuous );
+    }
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getAutoGain(bool& auto_gain) const
+{
+    DEB_MEMBER_FUNCT();
+    try{
+      auto_gain = !!Camera_->GainAuto.GetValue();
+    }
+    catch (GenICam::GenericException &e){
+      DEB_WARNING() << e.GetDescription();
+    }
+
+    DEB_RETURN() << DEB_VAR1(auto_gain);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setGain(double gain)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(gain);
+    // you want to set the gain, remove autogain
+    setAutoGain(false);
+    if (GenApi::IsWritable(Camera_->GainRaw)){
+
+	int low_limit = Camera_->AutoGainRawLowerLimit.GetValue();
+	int hight_limit = Camera_->AutoGainRawUpperLimit.GetValue();
+
+	int gain_raw = int((hight_limit - low_limit) * gain + low_limit);
+
+	if (gain_raw < low_limit){
+	    gain_raw = low_limit;
+	}
+	else if (gain_raw > hight_limit){
+	    gain_raw = hight_limit;
+	}
+	Camera_->GainRaw.SetValue(gain_raw);
+    }
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getGain(double& gain) const
+{
+    DEB_MEMBER_FUNCT();
+    if (GenApi::IsWritable(Camera_->GainRaw)){
+        int gain_raw = Camera_->GainRaw.GetValue();
+	int low_limit = Camera_->AutoGainRawLowerLimit.GetValue();
+	int hight_limit = Camera_->AutoGainRawUpperLimit.GetValue();
+
+	gain = double(gain_raw - low_limit) / (hight_limit - low_limit);
+    }
+    else{
+	gain = 0.;
+    }
+
+    DEB_RETURN() << DEB_VAR1(gain);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
 void Camera::setFrameTransmissionDelay(int ftd)
 {
     DEB_MEMBER_FUNCT();

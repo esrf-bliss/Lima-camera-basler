@@ -129,6 +129,12 @@ class Camera
     void setTimeout(int TO);
     void reset(void);
 
+    void setGain(double gain);
+    void getGain(double& gain) const;
+
+    void setAutoGain(bool auto_gain);
+    void getAutoGain(bool& auto_gain) const;
+
  private:
     class _AcqThread;
     friend class _AcqThread;
