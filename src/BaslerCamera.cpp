@@ -108,18 +108,16 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
         // Exit application if the specific transport layer is not available
         if (! pTl_)
         {
-            DEB_ERROR() << "Failed to create transport layer!";
             Pylon::PylonTerminate( );            
-            throw LIMA_HW_EXC(Error, "Failed to create transport layer!");
+            THROW_HW_ERROR(Error) << "Failed to create transport layer!";
         }
 
         // Get all attached cameras and exit application if no camera is found
         DEB_TRACE() << "Get all attached cameras, EnumerateDevices";
         if (0 == pTl_->EnumerateDevices(devices_))
         {
-            DEB_ERROR() << "No camera present!";
             Pylon::PylonTerminate( );            
-            throw LIMA_HW_EXC(Error, "No camera present!");
+            THROW_HW_ERROR(Error) << "No camera present!";
         }
     
         // Find the camera according to an IP user-defined
@@ -145,9 +143,8 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
         
         if (it == devices_.end())
         {
-            DEB_ERROR() << "Camera " << m_camera_ip<< " not found.";
             Pylon::PylonTerminate( );
-            throw LIMA_HW_EXC(Error, "Camera not found!");
+            THROW_HW_ERROR(Error) << "Camera not found!";
         }
         DEB_TRACE() << DEB_VAR2(m_detector_type,m_detector_model);
             
@@ -158,9 +155,8 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
         Camera_ = new Camera_t(pTl_->CreateDevice(*it));
         if(!Camera_)
         {
-            DEB_ERROR() <<"Unable to get the camera from transport_layer!";
             Pylon::PylonTerminate( );
-            throw LIMA_HW_EXC(Error, "Unable to get the camera from transport_layer!");
+            THROW_HW_ERROR(Error) << "Unable to get the camera from transport_layer!";
         }
         
         // Open the camera
@@ -186,10 +182,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
             }
         }
         if(!formatSetFlag)
-        {
-            DEB_ERROR() << "Unable to set PixelFormat for the camera!";
-            throw LIMA_HW_EXC(Error, "Unable to set PixelFormat for the camera!");
-        }
+            THROW_HW_ERROR(Error) << "Unable to set PixelFormat for the camera!";
         
         DEB_TRACE() << "Set the ROI to full frame";        
         Roi aFullFrame(0,0,Camera_->WidthMax(),Camera_->HeightMax());
@@ -226,9 +219,8 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
         Pylon::PylonTerminate( );
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }
 }
 
@@ -257,9 +249,8 @@ Camera::~Camera()
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
         Pylon::PylonTerminate( );
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }
 }
 
@@ -286,8 +277,7 @@ void Camera::prepareAcq()
         {
             delete StreamGrabber_;
             StreamGrabber_ = NULL;
-            DEB_ERROR() <<"Unable to open the steam grabber!";
-            throw LIMA_HW_EXC(Error,"Unable to open the steam grabber!");
+            THROW_HW_ERROR(Error) << "Unable to open the steam grabber!";
         }
         // We won't use image buffers greater than ImageSize
         DEB_TRACE() << "We won't use image buffers greater than ImageSize";
@@ -318,8 +308,7 @@ void Camera::prepareAcq()
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }
 }
 //---------------------------
@@ -345,8 +334,7 @@ void Camera::startAcq()
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }
 }
 //---------------------------
@@ -389,8 +377,7 @@ void Camera::_stopAcq(bool internalFlag)
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }    
 }
 
@@ -518,8 +505,7 @@ void Camera::_AcqThread::threadFunction()
         {
             // Error handling
             DEB_ERROR() << "GeniCam Error! "<< e.GetDescription();
-            throw LIMA_HW_EXC(Error, e.GetDescription());            
-        }            
+        }
         aLock.lock();
         m_cam.m_wait_flag = true;
     }
@@ -562,8 +548,7 @@ void Camera::getDetectorImageSize(Size& size)
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }            
 }
 
@@ -599,8 +584,7 @@ void Camera::getImageType(ImageType& type)
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }        
 
 }
@@ -625,15 +609,14 @@ void Camera::setImageType(ImageType type)
             break;
               
             default:
-                throw LIMA_HW_EXC(Error, "Cannot change the format of the camera !");
+                THROW_HW_ERROR(Error) << "Cannot change the format of the camera !";
             break;
         }
     }
     catch (GenICam::GenericException &e)
     {
       // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }
 }
 //-----------------------------------------------------
@@ -698,8 +681,7 @@ void Camera::setTrigMode(TrigMode mode)
      catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }        
 }
 
@@ -721,8 +703,7 @@ void Camera::getTrigMode(TrigMode& mode)
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }        
     DEB_RETURN() << DEB_VAR1(mode);
 }
@@ -761,8 +742,7 @@ void Camera::setExpTime(double exp_time)
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }        
     // set the frame rate useing expo time + latency
     if(m_latency_time < 1e-6) // Max camera speed
@@ -790,7 +770,7 @@ void Camera::getExpTime(double& exp_time)
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }            
     DEB_RETURN() << DEB_VAR1(exp_time);
 }
@@ -916,7 +896,7 @@ void Camera::getFrameRate(double& frame_rate)
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }        
     DEB_RETURN() << DEB_VAR1(frame_rate);
 }
@@ -988,11 +968,9 @@ void Camera::setRoi(const Roi& set_roi)
         }
         catch (GenICam::GenericException &e2)
         {
-            DEB_ERROR() << e2.GetDescription();
-            throw LIMA_HW_EXC(Error,e2.GetDescription());
+            THROW_HW_ERROR(Error) << e2.GetDescription();
         }
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }        
 
 }
@@ -1016,8 +994,7 @@ void Camera::getRoi(Roi& hw_roi)
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }    
     DEB_RETURN() << DEB_VAR1(hw_roi);
 }
@@ -1054,8 +1031,7 @@ void Camera::setBin(const Bin &aBin)
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }
     DEB_RETURN() << DEB_VAR1(aBin);
 }
@@ -1073,8 +1049,7 @@ void Camera::getBin(Bin &aBin)
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }
     DEB_RETURN() << DEB_VAR1(aBin);
 }
@@ -1213,8 +1188,7 @@ void Camera::reset(void)
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        DEB_ERROR() << e.GetDescription();
-        throw LIMA_HW_EXC(Error, e.GetDescription());
+        THROW_HW_ERROR(Error) << e.GetDescription();
     }    
 }
 //---------------------------
