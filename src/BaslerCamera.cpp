@@ -738,7 +738,7 @@ void Camera::setExpTime(double exp_time)
     
     try
     {
-        if(!GenApi::IsAvailable(Camera_->ExposureTimeAbs))
+        if(GenApi::IsAvailable(Camera_->ExposureTimeBaseAbs))
         {
             //If scout or pilot, exposure time has to be adjusted using
             // the exposure time base + the exposure time raw.
@@ -822,10 +822,12 @@ void Camera::getExposureTimeRange(double& min_expo, double& max_expo) const
 {
     DEB_MEMBER_FUNCT();
     // Pilot and and Scout do not have TimeAbs capability
-    if(!GenApi::IsAvailable(Camera_->ExposureTimeAbs))
+    if(GenApi::IsAvailable(Camera_->ExposureTimeBaseAbs))
     {
-        min_expo = 1e-6;
-        max_expo = 1e9;
+      min_expo = Camera_->ExposureTimeBaseAbs.GetMin() *
+	Camera_->ExposureTimeRaw.GetMin() * 1e6;
+      max_expo = Camera_->ExposureTimeBaseAbs.GetMax() *
+	Camera_->ExposureTimeRaw.GetMax() * 1e6;
     }
     else 
     {
