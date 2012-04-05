@@ -804,10 +804,14 @@ void Camera::getExposureTimeRange(double& min_expo, double& max_expo) const
     // Pilot and and Scout do not have TimeAbs capability
     if(GenApi::IsAvailable(Camera_->ExposureTimeBaseAbs))
     {
-      min_expo = Camera_->ExposureTimeBaseAbs.GetMin() *
-	Camera_->ExposureTimeRaw.GetMin() * 1e6;
-      max_expo = Camera_->ExposureTimeBaseAbs.GetMax() *
-	Camera_->ExposureTimeRaw.GetMax() * 1e6;
+      // memorize initial Raw value
+      int initial_raw = Camera_->ExposureTimeRaw.GetValue();
+      // fix Raw to 1, in order to get the Min/Max of ExposureTimeBaseAbs
+      Camera_->ExposureTimeRaw.SetValue(1);
+      min_expo = Camera_->ExposureTimeBaseAbs.GetMin() * 1e6;
+      max_expo = Camera_->ExposureTimeBaseAbs.GetMax() * 1e6;
+      // reload initial Raw value
+      Camera_->ExposureTimeRaw.SetValue(initial_raw);
     }
     else 
     {
