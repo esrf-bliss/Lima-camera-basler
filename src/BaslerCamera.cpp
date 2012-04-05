@@ -808,8 +808,8 @@ void Camera::getExposureTimeRange(double& min_expo, double& max_expo) const
       int initial_raw = Camera_->ExposureTimeRaw.GetValue();
       // fix Raw to 1, in order to get the Min/Max of ExposureTimeBaseAbs
       Camera_->ExposureTimeRaw.SetValue(1);
-      min_expo = Camera_->ExposureTimeBaseAbs.GetMin() * 1e6;
-      max_expo = Camera_->ExposureTimeBaseAbs.GetMax() * 1e6;
+      min_expo = Camera_->ExposureTimeBaseAbs.GetMin() * 1e-6;
+      max_expo = Camera_->ExposureTimeBaseAbs.GetMax() * 1e-6;
       // reload initial Raw value
       Camera_->ExposureTimeRaw.SetValue(initial_raw);
     }
