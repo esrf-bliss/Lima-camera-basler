@@ -22,6 +22,7 @@
 #include <sstream>
 #include <iostream>
 #include <string>
+#include <algorithm>
 #include <math.h>
 #include "BaslerCamera.h"
 
@@ -920,18 +921,29 @@ void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
 {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(set_roi);
-    hw_roi = set_roi;
-
+    if(set_roi.isActive())
+      {
+	const Size& aSetRoiSize = set_roi.getSize();
+	Size aRoiSize = Size(std::max(aSetRoiSize.getWidth(),
+				      int(Camera_->Width.GetMin())),
+			     std::max(aSetRoiSize.getHeight(),
+				      int(Camera_->Height.GetMin())));
+	hw_roi = Roi(set_roi.getTopLeft(),aRoiSize);
+      }
+    else
+      hw_roi = set_roi;
     DEB_RETURN() << DEB_VAR1(hw_roi);
 }
 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::setRoi(const Roi& set_roi)
+void Camera::setRoi(const Roi& ask_roi)
 {
     DEB_MEMBER_FUNCT();
-    DEB_PARAM() << DEB_VAR1(set_roi);
+    DEB_PARAM() << DEB_VAR1(ask_roi);
+    Roi set_roi;
+    checkRoi(ask_roi,set_roi);
     Roi r;    
     try
     {
