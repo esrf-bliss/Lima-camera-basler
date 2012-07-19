@@ -1,4 +1,5 @@
-basler-objs = BaslerCamera.o BaslerInterface.o BaslerDetInfoCtrlObj.o BaslerSyncCtrlObj.o BaslerRoiCtrlObj.o BaslerBinCtrlObj.o
+basler-objs = BaslerCamera.o BaslerInterface.o BaslerDetInfoCtrlObj.o BaslerSyncCtrlObj.o BaslerRoiCtrlObj.o BaslerBinCtrlObj.o \
+	BaslerVideoCtrlObj.o
 
 SRCS = $(basler-objs:.o=.cpp)
 

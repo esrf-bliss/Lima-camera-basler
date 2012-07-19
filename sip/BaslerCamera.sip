@@ -55,8 +55,9 @@ namespace Basler
 
     void setFrameTransmissionDelay(int ftd);
 
-    void getFrameRate(double& frame_rate /Out/);
-    bool isBinningAvailable();
+    void getFrameRate(double& frame_rate /Out/) const;
+    bool isBinningAvailable() const;
+    bool isRoiAvailable() const;
     void setTimeout(int TO);
     void reset();
 
@@ -69,6 +70,7 @@ namespace Basler
     void getStatus(Basler::Camera::Status& status /Out/);
 	
     void getTemperature(double& temperature /Out/);    
+    void isColor(bool& color_flag /Out/) const;
   };
 
 };
