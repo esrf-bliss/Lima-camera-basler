@@ -19,6 +19,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
+#ifdef WIN32
+#include <winsock2.h>
+#endif
+
 #include <sstream>
 #include <iostream>
 #include <string>
@@ -30,10 +34,15 @@ using namespace lima;
 using namespace lima::Basler;
 using namespace std;
 
+#if !defined(WIN32)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+
+#define min(A,B) std::min(A,B)
+#define max(A,B) std::max(A,B)
+#endif
 
 const static int DEFAULT_TIME_OUT = 600000; // 10 minutes
 
@@ -924,10 +933,10 @@ void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
     if(set_roi.isActive())
       {
 	const Size& aSetRoiSize = set_roi.getSize();
-	Size aRoiSize = Size(std::max(aSetRoiSize.getWidth(),
-				      int(Camera_->Width.GetMin())),
-			     std::max(aSetRoiSize.getHeight(),
-				      int(Camera_->Height.GetMin())));
+	Size aRoiSize = Size(max(aSetRoiSize.getWidth(),
+				 int(Camera_->Width.GetMin())),
+			     max(aSetRoiSize.getHeight(),
+				 int(Camera_->Height.GetMin())));
 	hw_roi = Roi(set_roi.getTopLeft(),aRoiSize);
       }
     else
