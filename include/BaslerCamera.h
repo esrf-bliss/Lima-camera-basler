@@ -33,6 +33,7 @@
 #include <limits>
 #include "HwMaxImageSizeCallback.h"
 #include "HwBufferMgr.h"
+#include "BaslerCompatibility.h"
 
 using namespace Pylon;
 using namespace std;
@@ -65,7 +66,7 @@ namespace Basler
  * \class Camera
  * \brief object controlling the basler camera via Pylon driver
  *******************************************************************/
-class Camera
+class LIBBASLER_API Camera
 {
     DEB_CLASS_NAMESPC(DebModCamera, "Camera", "Basler");
     friend class Interface;
