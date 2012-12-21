@@ -158,6 +158,11 @@ class Interface : public HwInterface
 
     void            getFrameRate(double& frame_rate);
     void            setTimeout(int TO);
+    void	    setGain(double gain);
+    void	    getGain(double& gain) const;
+
+    void	    setAutoGain(bool auto_gain);
+    void	    getAutoGain(bool& auto_gain) const;
  private:
     Camera&         m_cam;
     CapList         m_cap_list;
