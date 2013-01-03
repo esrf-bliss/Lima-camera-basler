@@ -24,6 +24,7 @@
 
 #include "HwInterface.h"
 #include "BaslerCamera.h"
+#include "BaslerCompatibility.h"
 
 namespace lima
 {
@@ -36,7 +37,7 @@ class Interface;
  * \brief Control object providing Basler detector info interface
  *******************************************************************/
 
-class DetInfoCtrlObj : public HwDetInfoCtrlObj
+class LIBBASLER_API DetInfoCtrlObj : public HwDetInfoCtrlObj
 {
     DEB_CLASS_NAMESPC(DebModCamera, "DetInfoCtrlObj", "Basler");
 
@@ -67,7 +68,7 @@ class DetInfoCtrlObj : public HwDetInfoCtrlObj
  * \brief Control object providing Basler synchronization interface
  *******************************************************************/
 
-class SyncCtrlObj : public HwSyncCtrlObj
+class LIBBASLER_API SyncCtrlObj : public HwSyncCtrlObj
 {
     DEB_CLASS_NAMESPC(DebModCamera, "SyncCtrlObj", "Basler");
 
@@ -99,7 +100,7 @@ class SyncCtrlObj : public HwSyncCtrlObj
  * \brief Control object providing Basler Roi interface
  *******************************************************************/
 
-class RoiCtrlObj : public HwRoiCtrlObj
+class LIBBASLER_API RoiCtrlObj : public HwRoiCtrlObj
 {
     DEB_CLASS_NAMESPC(DebModCamera, "RoiCtrlObj", "Basler");
 
@@ -119,7 +120,7 @@ class RoiCtrlObj : public HwRoiCtrlObj
  * \class BinCtrlObj
  * \brief Control object providing Basler Bin interface
  *******************************************************************/
-class BinCtrlObj : public HwBinCtrlObj
+class LIBBASLER_API BinCtrlObj : public HwBinCtrlObj
 {
  public:
   BinCtrlObj(Camera& cam);
@@ -139,7 +140,7 @@ class BinCtrlObj : public HwBinCtrlObj
  * \brief Basler hardware interface
  *******************************************************************/
 
-class Interface : public HwInterface
+class LIBBASLER_API Interface : public HwInterface
 {
     DEB_CLASS_NAMESPC(DebModCamera, "BaslerInterface", "Basler");
 

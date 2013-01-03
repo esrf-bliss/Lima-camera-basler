@@ -30,10 +30,12 @@ using namespace lima;
 using namespace lima::Basler;
 using namespace std;
 
+#if !defined(WIN32)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#endif
 
 const static int DEFAULT_TIME_OUT = 600000; // 10 minutes
 
@@ -924,11 +926,12 @@ void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
     if(set_roi.isActive())
       {
 	const Size& aSetRoiSize = set_roi.getSize();
-	Size aRoiSize = Size(std::max(aSetRoiSize.getWidth(),
-				      int(Camera_->Width.GetMin())),
-			     std::max(aSetRoiSize.getHeight(),
-				      int(Camera_->Height.GetMin())));
-	hw_roi = Roi(set_roi.getTopLeft(),aRoiSize);
+	//Size aRoiSize = Size(std::max(aSetRoiSize.getWidth(),
+	//			      int(Camera_->Width.GetMin())),
+	//		     std::max(aSetRoiSize.getHeight(),
+	//			      int(Camera_->Height.GetMin())));
+	//hw_roi = Roi(set_roi.getTopLeft(),aRoiSize);
+	hw_roi = set_roi;
       }
     else
       hw_roi = set_roi;
