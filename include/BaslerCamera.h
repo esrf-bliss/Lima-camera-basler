@@ -118,11 +118,11 @@ class Camera
     void setBin(const Bin&);
     void getBin(Bin&);
 
+    void getStatus(Camera::Status& status);
     void setInterPacketDelay(int ipd);
 
     void setFrameTransmissionDelay(int ftd);
 
-    void getStatus(Camera::Status& status);
     // -- basler specific, LIMA don't worry about it !
     void getFrameRate(double& frame_rate);
     bool isBinnigAvailable(void);
@@ -135,6 +135,7 @@ class Camera
     void setAutoGain(bool auto_gain);
     void getAutoGain(bool& auto_gain) const;
 
+    void getTemperature(double& temperature);    
  private:
     class _AcqThread;
     friend class _AcqThread;
@@ -158,6 +159,7 @@ class Camera
     string                      m_camera_ip;
     string                      m_detector_model;
     string                      m_detector_type;
+    Size                        m_detector_size;
     
     //- Pylon stuff
     DeviceInfoList_t              devices_;
