@@ -157,13 +157,7 @@ class LIBBASLER_API Interface : public HwInterface
     virtual void    getStatus(StatusType& status);
     virtual int     getNbHwAcquiredFrames();
 
-    void            getFrameRate(double& frame_rate);
-    void            setTimeout(int TO);
-    void	    setGain(double gain);
-    void	    getGain(double& gain) const;
-
-    void	    setAutoGain(bool auto_gain);
-    void	    getAutoGain(bool& auto_gain) const;
+    Camera& getCamera(){ return m_cam; }
  private:
     Camera&         m_cam;
     CapList         m_cap_list;

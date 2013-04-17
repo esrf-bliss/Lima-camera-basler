@@ -455,26 +455,3 @@ int Interface::getNbHwAcquiredFrames()
 }
 
 //-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::getFrameRate(double& frame_rate)
-{
-    DEB_MEMBER_FUNCT();
-    m_cam.getFrameRate(frame_rate);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::setTimeout(int TO)
-{
-    m_cam.setTimeout(TO);
-}
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::setGain(double gain) { m_cam.setGain(gain); }
-void Interface::getGain(double& gain) const { m_cam.getGain(gain); }
-
-void Interface::setAutoGain(bool auto_gain) { m_cam.setAutoGain(auto_gain); }
-void Interface::getAutoGain(bool& auto_gain) const { m_cam.getAutoGain(auto_gain); }
