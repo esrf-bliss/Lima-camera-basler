@@ -19,17 +19,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
-#ifndef BASLERCOMPATIBILITY_H
-#define BASLERCOMPATIBILITY_H
+#include <sstream>
+#include "BaslerRoiCtrlObj.h"
+#include "BaslerCamera.h"
 
-#ifdef WIN32
-#ifdef LIBBASLER_EXPORTS
-#define LIBBASLER_API __declspec(dllexport)
-#else
-#define LIBBASLER_API __declspec(dllimport)
-#endif
-#else  /* Unix */
-#define LIBBASLER_API
-#endif
+using namespace lima;
+using namespace lima::Basler;
 
-#endif
+RoiCtrlObj::RoiCtrlObj(Camera& cam) :
+  m_cam(cam)
+{
+}
+
+RoiCtrlObj::~RoiCtrlObj()
+{
+}
+void RoiCtrlObj::checkRoi(const Roi& set_roi, Roi& hw_roi)
+{
+  DEB_MEMBER_FUNCT();
+  m_cam.checkRoi(set_roi, hw_roi);
+}
+
+void RoiCtrlObj::setRoi(const Roi& roi)
+{
+  DEB_MEMBER_FUNCT();
+  Roi real_roi;
+  checkRoi(roi,real_roi);
+  m_cam.setRoi(real_roi);
+}
+
+void RoiCtrlObj::getRoi(Roi& roi)
+{
+  DEB_MEMBER_FUNCT();
+  m_cam.getRoi(roi);
+}

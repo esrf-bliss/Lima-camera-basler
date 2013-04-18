@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="LibBasler"
+	Name="LibLimaBasler"
 	ProjectGUID="{3E1490E7-66C0-4E77-9746-0632466FF270}"
-	RootNamespace="LibBasler"
+	RootNamespace="LibLimaBasler"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -181,11 +181,27 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\..\..\src\BaslerBinCtrlObj.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\src\BaslerCamera.cpp"
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\..\src\BaslerDetInfoCtrlObj.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\src\BaslerInterface.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\src\BaslerRoiCtrlObj.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\src\BaslerSyncCtrlObj.cpp"
 				>
 			</File>
 		</Filter>
@@ -195,6 +211,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\..\..\include\BaslerBinCtrlObj.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\include\BaslerCamera.h"
 				>
 			</File>
@@ -203,7 +223,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\..\include\BaslerDetInfoCtrlObj.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\include\BaslerInterface.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\include\BaslerRoiCtrlObj.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\include\BaslerSyncCtrlObj.h"
 				>
 			</File>
 		</Filter>

@@ -19,17 +19,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
-#ifndef BASLERCOMPATIBILITY_H
-#define BASLERCOMPATIBILITY_H
+#ifndef BASLERBINCTRLOBJ_H
+#define BASLERBINCTRLOBJ_H
 
-#ifdef WIN32
-#ifdef LIBBASLER_EXPORTS
-#define LIBBASLER_API __declspec(dllexport)
-#else
-#define LIBBASLER_API __declspec(dllimport)
-#endif
-#else  /* Unix */
-#define LIBBASLER_API
-#endif
+#include "BaslerCompatibility.h"
+#include "HwBinCtrlObj.h"
+#include "HwInterface.h"
 
-#endif
+namespace lima
+{
+  namespace Basler
+  {
+    class Camera;
+
+    class BinCtrlObj : public HwBinCtrlObj
+    {
+      DEB_CLASS_NAMESPC(DebModCamera,"BinCtrlObj","Balser");
+    public:
+      BinCtrlObj(Camera&);
+      virtual ~BinCtrlObj();
+
+      virtual void setBin(const Bin& bin);
+      virtual void getBin(Bin& bin);
+      //allow all binning
+      virtual void checkBin(Bin& bin);
+    private:
+      Camera&	m_cam;
+    };
+  } // namespace Basler
+} // namespace lima
+
+#endif // BASLERBINCTRLOBJ_H

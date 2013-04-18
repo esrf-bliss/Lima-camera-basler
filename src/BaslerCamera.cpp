@@ -39,7 +39,6 @@ using namespace std;
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#endif
 
 #define min(A,B) std::min(A,B)
 #define max(A,B) std::max(A,B)

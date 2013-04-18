@@ -19,52 +19,43 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
-#ifndef BASLERINTERFACE_H
-#define BASLERINTERFACE_H
+#ifndef BASLERDETINFOCTRLOBJ_H
+#define BASLERDETINFOCTRLOBJ_H
 
 #include "BaslerCompatibility.h"
-#include "HwInterface.h"
+#include "HwDetInfoCtrlObj.h"
+#include "Debug.h"
 
 namespace lima
 {
   namespace Basler
   {
-    //class Interface;
-    class DetInfoCtrlObj;
-    class SyncCtrlObj;
-    class RoiCtrlObj;
-    class BinCtrlObj;
     class Camera;
-
-    class LIBBASLER_API Interface : public HwInterface
+    class DetInfoCtrlObj : public HwDetInfoCtrlObj
     {
-      DEB_CLASS_NAMESPC(DebModCamera, "BaslerInterface", "Basler");
+      DEB_CLASS_NAMESPC(DebModCamera, "DetInfoCtrlObj","Basler");
 
     public:
-      Interface(Camera&);
-      virtual ~Interface();
+      DetInfoCtrlObj(Camera&);
+      virtual ~DetInfoCtrlObj();
 
-      //- From HwInterface
-      virtual void	getCapList(CapList&) const;
-      virtual void	reset(ResetLevel reset_level);
-      virtual void	prepareAcq();
-      virtual void	startAcq();
-      virtual void	stopAcq();
-      virtual void	getStatus(StatusType& status);
-      virtual int	getNbHwAcquiredFrames();
+      virtual void getMaxImageSize(Size& max_image_size);
+      virtual void getDetectorImageSize(Size& det_image_size);
 
-      Camera& getCamera(){ return m_cam; }
+      virtual void getDefImageType(ImageType& def_image_type);
+      virtual void getCurrImageType(ImageType& curr_image_type);
+      virtual void setCurrImageType(ImageType  curr_image_type);
+
+      virtual void getPixelSize(double& x_size,double &y_size);
+      virtual void getDetectorType(std::string& det_type);
+      virtual void getDetectorModel(std::string& det_model);
+
+      virtual void registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
+      virtual void unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
     private:
-      Camera&		m_cam;
-      CapList		m_cap_list;
-      DetInfoCtrlObj*	m_det_info;
-      SyncCtrlObj*	m_sync;
-      RoiCtrlObj*	m_roi;
-      BinCtrlObj*	m_bin;
-
-      mutable Cond	m_cond;
+      Camera& 	m_cam;
     };
   } // namespace Basler
 } // namespace lima
 
-#endif // BASLERINTERFACE_H
+#endif // BASLERDETINFOCTRLOBJ_H

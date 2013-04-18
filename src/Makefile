@@ -1,4 +1,4 @@
-basler-objs = BaslerCamera.o BaslerInterface.o
+basler-objs = BaslerCamera.o BaslerInterface.o BaslerDetInfoCtrlObj.o BaslerSyncCtrlObj.o BaslerRoiCtrlObj.o BaslerBinCtrlObj.o
 
 SRCS = $(basler-objs:.o=.cpp) 
 
@@ -23,4 +23,7 @@ clean:
 	-e '/^$$/ d' -e 's/$$/ :/' < $*.d >> $*.P; \
 	rm -f $*.d
 
+
 -include $(SRCS:.cpp=.P)
+
+

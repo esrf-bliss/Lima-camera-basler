@@ -19,17 +19,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
-#ifndef BASLERCOMPATIBILITY_H
-#define BASLERCOMPATIBILITY_H
+#include <sstream>
+#include "BaslerBinCtrlObj.h"
+#include "BaslerCamera.h"
 
-#ifdef WIN32
-#ifdef LIBBASLER_EXPORTS
-#define LIBBASLER_API __declspec(dllexport)
-#else
-#define LIBBASLER_API __declspec(dllimport)
-#endif
-#else  /* Unix */
-#define LIBBASLER_API
-#endif
+using namespace lima;
+using namespace lima::Basler;
 
-#endif
+BinCtrlObj::BinCtrlObj(Camera& cam) :
+  m_cam(cam)
+{
+}
+
+BinCtrlObj::~BinCtrlObj()
+{
+}
+void BinCtrlObj::setBin(const Bin& aBin)
+{
+  m_cam.setBin(aBin);
+}
+
+void BinCtrlObj::getBin(Bin &aBin)
+{
+  m_cam.getBin(aBin);
+}
+
+void BinCtrlObj::checkBin(Bin &aBin)
+{
+  m_cam.checkBin(aBin);
+}
