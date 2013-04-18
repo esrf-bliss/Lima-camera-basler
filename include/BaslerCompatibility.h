@@ -8,7 +8,7 @@
 #define LIBBASLER_API __declspec(dllimport)
 #endif
 #else  /* Unix */
-#define LIBSIMULATOR_API
+#define LIBBASLER_API
 #endif
 
 #endif

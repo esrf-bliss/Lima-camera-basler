@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;..\..\..\..\..\..\third-party\Processlib\core\include&quot;;&quot;..\..\..\..\..\..\third-party\Processlib\core\include\WindowSpecific&quot;;..\..\..\..\..\..\hardware\include;..\..\..\..\..\..\common\include;..\..\..\..\..\..\camera\basler\include;&quot;C:\Program Files\Basler\Pylon 2.3\pylon\include&quot;;&quot;C:\Program Files\Basler\Pylon 2.3\genicam\library\cpp\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\..\..\..\..\third-party\Processlib\core\include&quot;;&quot;..\..\..\..\..\..\third-party\Processlib\core\include\WindowSpecific&quot;;..\..\..\..\..\..\hardware\include;..\..\..\..\..\..\common\include;..\..\..\..\..\..\camera\basler\include;&quot;$(PYLON_ROOT)\include&quot;;&quot;$(PYLON_GENICAM_ROOT)\library\cpp\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBBASLER_EXPORTS;_WIN32_WINNT=0x0502;USE_GIGE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="0"
@@ -66,7 +66,7 @@
 				AdditionalDependencies="LibLimaCore.lib ws2_32.lib PylonGigE_MDd_VC80.lib"
 				OutputFile="$(OutDir)\liblimabasler.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\..\..\build\msvc\9.0\LimaCore\Debug&quot;;C:\Program Files\Basler\Pylon 2.3\genicam\library\cpp\lib\win32_i86;C:\Program Files\Basler\Pylon 2.3\pylon\lib\Win32"
+				AdditionalLibraryDirectories="&quot;..\..\..\..\..\..\build\msvc\9.0\LimaCore\Debug&quot;;$(PYLON_GENICAM_ROOT)\library\cpp\lib\win32_i86;$(PYLON_ROOT)\lib\Win32"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -120,7 +120,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;..\..\..\..\..\..\third-party\Processlib\core\include&quot;;&quot;..\..\..\..\..\..\third-party\Processlib\core\include\WindowSpecific&quot;;..\..\..\..\..\..\hardware\include;..\..\..\..\..\..\common\include;..\..\..\..\..\..\camera\basler\include;&quot;C:\Program Files\Basler\Pylon 2.3\pylon\include&quot;;&quot;C:\Program Files\Basler\Pylon 2.3\genicam\library\cpp\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\..\..\..\..\third-party\Processlib\core\include&quot;;&quot;..\..\..\..\..\..\third-party\Processlib\core\include\WindowSpecific&quot;;..\..\..\..\..\..\hardware\include;..\..\..\..\..\..\common\include;..\..\..\..\..\..\camera\basler\include;&quot;$(PYLON_ROOT)\include&quot;;&quot;$(PYLON_GENICAM_ROOT)\library\cpp\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBBASLER_EXPORTS;_WIN32_WINNT=0x0502;USE_GIGE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -142,7 +142,7 @@
 				AdditionalDependencies="LibLimaCore.lib ws2_32.lib PylonGigE_MD_VC80.lib"
 				OutputFile="$(OutDir)\liblimabasler.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\..\..\build\msvc\9.0\LimaCore\Release&quot;;C:\Program Files\Basler\Pylon 2.3\genicam\library\cpp\lib\win32_i86;C:\Program Files\Basler\Pylon 2.3\pylon\lib\Win32"
+				AdditionalLibraryDirectories="&quot;..\..\..\..\..\..\build\msvc\9.0\LimaCore\Release&quot;;$(PYLON_GENICAM_ROOT)\library\cpp\lib\win32_i86;$(PYLON_ROOT)\lib\Win32"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -181,11 +181,27 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\..\..\src\BaslerBinCtrlObj.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\src\BaslerCamera.cpp"
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\..\src\BaslerDetInfoCtrlObj.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\src\BaslerInterface.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\src\BaslerRoiCtrlObj.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\src\BaslerSyncCtrlObj.cpp"
 				>
 			</File>
 		</Filter>
@@ -195,6 +211,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\..\..\include\BaslerBinCtrlObj.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\include\BaslerCamera.h"
 				>
 			</File>
@@ -203,7 +223,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\..\include\BaslerDetInfoCtrlObj.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\include\BaslerInterface.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\include\BaslerRoiCtrlObj.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\include\BaslerSyncCtrlObj.h"
 				>
 			</File>
 		</Filter>
