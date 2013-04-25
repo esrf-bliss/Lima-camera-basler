@@ -55,6 +55,11 @@ namespace Basler
 
     void setFrameTransmissionDelay(int ftd);
 
+    void getFrameRate(double& frame_rate /Out/);
+    bool isBinnigAvailable();
+    void setTimeout(int TO);
+    void reset();
+
     void setAutoGain(bool auto_gain);
     void getAutoGain(bool& auto_gain /Out/) const;
 
@@ -63,8 +68,7 @@ namespace Basler
 
     void getStatus(Basler::Camera::Status& status /Out/);
 	
-    void getFrameRate(double& frame_rate /Out/);
-    void setTimeout(int TO);
+    void getTemperature(double& temperature /Out/);    
   };
 
 };

@@ -19,52 +19,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
-#ifndef BASLERINTERFACE_H
-#define BASLERINTERFACE_H
+#ifndef BASLERROICTRLOBJ_H
+#define BASLERROICTRLOBJ_H
 
 #include "BaslerCompatibility.h"
+#include "HwRoiCtrlObj.h"
 #include "HwInterface.h"
 
 namespace lima
 {
   namespace Basler
   {
-    //class Interface;
-    class DetInfoCtrlObj;
-    class SyncCtrlObj;
-    class RoiCtrlObj;
-    class BinCtrlObj;
     class Camera;
 
-    class LIBBASLER_API Interface : public HwInterface
+    class RoiCtrlObj : public HwRoiCtrlObj
     {
-      DEB_CLASS_NAMESPC(DebModCamera, "BaslerInterface", "Basler");
-
+      DEB_CLASS_NAMESPC(DebModCamera,"RoiCtrlObj","Balser");
     public:
-      Interface(Camera&);
-      virtual ~Interface();
+      RoiCtrlObj(Camera&);
+      virtual ~RoiCtrlObj();
 
-      //- From HwInterface
-      virtual void	getCapList(CapList&) const;
-      virtual void	reset(ResetLevel reset_level);
-      virtual void	prepareAcq();
-      virtual void	startAcq();
-      virtual void	stopAcq();
-      virtual void	getStatus(StatusType& status);
-      virtual int	getNbHwAcquiredFrames();
-
-      Camera& getCamera(){ return m_cam; }
+      virtual void setRoi(const Roi& set_roi);
+      virtual void getRoi(Roi& hw_roi);
+      virtual void checkRoi(const Roi& set_roi, Roi& hw_roi);
     private:
-      Camera&		m_cam;
-      CapList		m_cap_list;
-      DetInfoCtrlObj*	m_det_info;
-      SyncCtrlObj*	m_sync;
-      RoiCtrlObj*	m_roi;
-      BinCtrlObj*	m_bin;
-
-      mutable Cond	m_cond;
+      Camera&	m_cam;
     };
   } // namespace Basler
 } // namespace lima
 
-#endif // BASLERINTERFACE_H
+#endif // BASLERROICTRLOBJ_H

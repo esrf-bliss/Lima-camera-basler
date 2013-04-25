@@ -19,52 +19,54 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
-#ifndef BASLERINTERFACE_H
-#define BASLERINTERFACE_H
+#ifndef BASLERSYNCCTRLOBJ_H
+#define BASLERSYNCCTRLOBJ_H
 
 #include "BaslerCompatibility.h"
+#include "HwSyncCtrlObj.h"
 #include "HwInterface.h"
 
 namespace lima
 {
   namespace Basler
   {
-    //class Interface;
-    class DetInfoCtrlObj;
-    class SyncCtrlObj;
-    class RoiCtrlObj;
-    class BinCtrlObj;
     class Camera;
 
-    class LIBBASLER_API Interface : public HwInterface
+    class SyncCtrlObj : public HwSyncCtrlObj
     {
-      DEB_CLASS_NAMESPC(DebModCamera, "BaslerInterface", "Basler");
-
+      DEB_CLASS_NAMESPC(DebModCamera,"SyncCtrlObj","Balser");
     public:
-      Interface(Camera&);
-      virtual ~Interface();
+      SyncCtrlObj(Camera&);
+      virtual ~SyncCtrlObj();
 
-      //- From HwInterface
-      virtual void	getCapList(CapList&) const;
-      virtual void	reset(ResetLevel reset_level);
-      virtual void	prepareAcq();
-      virtual void	startAcq();
-      virtual void	stopAcq();
-      virtual void	getStatus(StatusType& status);
-      virtual int	getNbHwAcquiredFrames();
+      virtual bool checkTrigMode(TrigMode trig_mode);
+      virtual void setTrigMode(TrigMode  trig_mode);
+      virtual void getTrigMode(TrigMode& trig_mode);
 
-      Camera& getCamera(){ return m_cam; }
+      virtual void setExpTime(double  exp_time);
+      virtual void getExpTime(double& exp_time);
+
+      virtual void setLatTime(double  lat_time);
+      virtual void getLatTime(double& lat_time);
+
+      virtual void setNbHwFrames(int  nb_frames);
+      virtual void getNbHwFrames(int& nb_frames);
+
+      virtual void getValidRanges(ValidRangesType& valid_ranges);
+
+      void startAcq();
+      void stopAcq(bool clearQueue = true);
+      
+      void getStatus(HwInterface::StatusType&);
+
     private:
-      Camera&		m_cam;
-      CapList		m_cap_list;
-      DetInfoCtrlObj*	m_det_info;
-      SyncCtrlObj*	m_sync;
-      RoiCtrlObj*	m_roi;
-      BinCtrlObj*	m_bin;
-
-      mutable Cond	m_cond;
+      Camera&			m_cam;
+      TrigMode			m_trig_mode;
+      int			m_nb_frames;
+      bool			m_started;
     };
+
   } // namespace Basler
 } // namespace lima
 
-#endif // BASLERINTERFACE_H
+#endif // BASLERSYNCCTRLOBJ_H
