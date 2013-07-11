@@ -54,6 +54,7 @@ namespace lima
       virtual int	getNbHwAcquiredFrames();
 
       Camera& getCamera(){ return m_cam; }
+      const Camera& getCamera() const { return m_cam; }
     private:
       Camera&		m_cam;
       CapList		m_cap_list;
