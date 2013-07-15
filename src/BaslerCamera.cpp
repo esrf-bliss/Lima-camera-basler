@@ -113,62 +113,45 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
         // create a camera object of type Camera_t::DeviceClass()
         DEB_TRACE() << "Create a camera object of type Camera_t::DeviceClass()";
         CTlFactory& TlFactory = CTlFactory::GetInstance();
-        ITransportLayer* pTl_  = TlFactory.CreateTl( Camera_t::DeviceClass() );
 
-        // Exit application if the specific transport layer is not available
-        if (! pTl_)
-        {
-            Pylon::PylonTerminate( );            
-            THROW_HW_ERROR(Error) << "Failed to create transport layer!";
-        }
-
-        // Get all attached cameras and exit application if no camera is found
-        DEB_TRACE() << "Get all attached cameras, EnumerateDevices";
-        if (0 == pTl_->EnumerateDevices(devices_))
-        {
-            Pylon::PylonTerminate( );            
-            THROW_HW_ERROR(Error) << "No camera present!";
-        }
-    
-        // Find the camera according to an IP user-defined
-        DEB_TRACE() << "Find the camera according to an IP user-defined";        
-        Pylon::DeviceInfoList_t::const_iterator it;        
-            
         // camera_ip is not really necessarily an IP, it may also be a DNS name
         // pylon_camera_ip IS an IP
         Pylon::String_t pylon_camera_ip(_get_ip_addresse(m_camera_ip.c_str()));
-        for (it = devices_.begin(); it != devices_.end(); it++)
-        {
-            const Camera_t::DeviceInfo_t& gige_device_info = static_cast<const Camera_t::DeviceInfo_t&>(*it);
-            Pylon::String_t current_ip = gige_device_info.GetIpAddress();
-            DEB_TRACE() << "Found cam with Ip <" << DEB_VAR1(current_ip) << '>';
-            //if Ip camera is found.
-            if (current_ip == pylon_camera_ip)
-            {
-                m_detector_type  = gige_device_info.GetVendorName();
-                m_detector_model = gige_device_info.GetModelName();
-                break;
-            }
-        }
-        
-        if (it == devices_.end())
+
+        //- Find the Pylon device thanks to its IP Address
+        CBaslerGigEDeviceInfo di;
+        di.SetIpAddress( pylon_camera_ip);
+        DEB_TRACE() << "Create the Pylon device attached to ip address : " << DEB_VAR1(m_camera_ip);
+        IPylonDevice* device = TlFactory.CreateDevice( di);
+        if (!device)
         {
             Pylon::PylonTerminate( );
-            THROW_HW_ERROR(Error) << "Camera not found!";
+            THROW_HW_ERROR(Error) << "Unable to find camera with selected IP!";
         }
-        DEB_TRACE() << DEB_VAR2(m_detector_type,m_detector_model);
-            
-        // Create the camera object of the first available camera
-        // The camera object is used to set and get all available
-        // camera features.
-        DEB_TRACE() << "Create the camera object attached to ip address : " << DEB_VAR1(camera_ip);
-        Camera_ = new Camera_t(pTl_->CreateDevice(*it));
+
+        //- Create the Basler Camera object
+        DEB_TRACE() << "Create the Camera object corresponding to the created Pylon device";
+        Camera_ = new Camera_t(device);
         if(!Camera_)
         {
             Pylon::PylonTerminate( );
             THROW_HW_ERROR(Error) << "Unable to get the camera from transport_layer!";
         }
-        
+
+        //- Get detector model and type
+        m_detector_type  = Camera_->GetDeviceInfo().GetVendorName();
+        m_detector_model = Camera_->GetDeviceInfo().GetModelName();
+
+        //- Infos:
+        DEB_TRACE() << DEB_VAR2(m_detector_type,m_detector_model);
+        DEB_TRACE() << "SerialNumber    = " << Camera_->GetDeviceInfo().GetSerialNumber();
+        DEB_TRACE() << "UserDefinedName = " << Camera_->GetDeviceInfo().GetUserDefinedName();
+        DEB_TRACE() << "DeviceVersion   = " << Camera_->GetDeviceInfo().GetDeviceVersion();
+        DEB_TRACE() << "DeviceFactory   = " << Camera_->GetDeviceInfo().GetDeviceFactory();
+        DEB_TRACE() << "FriendlyName    = " << Camera_->GetDeviceInfo().GetFriendlyName();
+        DEB_TRACE() << "FullName        = " << Camera_->GetDeviceInfo().GetFullName();
+        DEB_TRACE() << "DeviceClass     = " << Camera_->GetDeviceInfo().GetDeviceClass();
+
         // Open the camera
         DEB_TRACE() << "Open camera";        
         Camera_->Open();
