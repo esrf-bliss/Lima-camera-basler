@@ -56,7 +56,7 @@ namespace Basler
     void setFrameTransmissionDelay(int ftd);
 
     void getFrameRate(double& frame_rate /Out/);
-    bool isBinnigAvailable();
+    bool isBinningAvailable();
     void setTimeout(int TO);
     void reset();
 

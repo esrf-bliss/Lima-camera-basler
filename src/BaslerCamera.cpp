@@ -1141,7 +1141,7 @@ void Camera::getBin(Bin &aBin)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-bool Camera::isBinnigAvailable(void)
+bool Camera::isBinningAvailable(void)
 {
     DEB_MEMBER_FUNCT();
     bool isAvailable = true;
