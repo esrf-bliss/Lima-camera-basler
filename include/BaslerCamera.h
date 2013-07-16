@@ -126,7 +126,7 @@ class LIBBASLER_API Camera
 
     // -- basler specific, LIMA don't worry about it !
     void getFrameRate(double& frame_rate);
-    bool isBinnigAvailable(void);
+    bool isBinningAvailable(void);
     void setTimeout(int TO);
     void reset(void);
 

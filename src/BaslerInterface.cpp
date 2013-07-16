@@ -58,7 +58,7 @@ void Interface::getCapList(CapList &cap_list) const
   cap_list.push_back(HwCap(m_sync));
   cap_list.push_back(HwCap(m_roi));
 
-  if(m_cam.isBinnigAvailable())
+  if(m_cam.isBinningAvailable())
     cap_list.push_back(HwCap(m_bin));
 }
 
@@ -105,6 +105,7 @@ void Interface::getStatus(StatusType& status)
       status.acq = AcqRunning;
       break;
     case Camera::Readout:
+      status.det = DetReadout;
       status.acq = AcqRunning;
       break;
     case Camera::Latency:
