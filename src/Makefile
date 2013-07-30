@@ -27,3 +27,7 @@ clean:
 -include $(SRCS:.cpp=.P)
 
 
+
+.PHONY: check-syntax
+check-syntax:
+	$(CXX) -Wall -Wextra -fsyntax-only $(CXXFLAGS) $(CHK_SOURCES)
