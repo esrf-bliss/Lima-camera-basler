@@ -665,13 +665,19 @@ void Camera::setTrigMode(TrigMode mode)
     {
         if ( mode == IntTrig )
         {
-            //- INTERNAL
+            //- INTERNAL 
+            this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
+            this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
+            this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
             this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
         }
         else if ( mode == ExtGate )
         {
             //- EXTERNAL - TRIGGER WIDTH
+            this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
+            this->Camera_->TriggerMode.SetValue( TriggerMode_On );
+            this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_TriggerWidth );
@@ -679,7 +685,11 @@ void Camera::setTrigMode(TrigMode mode)
         else //ExtTrigSingle
         {
             //- EXTERNAL - TIMED
+            
+            this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
+            this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
+            this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_Timed );
         }
@@ -689,6 +699,9 @@ void Camera::setTrigMode(TrigMode mode)
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }        
+
+
+    
 }
 
 //-----------------------------------------------------
@@ -697,11 +710,21 @@ void Camera::setTrigMode(TrigMode mode)
 void Camera::getTrigMode(TrigMode& mode)
 {
     DEB_MEMBER_FUNCT();
+    int frameStart, acqStart, expMode;
+    
     try
     {
-        if (this->Camera_->TriggerMode.GetValue() == TriggerMode_Off)
+        this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
+        acqStart =  this->Camera_->TriggerMode.GetValue();
+
+        this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
+        frameStart =  this->Camera_->TriggerMode.GetValue();
+
+        expMode = this->Camera_->ExposureMode.GetValue();
+    
+        if ((acqStart ==  TriggerMode_Off) && (frameStart ==  TriggerMode_Off))
             mode = IntTrig;
-        else if (this->Camera_->ExposureMode.GetValue() == ExposureMode_TriggerWidth)
+        else if (expMode == ExposureMode_TriggerWidth)
             mode = ExtGate;
         else //ExposureMode_Timed
             mode = ExtTrigSingle;
@@ -711,7 +734,7 @@ void Camera::getTrigMode(TrigMode& mode)
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }        
-    DEB_RETURN() << DEB_VAR1(mode);
+    DEB_RETURN() << DEB_VAR4(mode,acqStart, frameStart, expMode);
 }
 
 
@@ -722,27 +745,33 @@ void Camera::setExpTime(double exp_time)
 {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(exp_time);
-
+    
+    
+    TrigMode mode;
+    getTrigMode(mode);
+    
     try
     {
-        if (GenApi::IsAvailable(Camera_->ExposureTimeBaseAbs))
-        {
-            //If scout or pilot, exposure time has to be adjusted using
-            // the exposure time base + the exposure time raw.
-            //see ImageGrabber for more details !!!
-            Camera_->ExposureTimeBaseAbs.SetValue(100.0); //- to be sure we can set the Raw setting on the full range (1 .. 4095)
-            double raw = ::ceil(exp_time / 50);
-            Camera_->ExposureTimeRaw.SetValue(static_cast<int> (raw));
-            raw = static_cast<double> (Camera_->ExposureTimeRaw.GetValue());
-            Camera_->ExposureTimeBaseAbs.SetValue(1E6 * (exp_time / raw));
+        if(mode !=  ExtGate) { // the expTime can not be set in ExtGate!
+            if (GenApi::IsAvailable(Camera_->ExposureTimeBaseAbs))
+            {
+                //If scout or pilot, exposure time has to be adjusted using
+                // the exposure time base + the exposure time raw.
+                //see ImageGrabber for more details !!!
+                Camera_->ExposureTimeBaseAbs.SetValue(100.0); //- to be sure we can set the Raw setting on the full range (1 .. 4095)
+                double raw = ::ceil(exp_time / 50);
+                Camera_->ExposureTimeRaw.SetValue(static_cast<int> (raw));
+                raw = static_cast<double> (Camera_->ExposureTimeRaw.GetValue());
+                Camera_->ExposureTimeBaseAbs.SetValue(1E6 * (exp_time / raw));
+            }
+            else
+            {
+                // More recent model like ACE and AVIATOR support direct programming of the exposure using
+                // the exposure time absolute.
+                Camera_->ExposureTimeAbs.SetValue(1E6 * exp_time);
+            }
         }
-        else
-        {
-            // More recent model like ACE and AVIATOR support direct programming of the exposure using
-            // the exposure time absolute.
-            Camera_->ExposureTimeAbs.SetValue(1E6 * exp_time);
-        }
-
+        
         m_exp_time = exp_time;
 
         // set the frame rate using expo time + latency
