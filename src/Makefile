@@ -1,11 +1,18 @@
 basler-objs = BaslerCamera.o BaslerInterface.o BaslerDetInfoCtrlObj.o BaslerSyncCtrlObj.o BaslerRoiCtrlObj.o BaslerBinCtrlObj.o
 
-SRCS = $(basler-objs:.o=.cpp) 
+SRCS = $(basler-objs:.o=.cpp)
+
+ifndef PYLON_ROOT
+PYLON_ROOT = /opt/pylon
+endif
+
+ifndef GENICAM_ROOT_V2_1
+GENICAM_ROOT_V2_1 = $(PYLON_ROOT)/genicam
+endif
 
 CXXFLAGS += -I../include -I../../../hardware/include -I../../../common/include \
-			-I/opt/pylon/include \
-			-I/opt/pylon/include/genicam \
-			-I/opt/pylon/genicam/library/CPP/include \
+			-I$(PYLON_ROOT)/include \
+			-I$(GENICAM_ROOT_V2_1)/library/CPP/include \
 			-DUSE_GIGE -Wall -pthread -fPIC -g
 
 all:	Basler.o
