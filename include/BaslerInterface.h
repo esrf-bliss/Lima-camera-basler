@@ -24,6 +24,7 @@
 
 #include "BaslerCompatibility.h"
 #include "HwInterface.h"
+#include "BaslerCamera.h"
 
 namespace lima
 {
@@ -34,7 +35,6 @@ namespace lima
     class SyncCtrlObj;
     class RoiCtrlObj;
     class BinCtrlObj;
-    class Camera;
 
     class LIBBASLER_API Interface : public HwInterface
     {

@@ -20,7 +20,6 @@
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
 #include "BaslerInterface.h"
-#include "BaslerCamera.h"
 #include "BaslerDetInfoCtrlObj.h"
 #include "BaslerSyncCtrlObj.h"
 #include "BaslerRoiCtrlObj.h"
