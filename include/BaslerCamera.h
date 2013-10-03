@@ -72,6 +72,7 @@ class LIBBASLER_API Camera
     DEB_CLASS_NAMESPC(DebModCamera, "Camera", "Basler");
     friend class Interface;
     friend class VideoCtrlObj;
+    friend class SyncCtrlObj;
  public:
 
     enum Status {
