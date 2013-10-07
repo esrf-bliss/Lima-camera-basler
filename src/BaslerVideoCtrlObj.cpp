@@ -213,3 +213,15 @@ void VideoCtrlObj::checkRoi(const Roi&,Roi& hw_roi)
 	       m_cam.Camera_->Width.GetMax(),
 	       m_cam.Camera_->Height.GetMax());
 }
+
+bool VideoCtrlObj::checkAutoGainMode(AutoGainMode mode) const
+{
+  return mode == OFF ? true :
+    GenApi::IsAvailable(m_cam.Camera_->GainAuto) && 
+    GenApi::IsAvailable(m_cam.Camera_->GainSelector);
+}
+
+void VideoCtrlObj::setHwAutoGainMode(AutoGainMode mode)
+{
+  m_cam.setAutoGain(mode == ON);
+}

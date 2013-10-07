@@ -46,6 +46,8 @@ namespace lima
 
       virtual void getGain(double&) const;
       virtual void setGain(double);
+      virtual bool checkAutoGainMode(AutoGainMode) const;
+      virtual void setHwAutoGainMode(AutoGainMode);
 
       virtual void checkBin(Bin& bin);
       virtual void checkRoi(const Roi& set_roi, Roi& hw_roi);
