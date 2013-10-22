@@ -255,9 +255,9 @@ Camera::~Camera()
         DEB_TRACE() << "Close camera";
         delete Camera_;
         Camera_ = NULL;
-
-	for(int i = 0;i < NB_COLOR_BUFFER;++i)
-	  free(m_color_buffer[i]);
+	if (m_color_flag)
+	  for(int i = 0;i < NB_COLOR_BUFFER;++i)
+	    free(m_color_buffer[i]);
     }
     catch (GenICam::GenericException &e)
     {
@@ -505,7 +505,7 @@ void Camera::_AcqThread::threadFunction()
                                 // Grabbing was successful, process image
                                 m_cam._setStatus(Camera::Readout,false);
                                 DEB_TRACE()  << "image#" << DEB_VAR1(m_cam.m_image_number) <<" acquired !";
-				if(!m_cam.m_color_buffer)
+				if(!m_cam.m_color_flag)
 				  {
 				    int nb_buffers;
 				    buffer_mgr.getNbBuffers(nb_buffers);
