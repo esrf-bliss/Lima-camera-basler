@@ -127,8 +127,11 @@ void SyncCtrlObj::setHwAutoExposureMode(AutoExposureMode mode)
   DEB_PARAM() << DEB_VAR1(mode);
   try
     {
-      m_cam.Camera_->ExposureAuto.SetValue(mode == HwSyncCtrlObj::ON ?
+       if ( GenApi::IsAvailable(m_cam.Camera_->ExposureAuto ))
+       {
+            m_cam.Camera_->ExposureAuto.SetValue(mode == HwSyncCtrlObj::ON ?
 					   ExposureAuto_Continuous : ExposureAuto_Off);
+       }
     }
   catch(GenICam::GenericException& e)
     {
