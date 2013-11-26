@@ -24,6 +24,7 @@
 
 #include "BaslerCompatibility.h"
 #include "HwInterface.h"
+#include "BaslerCamera.h"
 
 namespace lima
 {
