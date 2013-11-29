@@ -442,7 +442,21 @@ void Camera::_initColorStreamGrabber(bool allocFlag)
 
   for(int i = 0;i < NB_COLOR_BUFFER;++i)
     {
-      if(allocFlag) posix_memalign(&m_color_buffer[i],16,ImageSize_);
+		if(allocFlag)
+		{
+#ifdef __unix
+		  if(posix_memalign(&m_color_buffer[i],16,ImageSize_))
+#else  // Windows
+		  m_color_buffer[i] = _aligned_malloc(ImageSize_,16);
+		  if(!m_color_buffer[i])
+#endif
+		  {
+			std::cerr << "Can't allocate memory" << std::endl;
+			THROW_HW_ERROR(Error) << "Can't allocate memory";
+		  }
+		}
+
+
       StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_color_buffer[i],
 								   (const size_t)ImageSize_);
       StreamGrabber_->QueueBuffer(bufferId,NULL);
