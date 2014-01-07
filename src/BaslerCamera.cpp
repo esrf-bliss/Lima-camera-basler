@@ -717,7 +717,9 @@ void Camera::setExpTime(double exp_time)
             double raw = ::ceil(exp_time / 50);
             Camera_->ExposureTimeRaw.SetValue(static_cast<int> (raw));
             raw = static_cast<double> (Camera_->ExposureTimeRaw.GetValue());
-            Camera_->ExposureTimeBaseAbs.SetValue(1E6 * (exp_time / raw));
+            Camera_->ExposureTimeBaseAbs.SetValue(1E6 * (exp_time / raw));			
+			DEB_TRACE() <<"raw = "<<raw;
+			DEB_TRACE() <<"ExposureTimeBaseAbs = "<<(1E6 * (exp_time / raw));			
         }
         else
         {
