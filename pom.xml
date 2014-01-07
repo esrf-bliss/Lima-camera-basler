@@ -12,7 +12,7 @@
 	<version>1.3.0-SNAPSHOT</version>
 
     <packaging>nar</packaging>
-    <name>LimaBasler</name>    <!-- use for the name of executable -->
+    <name>LimaBasler</name>
     <description>This module controls the Basler Camera</description>
 	
 	<dependencies>
