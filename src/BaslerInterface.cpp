@@ -24,7 +24,6 @@
 #include "BaslerSyncCtrlObj.h"
 #include "BaslerRoiCtrlObj.h"
 #include "BaslerBinCtrlObj.h"
-#include "BaslerVideoCtrlObj.h"
 
 using namespace lima;
 using namespace lima::Basler;
@@ -38,12 +37,6 @@ Interface::Interface(Camera& cam) :
   m_sync = new SyncCtrlObj(cam);
   m_roi = new RoiCtrlObj(cam);
   m_bin = new BinCtrlObj(cam);
-  bool is_color_flag;
-  m_cam.isColor(is_color_flag);
-  if(is_color_flag)
-    m_video = new VideoCtrlObj(cam);
-  else
-    m_video = NULL;
 }
 
 Interface::~Interface()
@@ -53,28 +46,17 @@ Interface::~Interface()
   delete m_sync;
   delete m_roi;
   delete m_bin;
-  delete m_video;
 }
 
 void Interface::getCapList(CapList &cap_list) const
 {
   cap_list.push_back(HwCap(m_det_info));
 
-  if(m_video)
-    {
-      cap_list.push_back(HwCap(m_video));
-      cap_list.push_back(HwCap(&(m_video->getHwBufferCtrlObj())));
-    }
-  else
-    {
-      HwBufferCtrlObj* buffer = m_cam.getBufferCtrlObj();
-      cap_list.push_back(HwCap(buffer));
-    }
+  HwBufferCtrlObj* buffer = m_cam.getBufferCtrlObj();
+  cap_list.push_back(HwCap(buffer));
 
   cap_list.push_back(HwCap(m_sync));
-
-  if(m_cam.isRoiAvailable())
-    cap_list.push_back(HwCap(m_roi));
+  cap_list.push_back(HwCap(m_roi));
 
   if(m_cam.isBinningAvailable())
     cap_list.push_back(HwCap(m_bin));
