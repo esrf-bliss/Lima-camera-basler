@@ -45,8 +45,6 @@ namespace lima
 
       virtual void setExpTime(double  exp_time);
       virtual void getExpTime(double& exp_time);
-      virtual bool checkAutoExposureMode(AutoExposureMode mode) const;
-      virtual void setHwAutoExposureMode(AutoExposureMode mode);
 
       virtual void setLatTime(double  lat_time);
       virtual void getLatTime(double& lat_time);

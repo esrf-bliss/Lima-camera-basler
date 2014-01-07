@@ -66,13 +66,10 @@ namespace Basler
  * \class Camera
  * \brief object controlling the basler camera via Pylon driver
  *******************************************************************/
-class VideoCtrlObj;
 class LIBBASLER_API Camera
 {
     DEB_CLASS_NAMESPC(DebModCamera, "Camera", "Basler");
     friend class Interface;
-    friend class VideoCtrlObj;
-    friend class SyncCtrlObj;
  public:
 
     enum Status {
@@ -128,11 +125,10 @@ class LIBBASLER_API Camera
     void setFrameTransmissionDelay(int ftd);
 
     // -- basler specific, LIMA don't worry about it !
-    void getFrameRate(double& frame_rate) const;
-    bool isBinningAvailable() const;
-    bool isRoiAvailable() const;
+    void getFrameRate(double& frame_rate);
+    bool isBinningAvailable(void);
     void setTimeout(int TO);
-    void reset();
+    void reset(void);
 
     void setGain(double gain);
     void getGain(double& gain) const;
@@ -141,16 +137,13 @@ class LIBBASLER_API Camera
     void getAutoGain(bool& auto_gain) const;
 
     void getTemperature(double& temperature);    
-    void isColor(bool& color_flag) const;
  private:
     class _AcqThread;
     friend class _AcqThread;
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
     void _freeStreamGrabber();
-    void _initColorStreamGrabber(bool = false);
 
-    static const int NB_COLOR_BUFFER = 2;
     //- lima stuff
     SoftBufferCtrlObj		m_buffer_ctrl_obj;
     int                         m_nb_frames;    
@@ -178,9 +171,6 @@ class LIBBASLER_API Camera
     _AcqThread*                   m_acq_thread;
     Cond                          m_cond;
     int                           m_receive_priority;
-    bool			  m_color_flag;
-    void*			  m_color_buffer[NB_COLOR_BUFFER];
-    VideoCtrlObj*		  m_video;
 };
 } // namespace Basler
 } // namespace lima

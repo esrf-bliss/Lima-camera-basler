@@ -29,7 +29,6 @@
 #include <algorithm>
 #include <math.h>
 #include "BaslerCamera.h"
-#include "BaslerVideoCtrlObj.h"
 
 using namespace lima;
 using namespace lima::Basler;
@@ -103,8 +102,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
           m_latency_time(0.),
           Camera_(NULL),
           StreamGrabber_(NULL),
-          m_receive_priority(receive_priority),
-	  m_video(NULL)
+          m_receive_priority(receive_priority)
 {
     DEB_CONSTRUCTOR();
     m_camera_ip = camera_ip;
@@ -163,10 +161,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
     
         // Set the image format and AOI
         DEB_TRACE() << "Set the image format and AOI";
-        static const char* PixelFormatStr[] = {"BayerRG16","BayerBG16",
-					       "BayerRG12","BayerBG12",
-					       "BayerRG8","BayerBG8",
-					       "Mono16", "Mono12", "Mono8",NULL};
+        static const char* PixelFormatStr[] = {"Mono16", "Mono12", "Mono8",NULL};
         bool formatSetFlag = false;
         for(const char** pt = PixelFormatStr;*pt;++pt)
         {
@@ -174,8 +169,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
             if(anEntry && GenApi::IsAvailable(anEntry))
             {
                 formatSetFlag = true;
-		m_color_flag = *pt[0] == 'B';
-		Camera_->PixelFormat.SetIntValue(anEntry->GetValue());
+                Camera_->PixelFormat.SetIntValue(Camera_->PixelFormat.GetEntryByName(*pt)->GetValue());
                 DEB_TRACE() << "Set pixel format to " << *pt;
                 break;
             }
@@ -183,14 +177,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
         if(!formatSetFlag)
             THROW_HW_ERROR(Error) << "Unable to set PixelFormat for the camera!";
         
-        DEB_TRACE() << "Set the ROI to full frame";
-	if(isRoiAvailable())
-	  {
-	    Roi aFullFrame(0,0,Camera_->WidthMax(),Camera_->HeightMax());
-	    setRoi(aFullFrame);
-	  }
-        // Set Binning to 1, only if the camera has this functionality        
-        if (isBinningAvailable())
+        if (GenApi::IsAvailable(Camera_->BinningVertical) && GenApi::IsAvailable(Camera_->BinningHorizontal))
         {
             DEB_TRACE() << "Set BinningH & BinningV to 1";
             Camera_->BinningVertical.SetValue(1);
@@ -199,6 +186,10 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
 
         DEB_TRACE() << "Get the Detector Max Size";
         m_detector_size = Size(Camera_->WidthMax(), Camera_->HeightMax());
+
+        DEB_TRACE() << "Set the ROI to full frame";
+        Roi aFullFrame(0, 0, m_detector_size.getWidth(), m_detector_size.getHeight());
+        setRoi(aFullFrame);
 
         // Set the camera to continuous frame mode
         DEB_TRACE() << "Set the camera to continuous frame mode";
@@ -226,13 +217,6 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
         Pylon::PylonTerminate( );
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
-    if(m_color_flag)
-      _initColorStreamGrabber(true);
-    else
-      {
-	for(int i = 0;i < NB_COLOR_BUFFER;++i)
-	  m_color_buffer[i] = NULL;
-      }
 }
 
 //---------------------------
@@ -249,15 +233,13 @@ Camera::~Camera()
         
         // Close stream grabber
         DEB_TRACE() << "Close stream grabber";
-	_freeStreamGrabber();
-
+        delete StreamGrabber_;
+        StreamGrabber_ = NULL;
+        
         // Close camera
         DEB_TRACE() << "Close camera";
         delete Camera_;
         Camera_ = NULL;
-	if (m_color_flag)
-	  for(int i = 0;i < NB_COLOR_BUFFER;++i)
-	    free(m_color_buffer[i]);
     }
     catch (GenICam::GenericException &e)
     {
@@ -270,13 +252,9 @@ Camera::~Camera()
 void Camera::prepareAcq()
 {
     DEB_MEMBER_FUNCT();
-    m_image_number=0;
-
-    if(m_color_flag)
-      return;			// Nothing to do if color camera
-
     try
     {
+        m_image_number=0;
 	_freeStreamGrabber();
         // Get the first stream grabber object of the selected camera
         DEB_TRACE() << "Get the first stream grabber object of the selected camera";
@@ -339,11 +317,8 @@ void Camera::startAcq()
         // Let the camera acquire images continuously ( Acquisiton mode equals Continuous! )
         DEB_TRACE() << "Let the camera acquire images continuously";
 
-	if(m_video)
-	  m_video->getBuffer().setStartTimestamp(Timestamp::now());
-	else
-	  m_buffer_ctrl_obj.getBuffer().setStartTimestamp(Timestamp::now());
-
+        StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
+        buffer_mgr.setStartTimestamp(Timestamp::now());
         Camera_->AcquisitionStart.Execute();
 
 	//Start acqusition thread
@@ -390,9 +365,7 @@ void Camera::_stopAcq(bool internalFlag)
             // Stop acquisition
             DEB_TRACE() << "Stop acquisition";
             Camera_->AcquisitionStop.Execute();
-
-	    if(!m_color_flag)
-	      _freeStreamGrabber();
+	    _freeStreamGrabber();
             _setStatus(Camera::Ready,false);
         }
     }
@@ -423,46 +396,6 @@ void Camera::_freeStreamGrabber()
       StreamGrabber_ = NULL;         
     }
 }
-
-void Camera::_initColorStreamGrabber(bool allocFlag)
-{
-  DEB_MEMBER_FUNCT();
-
-  StreamGrabber_ = new Camera_t::StreamGrabber_t(Camera_->GetStreamGrabber(0));
-  StreamGrabber_->Open();
-  if(!StreamGrabber_->IsOpen())
-    {
-      delete StreamGrabber_;
-      StreamGrabber_ = NULL;
-      THROW_HW_ERROR(Error) << "Unable to open the steam grabber!";
-    }
-  StreamGrabber_->MaxBufferSize.SetValue((const size_t)ImageSize_);
-  StreamGrabber_->MaxNumBuffer.SetValue(NB_COLOR_BUFFER);
-  StreamGrabber_->PrepareGrab();
-
-  for(int i = 0;i < NB_COLOR_BUFFER;++i)
-    {
-		if(allocFlag)
-		{
-#ifdef __unix
-		  if(posix_memalign(&m_color_buffer[i],16,ImageSize_))
-#else  // Windows
-		  m_color_buffer[i] = _aligned_malloc(ImageSize_,16);
-		  if(!m_color_buffer[i])
-#endif
-		  {
-			std::cerr << "Can't allocate memory" << std::endl;
-			THROW_HW_ERROR(Error) << "Can't allocate memory";
-		  }
-		}
-
-
-      StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_color_buffer[i],
-								   (const size_t)ImageSize_);
-      StreamGrabber_->QueueBuffer(bufferId,NULL);
-    }
-}
-
 //---------------------------
 //- Camera::_AcqThread::threadFunction()
 //---------------------------
@@ -519,53 +452,15 @@ void Camera::_AcqThread::threadFunction()
                                 // Grabbing was successful, process image
                                 m_cam._setStatus(Camera::Readout,false);
                                 DEB_TRACE()  << "image#" << DEB_VAR1(m_cam.m_image_number) <<" acquired !";
-				if(!m_cam.m_color_flag)
-				  {
-				    int nb_buffers;
-				    buffer_mgr.getNbBuffers(nb_buffers);
-				    if (!m_cam.m_nb_frames || 
-					m_cam.m_image_number < int(m_cam.m_nb_frames - nb_buffers))
-				      m_cam.StreamGrabber_->QueueBuffer(Result.Handle(),NULL);
+                                int nb_buffers;
+                                buffer_mgr.getNbBuffers(nb_buffers);
+                                if (!m_cam.m_nb_frames || m_cam.m_image_number < int(m_cam.m_nb_frames - nb_buffers))
+                                    m_cam.StreamGrabber_->QueueBuffer(Result.Handle(),NULL);
                                 
-				    HwFrameInfoType frame_info;
-				    frame_info.acq_frame_nb = m_cam.m_image_number;
-				    continueAcq = buffer_mgr.newFrameReady(frame_info);
-				    DEB_TRACE() << DEB_VAR1(continueAcq);
-				  }
-				else
-				  {
-				    m_cam.StreamGrabber_->QueueBuffer(Result.Handle(),NULL);
-				    VideoMode mode;
-				    switch(Result.GetPixelType())
-				      {
-				      case PixelType_Mono8:		mode = Y8;		break;
-				      case PixelType_Mono10: 		mode = Y16;		break;
-				      case PixelType_Mono12:  		mode = Y16;		break;
-				      case PixelType_Mono16:  		mode = Y16;		break;
-				      case PixelType_BayerRG8:  	mode = BAYER_RG8;	break;
-				      case PixelType_BayerBG8: 		mode = BAYER_BG8;	break;  
-				      case PixelType_BayerRG10:  	mode = BAYER_RG16;	break;
-				      case PixelType_BayerBG10:    	mode = BAYER_BG16;	break;
-				      case PixelType_BayerRG12:    	mode = BAYER_RG16;	break;
-				      case PixelType_BayerBG12:      	mode = BAYER_BG16;	break;
-				      case PixelType_RGB8packed:  	mode = RGB24;		break;
-				      case PixelType_BGR8packed:  	mode = BGR24;		break;
-				      case PixelType_RGBA8packed:  	mode = RGB32;		break;
-				      case PixelType_BGRA8packed:  	mode = BGR32;		break;
-				      case PixelType_YUV411packed:  	mode = YUV411;		break;
-				      case PixelType_YUV422packed:  	mode = YUV422;		break;
-				      case PixelType_YUV444packed:  	mode = YUV444;		break;
-				      case PixelType_BayerRG16:    	mode = BAYER_RG16;	break;
-				      case PixelType_BayerBG16:    	mode = BAYER_BG16;	break;
-				      default:
-					DEB_ERROR() << "Image type not managed";
-					return;
-				      }
-				    m_cam.m_video->callNewImage((char*)Result.Buffer(),
-								Result.GetSizeX(),
-								Result.GetSizeY(),
-								mode);
-				  }
+                                HwFrameInfoType frame_info;
+                                frame_info.acq_frame_nb = m_cam.m_image_number;
+                                continueAcq = buffer_mgr.newFrameReady(frame_info);
+                                DEB_TRACE() << DEB_VAR1(continueAcq);
                                 ++m_cam.m_image_number;
                             }
                             else if (Failed == Result.Status())
@@ -753,21 +648,13 @@ void Camera::setTrigMode(TrigMode mode)
     {
         if ( mode == IntTrig )
         {
-            //- INTERNAL 
-            this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
-            this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
-            if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
-                this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
+            //- INTERNAL
             this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
             this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
         }
         else if ( mode == ExtGate )
         {
             //- EXTERNAL - TRIGGER WIDTH
-            this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
-            this->Camera_->TriggerMode.SetValue( TriggerMode_On );
-            if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
-                this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_TriggerWidth );
@@ -775,12 +662,7 @@ void Camera::setTrigMode(TrigMode mode)
         else //ExtTrigSingle
         {
             //- EXTERNAL - TIMED
-            
-            this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
-            if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
-                this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
-            this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_Timed );
         }
@@ -790,9 +672,6 @@ void Camera::setTrigMode(TrigMode mode)
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }        
-
-
-    
 }
 
 //-----------------------------------------------------
@@ -801,24 +680,11 @@ void Camera::setTrigMode(TrigMode mode)
 void Camera::getTrigMode(TrigMode& mode)
 {
     DEB_MEMBER_FUNCT();
-    int frameStart = TriggerMode_Off, acqStart = TriggerMode_Off, expMode;
-    
     try
     {
-        this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
-        acqStart =  this->Camera_->TriggerMode.GetValue();
-
-        if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
-        {
-            this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
-            frameStart =  this->Camera_->TriggerMode.GetValue();
-        }
-
-        expMode = this->Camera_->ExposureMode.GetValue();
-    
-        if ((acqStart ==  TriggerMode_Off) && (frameStart ==  TriggerMode_Off))
+        if (this->Camera_->TriggerMode.GetValue() == TriggerMode_Off)
             mode = IntTrig;
-        else if (expMode == ExposureMode_TriggerWidth)
+        else if (this->Camera_->ExposureMode.GetValue() == ExposureMode_TriggerWidth)
             mode = ExtGate;
         else //ExposureMode_Timed
             mode = ExtTrigSingle;
@@ -828,7 +694,7 @@ void Camera::getTrigMode(TrigMode& mode)
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }        
-    DEB_RETURN() << DEB_VAR4(mode,acqStart, frameStart, expMode);
+    DEB_RETURN() << DEB_VAR1(mode);
 }
 
 
@@ -839,35 +705,29 @@ void Camera::setExpTime(double exp_time)
 {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(exp_time);
-    
-    
-    TrigMode mode;
-    getTrigMode(mode);
-    
+
     try
     {
-        if(mode !=  ExtGate) { // the expTime can not be set in ExtGate!
-            if (GenApi::IsAvailable(Camera_->ExposureTimeBaseAbs))
-            {
-                //If scout or pilot, exposure time has to be adjusted using
-                // the exposure time base + the exposure time raw.
-                //see ImageGrabber for more details !!!
-                Camera_->ExposureTimeBaseAbs.SetValue(100.0); //- to be sure we can set the Raw setting on the full range (1 .. 4095)
-                double raw = ::ceil(exp_time / 50);
-                Camera_->ExposureTimeRaw.SetValue(static_cast<int> (raw));
-                raw = static_cast<double> (Camera_->ExposureTimeRaw.GetValue());
-                Camera_->ExposureTimeBaseAbs.SetValue(1E6 * (exp_time / raw));
-                DEB_TRACE() <<"raw = "<<raw;
-				DEB_TRACE() <<"ExposureTimeBaseAbs = "<<(1E6 * (exp_time / raw));	
-            }
-            else
-            {
-                // More recent model like ACE and AVIATOR support direct programming of the exposure using
-                // the exposure time absolute.
-                Camera_->ExposureTimeAbs.SetValue(1E6 * exp_time);
-            }
+        if (GenApi::IsAvailable(Camera_->ExposureTimeBaseAbs))
+        {
+            //If scout or pilot, exposure time has to be adjusted using
+            // the exposure time base + the exposure time raw.
+            //see ImageGrabber for more details !!!
+            Camera_->ExposureTimeBaseAbs.SetValue(100.0); //- to be sure we can set the Raw setting on the full range (1 .. 4095)
+            double raw = ::ceil(exp_time / 50);
+            Camera_->ExposureTimeRaw.SetValue(static_cast<int> (raw));
+            raw = static_cast<double> (Camera_->ExposureTimeRaw.GetValue());
+            Camera_->ExposureTimeBaseAbs.SetValue(1E6 * (exp_time / raw));			
+			DEB_TRACE() <<"raw = "<<raw;
+			DEB_TRACE() <<"ExposureTimeBaseAbs = "<<(1E6 * (exp_time / raw));			
         }
-        
+        else
+        {
+            // More recent model like ACE and AVIATOR support direct programming of the exposure using
+            // the exposure time absolute.
+            Camera_->ExposureTimeAbs.SetValue(1E6 * exp_time);
+        }
+
         m_exp_time = exp_time;
 
         // set the frame rate using expo time + latency
@@ -1059,7 +919,7 @@ void Camera::_setStatus(Camera::Status status,bool force)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getFrameRate(double& frame_rate) const
+void Camera::getFrameRate(double& frame_rate)
 {
     DEB_MEMBER_FUNCT();
     try
@@ -1254,14 +1114,19 @@ void Camera::getBin(Bin &aBin)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-bool Camera::isBinningAvailable() const
+bool Camera::isBinningAvailable(void)
 {
     DEB_MEMBER_FUNCT();
-    bool isAvailable = false;
+    bool isAvailable = true;
     try
     {
-      isAvailable = (GenApi::IsAvailable(Camera_->BinningVertical) &&
-		     GenApi::IsAvailable(Camera_->BinningHorizontal));
+        // If the binning mode is not supported, return false
+        if (!GenApi::IsAvailable(Camera_->BinningVertical))
+            isAvailable = false;
+
+        // If the binning mode is not supported, return false
+        if (!GenApi::IsAvailable(Camera_->BinningHorizontal))
+            isAvailable = false;
     }
     catch (GenICam::GenericException &e)
     {
@@ -1271,24 +1136,6 @@ bool Camera::isBinningAvailable() const
     return isAvailable;
 }
 
-bool Camera::isRoiAvailable() const
-{
-  DEB_MEMBER_FUNCT();
-  bool isAvailable = false;
-  try
-    {
-      isAvailable = (GenApi::IsAvailable(Camera_->OffsetX) && GenApi::IsWritable(Camera_->OffsetX) &&
-		     GenApi::IsAvailable(Camera_->OffsetY) && GenApi::IsWritable(Camera_->OffsetY) &&
-		     GenApi::IsAvailable(Camera_->Width) && GenApi::IsWritable(Camera_->Width) &&
-		     GenApi::IsAvailable(Camera_->Height) && GenApi::IsWritable(Camera_->Height));
-    }
-  catch(GenICam::GenericException &e)
-    {
-      DEB_WARNING() << e.GetDescription();
-    }
-  DEB_RETURN() << DEB_VAR1(isAvailable);
-  return isAvailable;
-}
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -1470,7 +1317,7 @@ void Camera::setFrameTransmissionDelay(int ftd)
 //---------------------------
 //- Camera::reset()
 //---------------------------
-void Camera::reset()
+void Camera::reset(void)
 {
     DEB_MEMBER_FUNCT();
     try
@@ -1482,10 +1329,5 @@ void Camera::reset()
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }    
-}
-
-void Camera::isColor(bool& color_flag) const
-{
-  color_flag = m_color_flag;
 }
 //---------------------------

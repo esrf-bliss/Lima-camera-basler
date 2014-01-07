@@ -110,31 +110,3 @@ void SyncCtrlObj::getValidRanges(ValidRangesType& valid_ranges)
   valid_ranges.min_lat_time = min_time;
   valid_ranges.max_lat_time = max_time;
 }
-
-bool SyncCtrlObj::checkAutoExposureMode(HwSyncCtrlObj::AutoExposureMode mode) const
-{
-  DEB_MEMBER_FUNCT();
-  DEB_PARAM() << DEB_VAR1(mode);
-  bool checkFlag = mode == HwSyncCtrlObj::ON ?
-    GenApi::IsAvailable(m_cam.Camera_->ExposureAuto) : true;
-  DEB_RETURN() << DEB_VAR1(checkFlag);
-  return checkFlag;
-}
-
-void SyncCtrlObj::setHwAutoExposureMode(AutoExposureMode mode)
-{
-  DEB_MEMBER_FUNCT();
-  DEB_PARAM() << DEB_VAR1(mode);
-  try
-    {
-       if ( GenApi::IsAvailable(m_cam.Camera_->ExposureAuto ))
-       {
-            m_cam.Camera_->ExposureAuto.SetValue(mode == HwSyncCtrlObj::ON ?
-					   ExposureAuto_Continuous : ExposureAuto_Off);
-       }
-    }
-  catch(GenICam::GenericException& e)
-    {
-      THROW_HW_ERROR(Error) << e.GetDescription();
-    }
-}
