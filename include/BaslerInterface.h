@@ -35,7 +35,8 @@ namespace lima
     class SyncCtrlObj;
     class RoiCtrlObj;
     class BinCtrlObj;
-
+    class VideoCtrlObj;
+    class Camera;
     class LIBBASLER_API Interface : public HwInterface
     {
       DEB_CLASS_NAMESPC(DebModCamera, "BaslerInterface", "Basler");
@@ -62,7 +63,7 @@ namespace lima
       SyncCtrlObj*	m_sync;
       RoiCtrlObj*	m_roi;
       BinCtrlObj*	m_bin;
-
+      VideoCtrlObj*     m_video;
       mutable Cond	m_cond;
     };
   } // namespace Basler
