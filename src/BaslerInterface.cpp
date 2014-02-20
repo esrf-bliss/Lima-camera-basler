@@ -97,26 +97,20 @@ void Interface::getStatus(StatusType& status)
   switch (basler_status)
     {
     case Camera::Ready:
-      status.acq = AcqReady;
-      status.det = DetIdle;
+      status.set(HwInterface::StatusType::Ready);
       break;
     case Camera::Exposure:
-      status.det = DetExposure;
-      status.acq = AcqRunning;
+      status.set(HwInterface::StatusType::Exposure);
       break;
     case Camera::Readout:
-      status.det = DetReadout;
-      status.acq = AcqRunning;
+      status.set(HwInterface::StatusType::Readout);
       break;
     case Camera::Latency:
-      status.det = DetLatency;
-      status.acq = AcqRunning;
+      status.set(HwInterface::StatusType::Latency);
       break;
     case Camera::Fault:
-      status.det = DetFault;
-      status.acq = AcqFault;
+      status.set(HwInterface::StatusType::Fault);
     }
-  status.det_mask = DetExposure | DetReadout | DetLatency;
 }
 
 int Interface::getNbHwAcquiredFrames()
