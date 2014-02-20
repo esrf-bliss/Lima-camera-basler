@@ -19,53 +19,46 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
-#ifndef BASLERINTERFACE_H
-#define BASLERINTERFACE_H
-
+#ifndef BASLERVIDEOCTRL_H
+#define BASLERVIDEOCTRL_H
+#include "HwVideoCtrlObj.h"
+#include "BaslerCamera.h"
 #include "BaslerCompatibility.h"
-#include "HwInterface.h"
 
 namespace lima
 {
   namespace Basler
   {
-    //class Interface;
-    class DetInfoCtrlObj;
     class SyncCtrlObj;
-    class RoiCtrlObj;
-    class BinCtrlObj;
-    class VideoCtrlObj;
-    class Camera;
-    class LIBBASLER_API Interface : public HwInterface
+    class LIBBASLER_API VideoCtrlObj : public HwVideoCtrlObj
     {
-      DEB_CLASS_NAMESPC(DebModCamera, "BaslerInterface", "Basler");
-
+      DEB_CLASS_NAMESPC(DebModCamera,"VideoCtrlObj","Basler");
     public:
-      Interface(Camera&);
-      virtual ~Interface();
+      VideoCtrlObj(Camera& cam);
+      virtual ~VideoCtrlObj();
 
-      //- From HwInterface
-      virtual void	getCapList(CapList&) const;
-      virtual void	reset(ResetLevel reset_level);
-      virtual void	prepareAcq();
-      virtual void	startAcq();
-      virtual void	stopAcq();
-      virtual void	getStatus(StatusType& status);
-      virtual int	getNbHwAcquiredFrames();
+      virtual void getSupportedVideoMode(std::list<VideoMode> &aList) const;
+      virtual void setVideoMode(VideoMode);
+      virtual void getVideoMode(VideoMode&) const;
 
-      Camera& getCamera(){ return m_cam; }
-      const Camera& getCamera() const { return m_cam; }
+      virtual void setLive(bool);
+      virtual void getLive(bool&) const;
+
+      virtual void getGain(double&) const;
+      virtual void setGain(double);
+      virtual bool checkAutoGainMode(AutoGainMode) const;
+      virtual void setHwAutoGainMode(AutoGainMode);
+
+      virtual void checkBin(Bin& bin);
+      virtual void checkRoi(const Roi& set_roi, Roi& hw_roi);
+
+      virtual void setBin(const Bin&){};
+      virtual void setRoi(const Roi&){};
+
     private:
-      Camera&		m_cam;
-      CapList		m_cap_list;
-      DetInfoCtrlObj*	m_det_info;
-      SyncCtrlObj*	m_sync;
-      RoiCtrlObj*	m_roi;
-      BinCtrlObj*	m_bin;
-      VideoCtrlObj*     m_video;
-      mutable Cond	m_cond;
+      Camera&	m_cam;
     };
-  } // namespace Basler
-} // namespace lima
+  }
+}
 
-#endif // BASLERINTERFACE_H
+#endif
