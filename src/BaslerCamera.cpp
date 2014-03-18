@@ -1352,6 +1352,7 @@ void Camera::getAutoGain(bool& auto_gain) const
         else
         {
             auto_gain = false;
+			THROW_HW_ERROR(Error)<<"GainAuto Parameter is not Available !";			
         }
     }
     catch (GenICam::GenericException &e)
@@ -1373,7 +1374,11 @@ void Camera::setGain(double gain)
     try
     {
         // you want to set the gain, remove autogain
-        setAutoGain(false);
+        if (GenApi::IsAvailable(Camera_->GainAuto))
+        {		
+			setAutoGain(false);
+		}
+		
         if (GenApi::IsWritable(Camera_->GainRaw) && GenApi::IsAvailable(Camera_->GainRaw))
         {
 
@@ -1396,11 +1401,15 @@ void Camera::setGain(double gain)
             Camera_->GainRaw.SetValue(gain_raw);
             DEB_TRACE() << "gain_raw = " << gain_raw;
         }
+		else
+		{
+			THROW_HW_ERROR(Error)<<"GainRaw Parameter is not Available !";
+		}
     }
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        THROW_HW_ERROR(Error) << e.GetDescription();
+        THROW_HW_ERROR(Error) << e.GetDescription();		
     }
 }
 
