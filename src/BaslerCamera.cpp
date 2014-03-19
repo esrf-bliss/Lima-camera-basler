@@ -1354,7 +1354,7 @@ void Camera::getAutoGain(bool& auto_gain) const
         else
         {
             auto_gain = false;
-			THROW_HW_ERROR(Error)<<"GainAuto Parameter is not Available !";			
+//			THROW_HW_ERROR(Error)<<"GainAuto Parameter is not Available !";			
         }
     }
     catch (GenICam::GenericException &e)
