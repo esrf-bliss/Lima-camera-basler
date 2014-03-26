@@ -736,14 +736,17 @@ void Camera::setTrigMode(TrigMode mode)
     DEB_PARAM() << DEB_VAR1(mode);
 
     try
-    {
+    {        
         if ( mode == IntTrig )
         {
             //- INTERNAL 
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
-            if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
+                        
+            GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");                    
+            if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))            
                 this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
+            
             this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
             this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
         }
@@ -752,8 +755,11 @@ void Camera::setTrigMode(TrigMode mode)
             //- EXTERNAL - TRIGGER WIDTH
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
-            if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
+            
+            GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");                    
+            if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))                    
                 this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
+            
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_TriggerWidth );
@@ -764,8 +770,11 @@ void Camera::setTrigMode(TrigMode mode)
             
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
-            if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
+            
+            GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");                    
+            if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))                     
                 this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
+            
             this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_Timed );
@@ -794,7 +803,8 @@ void Camera::getTrigMode(TrigMode& mode)
         this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
         acqStart =  this->Camera_->TriggerMode.GetValue();
 
-        if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
+        GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");  
+        if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))            
         {
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
             frameStart =  this->Camera_->TriggerMode.GetValue();
@@ -814,9 +824,9 @@ void Camera::getTrigMode(TrigMode& mode)
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }        
-    DEB_RETURN() << DEB_VAR4(mode,acqStart, frameStart, expMode);
+   	
+    DEB_RETURN() << DEB_VAR4(mode,acqStart, frameStart, expMode);    
 }
-
 
 //-----------------------------------------------------
 //
