@@ -766,7 +766,7 @@ void Camera::setTrigMode(TrigMode mode)
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
             if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
                 this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
-            this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
+            this->Camera_->TriggerMode.SetValue( TriggerMode_On );
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_Timed );
         }
