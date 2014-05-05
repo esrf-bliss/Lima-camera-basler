@@ -774,8 +774,7 @@ void Camera::setTrigMode(TrigMode mode)
             GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");                    
             if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))                     
                 this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
-            
-            this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
+            this->Camera_->TriggerMode.SetValue( TriggerMode_On );
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_Timed );
         }
