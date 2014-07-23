@@ -682,8 +682,9 @@ void Camera::setImageType(ImageType type)
             case Bpp8:
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
             break;
-              
             case Bpp12:
+				this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
+			break;
             case Bpp16:
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
             break;
