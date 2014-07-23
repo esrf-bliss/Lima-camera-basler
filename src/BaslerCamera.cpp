@@ -641,18 +641,18 @@ void Camera::getImageType(ImageType& type)
     DEB_MEMBER_FUNCT();
     try
     {
-        PixelSizeEnums ps = Camera_->PixelSize.GetValue();
+        PixelFormatEnums ps = Camera_->PixelFormat.GetValue();
         switch( ps )
         {
-            case PixelSize_Bpp8:
+            case PixelFormat_Mono8:
                 type= Bpp8;
             break;
               
-            case PixelSize_Bpp12:
+            case PixelFormat_Mono12:
                 type= Bpp12;
             break;
               
-            case PixelSize_Bpp16: //- this is in fact 12 bpp inside a 16bpp image
+            case PixelFormat_Mono16: //- this is in fact 12 bpp inside a 16bpp image
                 type= Bpp16;
             break;
               
@@ -665,8 +665,7 @@ void Camera::getImageType(ImageType& type)
     {
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
-    }        
-
+    }
 }
 
 //-----------------------------------------------------
