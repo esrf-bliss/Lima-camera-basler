@@ -257,7 +257,11 @@ Camera::~Camera()
         Camera_ = NULL;
 	if (m_color_flag)
 	  for(int i = 0;i < NB_COLOR_BUFFER;++i)
+#ifdef __unix
 	    free(m_color_buffer[i]);
+#else
+	_aligned_free(m_color_buffer[i]);
+#endif
     }
     catch (GenICam::GenericException &e)
     {
@@ -442,7 +446,12 @@ void Camera::_initColorStreamGrabber(bool allocFlag)
 
   for(int i = 0;i < NB_COLOR_BUFFER;++i)
     {
-      if(allocFlag) posix_memalign(&m_color_buffer[i],16,ImageSize_);
+      if(allocFlag)
+#ifdef __unix
+	posix_memalign(&m_color_buffer[i],16,ImageSize_);
+#else
+        m_color_buffer[i] = _aligned_malloc(ImageSize_,16);
+#endif
       StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_color_buffer[i],
 								   (const size_t)ImageSize_);
       StreamGrabber_->QueueBuffer(bufferId,NULL);
