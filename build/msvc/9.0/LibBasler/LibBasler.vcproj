@@ -204,6 +204,10 @@
 				RelativePath="..\..\..\..\src\BaslerSyncCtrlObj.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\..\src\BaslerVideoCtrlObj.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -236,6 +240,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\include\BaslerSyncCtrlObj.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\include\BaslerVideoCtrlObj.h"
 				>
 			</File>
 		</Filter>
