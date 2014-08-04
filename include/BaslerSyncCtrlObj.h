@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 //###########################################################################
 // This file is part of LImA, a Library for Image Acquisition
 //
@@ -21,7 +19,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 #ifndef BASLERSYNCCTRLOBJ_H
 #define BASLERSYNCCTRLOBJ_H
 
@@ -39,11 +36,7 @@ namespace lima
     {
       DEB_CLASS_NAMESPC(DebModCamera,"SyncCtrlObj","Balser");
     public:
-<<<<<<< HEAD
-      SyncCtrlObj(Camera*);
-=======
       SyncCtrlObj(Camera&);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
       virtual ~SyncCtrlObj();
 
       virtual bool checkTrigMode(TrigMode trig_mode);
@@ -52,11 +45,8 @@ namespace lima
 
       virtual void setExpTime(double  exp_time);
       virtual void getExpTime(double& exp_time);
-<<<<<<< HEAD
-=======
       virtual bool checkAutoExposureMode(AutoExposureMode mode) const;
       virtual void setHwAutoExposureMode(AutoExposureMode mode);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 
       virtual void setLatTime(double  lat_time);
       virtual void getLatTime(double& lat_time);
@@ -72,19 +62,10 @@ namespace lima
       void getStatus(HwInterface::StatusType&);
 
     private:
-<<<<<<< HEAD
-      Camera*			m_cam;
-     // tPvHandle&		m_handle;
-      TrigMode			m_trig_mode;
-   //   BufferCtrlObj*	m_buffer;
-      int				m_nb_frames;
-      bool				m_started;
-=======
       Camera&			m_cam;
       TrigMode			m_trig_mode;
       int			m_nb_frames;
       bool			m_started;
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
     };
 
   } // namespace Basler

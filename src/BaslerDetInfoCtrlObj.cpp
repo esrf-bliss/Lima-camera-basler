@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 //###########################################################################
 // This file is part of LImA, a Library for Image Acquisition
 //
@@ -21,7 +19,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 #include <cstdlib>
 #include "BaslerDetInfoCtrlObj.h"
 #include "BaslerCamera.h"
@@ -29,11 +26,7 @@
 using namespace lima;
 using namespace lima::Basler;
 
-<<<<<<< HEAD
-DetInfoCtrlObj::DetInfoCtrlObj(Camera *cam):
-=======
 DetInfoCtrlObj::DetInfoCtrlObj(Camera& cam):
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
   m_cam(cam)
 {
 }
@@ -44,47 +37,27 @@ DetInfoCtrlObj::~DetInfoCtrlObj()
 
 void DetInfoCtrlObj::getMaxImageSize(Size& max_image_size)
 {
-<<<<<<< HEAD
-    m_cam->getDetectorImageSize(max_image_size);
-=======
     m_cam.getDetectorImageSize(max_image_size);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void DetInfoCtrlObj::getDetectorImageSize(Size& det_image_size)
 {
-<<<<<<< HEAD
-    m_cam->getDetectorImageSize(det_image_size);
-=======
     m_cam.getDetectorImageSize(det_image_size);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void DetInfoCtrlObj::getDefImageType(ImageType& def_image_type)
 {
-<<<<<<< HEAD
-    m_cam->getImageType(def_image_type);
-=======
     m_cam.getImageType(def_image_type);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void DetInfoCtrlObj::getCurrImageType(ImageType& curr_image_type)
 {
-<<<<<<< HEAD
-    m_cam->getImageType(curr_image_type);
-=======
     m_cam.getImageType(curr_image_type);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void DetInfoCtrlObj::setCurrImageType(ImageType curr_image_type)
 {
-<<<<<<< HEAD
-    m_cam->setImageType(curr_image_type);
-=======
     m_cam.setImageType(curr_image_type);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void DetInfoCtrlObj::getPixelSize(double& x_size,double& y_size)
@@ -94,20 +67,12 @@ void DetInfoCtrlObj::getPixelSize(double& x_size,double& y_size)
 
 void DetInfoCtrlObj::getDetectorType(std::string& det_type)
 {
-<<<<<<< HEAD
-    m_cam->getDetectorType(det_type);
-=======
     m_cam.getDetectorType(det_type);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void DetInfoCtrlObj::getDetectorModel(std::string& det_model)
 {
-<<<<<<< HEAD
-    m_cam->getDetectorModel(det_model);
-=======
     m_cam.getDetectorModel(det_model);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void DetInfoCtrlObj::registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
@@ -118,8 +83,4 @@ void DetInfoCtrlObj::registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
 void DetInfoCtrlObj::unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb)
 {
     //m_cam.unregisterMaxImageSizeCallback(cb);
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25

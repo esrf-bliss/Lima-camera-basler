@@ -1,28 +1,36 @@
+//###########################################################################
+// This file is part of LImA, a Library for Image Acquisition
+//
+// Copyright (C) : 2009-2011
+// European Synchrotron Radiation Facility
+// BP 220, Grenoble 38043
+// FRANCE
+//
+// This is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This software is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, see <http://www.gnu.org/licenses/>.
+//###########################################################################
 #include "BaslerInterface.h"
 #include "BaslerCamera.h"
 #include "BaslerDetInfoCtrlObj.h"
 #include "BaslerSyncCtrlObj.h"
 #include "BaslerRoiCtrlObj.h"
 #include "BaslerBinCtrlObj.h"
-<<<<<<< HEAD
-=======
 #include "BaslerVideoCtrlObj.h"
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 
 using namespace lima;
 using namespace lima::Basler;
 
 
-<<<<<<< HEAD
-Interface::Interface(Camera *cam) :
-  m_cam(cam)
-{
-	DEB_CONSTRUCTOR();
-	m_det_info = new DetInfoCtrlObj(cam);
-	m_sync = new SyncCtrlObj(cam);
-	m_roi = new RoiCtrlObj(cam);
-	m_bin = new BinCtrlObj(cam);
-=======
 Interface::Interface(Camera& cam) :
   m_cam(cam)
 {
@@ -37,23 +45,12 @@ Interface::Interface(Camera& cam) :
     m_video = new VideoCtrlObj(cam);
   else
     m_video = NULL;
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 Interface::~Interface()
 {
   DEB_DESTRUCTOR();
   delete m_det_info;
-<<<<<<< HEAD
-}
-
-void Interface::getCapList(CapList &cap_list) const
-{
-	cap_list.push_back(HwCap(m_det_info));
-	cap_list.push_back(HwCap(m_sync));
-	cap_list.push_back(HwCap(m_roi));
-	cap_list.push_back(HwCap(m_bin));
-=======
   delete m_sync;
   delete m_roi;
   delete m_bin;
@@ -82,7 +79,6 @@ void Interface::getCapList(CapList &cap_list) const
 
   if(m_cam.isBinningAvailable())
     cap_list.push_back(HwCap(m_bin));
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void Interface::reset(ResetLevel reset_level)
@@ -92,70 +88,29 @@ void Interface::reset(ResetLevel reset_level)
 
   stopAcq();
 
-<<<<<<< HEAD
-  m_cam->_setStatus(Camera::Ready,true);
-=======
   m_cam._setStatus(Camera::Ready,true);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void Interface::prepareAcq()
 {
   DEB_MEMBER_FUNCT();
-<<<<<<< HEAD
-  m_cam->prepareAcq();
-=======
   m_cam.prepareAcq();
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void Interface::startAcq()
 {
-<<<<<<< HEAD
-	DEB_MEMBER_FUNCT();
-	m_cam->startAcq();
-=======
   DEB_MEMBER_FUNCT();
   m_cam.startAcq();
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void Interface::stopAcq()
 {
   DEB_MEMBER_FUNCT();
-<<<<<<< HEAD
-  m_cam->stopAcq();
-=======
   m_cam.stopAcq();
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 }
 
 void Interface::getStatus(StatusType& status)
 {
-<<<<<<< HEAD
-	Camera::Status basler_status = Camera::Ready;
-    m_cam->getStatus(basler_status);
-    switch (basler_status)
-    {
-        case Camera::Ready:
-            status.acq = AcqReady;
-            status.det = DetIdle;
-            break;
-        case Camera::Exposure:
-            status.det = DetExposure;
-            status.acq = AcqRunning;
-            break;
-        case Camera::Readout:
-            status.acq = AcqRunning;
-            break;
-        case Camera::Latency:
-            status.det = DetLatency;
-            status.acq = AcqRunning;
-            break;
-        case Camera::Fault:
-          status.det = DetFault;
-          status.acq = AcqFault;
-=======
   Camera::Status basler_status = Camera::Ready;
   m_cam.getStatus(basler_status);
   switch (basler_status)
@@ -174,41 +129,11 @@ void Interface::getStatus(StatusType& status)
       break;
     case Camera::Fault:
       status.set(HwInterface::StatusType::Fault);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
     }
 }
 
 int Interface::getNbHwAcquiredFrames()
 {
-<<<<<<< HEAD
-	DEB_MEMBER_FUNCT();
-	int acq_frames;
-	m_cam->getNbHwAcquiredFrames(acq_frames);
-	return acq_frames;
-}
-
-void Interface::getFrameRate(double& frame_rate)
-{
-    DEB_MEMBER_FUNCT();
-    m_cam->getFrameRate(frame_rate);
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::setTimeout(int TO)
-{
-    m_cam->setTimeout(TO);
-}
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Interface::setGain(double gain) { m_cam->setGain(gain); }
-void Interface::getGain(double& gain) const { m_cam->getGain(gain); }
-
-void Interface::setAutoGain(bool auto_gain) { m_cam->setAutoGain(auto_gain); }
-void Interface::getAutoGain(bool& auto_gain) const { m_cam->getAutoGain(auto_gain); }
-=======
   DEB_MEMBER_FUNCT();
   int acq_frames;
   m_cam.getNbHwAcquiredFrames(acq_frames);
@@ -216,4 +141,3 @@ void Interface::getAutoGain(bool& auto_gain) const { m_cam->getAutoGain(auto_gai
 }
 
 //-----------------------------------------------------
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25

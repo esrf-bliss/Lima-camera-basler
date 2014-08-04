@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 //###########################################################################
 // This file is part of LImA, a Library for Image Acquisition
 //
@@ -21,7 +19,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 #ifndef BASLERBINCTRLOBJ_H
 #define BASLERBINCTRLOBJ_H
 
@@ -31,28 +28,6 @@
 
 namespace lima
 {
-<<<<<<< HEAD
-	namespace Basler
-	{
-		class Camera;
-
-		class BinCtrlObj : public HwBinCtrlObj
-		{
-			DEB_CLASS_NAMESPC(DebModCamera,"BinCtrlObj","Balser");
-		public:
-			BinCtrlObj(Camera*);
-			virtual ~BinCtrlObj();
-
-			virtual void setBin(const Bin& bin);
-			virtual void getBin(Bin& bin);
-			//allow all binning
-			virtual void checkBin(Bin& bin);
-		
-		private:
-			Camera*			m_cam;
-		};
-	} // namespace Basler
-=======
   namespace Basler
   {
     class Camera;
@@ -72,7 +47,6 @@ namespace lima
       Camera&	m_cam;
     };
   } // namespace Basler
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 } // namespace lima
 
 #endif // BASLERBINCTRLOBJ_H

@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 //###########################################################################
 // This file is part of LImA, a Library for Image Acquisition
 //
@@ -21,7 +19,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 #ifndef BASLERDETINFOCTRLOBJ_H
 #define BASLERDETINFOCTRLOBJ_H
 
@@ -39,11 +36,7 @@ namespace lima
       DEB_CLASS_NAMESPC(DebModCamera, "DetInfoCtrlObj","Basler");
 
     public:
-<<<<<<< HEAD
-      DetInfoCtrlObj(Camera*);
-=======
       DetInfoCtrlObj(Camera&);
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
       virtual ~DetInfoCtrlObj();
 
       virtual void getMaxImageSize(Size& max_image_size);
@@ -60,11 +53,7 @@ namespace lima
       virtual void registerMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
       virtual void unregisterMaxImageSizeCallback(HwMaxImageSizeCallback& cb);
     private:
-<<<<<<< HEAD
-      Camera* 			m_cam;
-=======
       Camera& 	m_cam;
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
     };
   } // namespace Basler
 } // namespace lima

@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 //###########################################################################
 // This file is part of LImA, a Library for Image Acquisition
 //
@@ -21,7 +19,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 #ifndef BASLERROICTRLOBJ_H
 #define BASLERROICTRLOBJ_H
 
@@ -31,26 +28,6 @@
 
 namespace lima
 {
-<<<<<<< HEAD
-	namespace Basler
-	{
-		class Camera;
-
-		class RoiCtrlObj : public HwRoiCtrlObj
-		{
-			DEB_CLASS_NAMESPC(DebModCamera,"RoiCtrlObj","Balser");
-		public:
-			RoiCtrlObj(Camera*);
-			virtual ~RoiCtrlObj();
-
-			virtual void setRoi(const Roi& set_roi);
-			virtual void getRoi(Roi& hw_roi);
-			virtual void checkRoi(const Roi& set_roi, Roi& hw_roi);
-		private:
-			Camera*			m_cam;
-		};
-	} // namespace Basler
-=======
   namespace Basler
   {
     class Camera;
@@ -69,7 +46,6 @@ namespace lima
       Camera&	m_cam;
     };
   } // namespace Basler
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
 } // namespace lima
 
 #endif // BASLERROICTRLOBJ_H

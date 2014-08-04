@@ -242,7 +242,7 @@ Camera::~Camera()
 {
     DEB_DESTRUCTOR();
     try
-    {
+	{
         // Stop Acq thread
         delete m_acq_thread;
         m_acq_thread = NULL;
@@ -257,7 +257,13 @@ Camera::~Camera()
         Camera_ = NULL;
 	if (m_color_flag)
 	  for(int i = 0;i < NB_COLOR_BUFFER;++i)
-	    free(m_color_buffer[i]);
+	  {
+			#ifdef __unix
+					free(m_color_buffer[i]);
+			#else
+				_aligned_free(m_color_buffer[i]);
+			#endif
+	  }
     }
     catch (GenICam::GenericException &e)
     {
@@ -442,7 +448,12 @@ void Camera::_initColorStreamGrabber(bool allocFlag)
 
   for(int i = 0;i < NB_COLOR_BUFFER;++i)
     {
-      if(allocFlag) posix_memalign(&m_color_buffer[i],16,ImageSize_);
+           if(allocFlag)
+			#ifdef __unix
+				posix_memalign(&m_color_buffer[i],16,ImageSize_);
+			#else
+					m_color_buffer[i] = _aligned_malloc(ImageSize_,16);
+			#endif
       StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_color_buffer[i],
 								   (const size_t)ImageSize_);
       StreamGrabber_->QueueBuffer(bufferId,NULL);
@@ -1073,19 +1084,6 @@ void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
 {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(set_roi);
-<<<<<<< HEAD
-    if(set_roi.isActive())
-      {
-	const Size& aSetRoiSize = set_roi.getSize();
-	Size aRoiSize = Size(max(aSetRoiSize.getWidth(),
-				 int(Camera_->Width.GetMin())),
-			     max(aSetRoiSize.getHeight(),
-				 int(Camera_->Height.GetMin())));
-	hw_roi = Roi(set_roi.getTopLeft(),aRoiSize);
-      }
-    else
-      hw_roi = set_roi;
-=======
     try
     {
         if (set_roi.isActive())
@@ -1104,7 +1102,6 @@ void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
     {
         DEB_WARNING() << e.GetDescription();
     }
->>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
     DEB_RETURN() << DEB_VAR1(hw_roi);
 }
 //-----------------------------------------------------
