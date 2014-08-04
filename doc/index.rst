@@ -1,5 +1,7 @@
-Basler
--------
+.. _camera-basler:
+
+Basler camera plugin
+----------------------
 
 .. image:: basler.png
 

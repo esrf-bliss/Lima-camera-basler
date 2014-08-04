@@ -39,6 +39,7 @@ using namespace Basler_GigEStreamParams;
 
 namespace lima
 {
+<<<<<<< HEAD
 	namespace Basler
 	{
 		class LIBBASLER_API Camera
@@ -56,6 +57,41 @@ namespace lima
 		void prepareAcq();
 		void startAcq();
 		void stopAcq();
+=======
+namespace Basler
+{
+/*******************************************************************
+ * \class Camera
+ * \brief object controlling the basler camera via Pylon driver
+ *******************************************************************/
+class VideoCtrlObj;
+class LIBBASLER_API Camera
+{
+    DEB_CLASS_NAMESPC(DebModCamera, "Camera", "Basler");
+    friend class Interface;
+    friend class VideoCtrlObj;
+    friend class SyncCtrlObj;
+ public:
+
+    enum Status {
+      Ready, Exposure, Readout, Latency, Fault
+    };
+
+    Camera(const std::string& camera_ip,int packet_size = -1,int received_priority = 0);
+    ~Camera();
+
+    void prepareAcq();
+    void startAcq();
+    void stopAcq();
+    
+    // -- detector info object
+    void getImageType(ImageType& type);
+    void setImageType(ImageType type);
+
+    void getDetectorType(std::string& type);
+    void getDetectorModel(std::string& model);
+    void getDetectorImageSize(Size& size);
+>>>>>>> 8c39a25a0ded40896c66c1c181a557e0d9924a25
     
 		// -- detector info object
 		void getImageType(ImageType& type);
@@ -93,16 +129,17 @@ namespace lima
     void setBin(const Bin&);
     void getBin(Bin&);
 
+    void getStatus(Camera::Status& status);
     void setInterPacketDelay(int ipd);
 
     void setFrameTransmissionDelay(int ftd);
 
-    void getStatus(Camera::Status& status);
     // -- basler specific, LIMA don't worry about it !
-    void getFrameRate(double& frame_rate);
-    bool isBinnigAvailable(void);
+    void getFrameRate(double& frame_rate) const;
+    bool isBinningAvailable() const;
+    bool isRoiAvailable() const;
     void setTimeout(int TO);
-    void reset(void);
+    void reset();
 
     void setGain(double gain);
     void getGain(double& gain) const;
@@ -110,13 +147,17 @@ namespace lima
     void setAutoGain(bool auto_gain);
     void getAutoGain(bool& auto_gain) const;
 
+    void getTemperature(double& temperature);    
+    void isColor(bool& color_flag) const;
  private:
     class _AcqThread;
     friend class _AcqThread;
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
     void _freeStreamGrabber();
+    void _initColorStreamGrabber(bool = false);
 
+    static const int NB_COLOR_BUFFER = 2;
     //- lima stuff
     SoftBufferCtrlObj		m_buffer_ctrl_obj;
     int                         m_nb_frames;    
@@ -133,6 +174,7 @@ namespace lima
     string                      m_camera_ip;
     string                      m_detector_model;
     string                      m_detector_type;
+    Size                        m_detector_size;
     
     //- Pylon stuff
     DeviceInfoList_t              devices_;
@@ -143,6 +185,9 @@ namespace lima
     _AcqThread*                   m_acq_thread;
     Cond                          m_cond;
     int                           m_receive_priority;
+    bool			  m_color_flag;
+    void*			  m_color_buffer[NB_COLOR_BUFFER];
+    VideoCtrlObj*		  m_video;
 };
 } // namespace Basler
 } // namespace lima
