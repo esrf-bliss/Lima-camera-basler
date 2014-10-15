@@ -9,17 +9,23 @@
 
     <groupId>fr.soleil.lib.Lima.Camera</groupId>
     <artifactId>LimaBasler-${aol}-shared-${mode}</artifactId>
-	<version>1.3.2</version>
+	<version>1.3.3</version>
 
     <packaging>nar</packaging>
     <name>LimaBasler</name>
     <description>This module controls the Basler Camera</description>
+    
+    <scm>
+       <connection>scm:git:git://github.com/soleil-ica/Lima-camera-basler.git</connection>
+       <developerConnection>scm:git:git://github.com/soleil-ica/Lima-camera-basler.git</developerConnection>
+       <url>https://github.com/soleil-ica/Lima-camera-basler</url>
+    </scm>
 	
 	<dependencies>
 		<dependency>
 			<groupId>fr.soleil.lib</groupId>
 			<artifactId>LimaCore-${aol}-shared-${mode}</artifactId>
-			<version>1.3.1</version>
+			<version>1.3.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.basler</groupId>
