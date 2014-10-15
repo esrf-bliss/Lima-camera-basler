@@ -6,7 +6,7 @@ namespace Basler
 #include <BaslerInterface.h>
 %End
   public:
-    Interface(Basler::Camera& cam);
+    Interface(Basler::Camera& cam /KeepReference/);
     virtual ~Interface();
 
     //- From HwInterface
