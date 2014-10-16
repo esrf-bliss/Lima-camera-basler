@@ -142,6 +142,11 @@ class LIBBASLER_API Camera
 
     void getTemperature(double& temperature);    
     void isColor(bool& color_flag) const;
+    
+    // -- Pylon buffers statistics
+    void getStatisticsTotalBufferCount(long& count);    
+    void getStatisticsFailedBufferCount(long& count);
+    
  private:
     class _AcqThread;
     friend class _AcqThread;
