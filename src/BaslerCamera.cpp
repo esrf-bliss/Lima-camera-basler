@@ -1501,4 +1501,31 @@ void Camera::isColor(bool& color_flag) const
 {
   color_flag = m_color_flag;
 }
+
 //---------------------------
+// The Total Buffer Count will count the number of all buffers with "status == succeeded" and "status == failed". 
+// That means, all successfully and all incompletely grabbed (error code: 0xE1000014) buffers. 
+// That means, the Failed Buffer Count will also be included into this number.
+//---------------------------
+void Camera::getStatisticsTotalBufferCount(long& count)
+{
+	DEB_MEMBER_FUNCT();
+	if(StreamGrabber_ != NULL)
+		count = StreamGrabber_->Statistic_Total_Buffer_Count.GetValue();
+	else
+		count = -1;//Because Not valid when acquisition is stopped
+}
+
+//---------------------------    
+// The Failed Buffer Count will count only buffers, which were received with "status == failed". 
+// That means, buffers that were incompletely grabbed (error code: 0xE1000014).
+//---------------------------
+void Camera::getStatisticsFailedBufferCount(long& count)
+{
+	DEB_MEMBER_FUNCT();
+	if(StreamGrabber_ != NULL)
+		count = StreamGrabber_->Statistic_Failed_Buffer_Count.GetValue();
+	else
+		count = -1;//Because Not valid when acquisition is stopped
+}
+//---------------------------    
