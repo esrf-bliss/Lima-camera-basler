@@ -650,18 +650,18 @@ void Camera::getImageType(ImageType& type)
     DEB_MEMBER_FUNCT();
     try
     {
-        PixelSizeEnums ps = Camera_->PixelSize.GetValue();
+        PixelFormatEnums ps = Camera_->PixelFormat.GetValue();
         switch( ps )
         {
-            case PixelSize_Bpp8:
+            case PixelFormat_Mono8:
                 type= Bpp8;
             break;
               
-            case PixelSize_Bpp12:
+            case PixelFormat_Mono12:
                 type= Bpp12;
             break;
               
-            case PixelSize_Bpp16: //- this is in fact 12 bpp inside a 16bpp image
+            case PixelFormat_Mono16: //- this is in fact 12 bpp inside a 16bpp image
                 type= Bpp16;
             break;
               
@@ -674,8 +674,7 @@ void Camera::getImageType(ImageType& type)
     {
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
-    }        
-
+    }
 }
 
 //-----------------------------------------------------
@@ -691,8 +690,9 @@ void Camera::setImageType(ImageType type)
             case Bpp8:
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
             break;
-              
             case Bpp12:
+				this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
+			break;
             case Bpp16:
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
             break;
@@ -745,14 +745,17 @@ void Camera::setTrigMode(TrigMode mode)
     DEB_PARAM() << DEB_VAR1(mode);
 
     try
-    {
+    {        
         if ( mode == IntTrig )
         {
             //- INTERNAL 
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
-            if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
+                        
+            GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");                    
+            if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))            
                 this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
+            
             this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
             this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
         }
@@ -761,8 +764,11 @@ void Camera::setTrigMode(TrigMode mode)
             //- EXTERNAL - TRIGGER WIDTH
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
-            if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
+            
+            GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");                    
+            if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))                    
                 this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
+            
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_TriggerWidth );
@@ -773,7 +779,9 @@ void Camera::setTrigMode(TrigMode mode)
             
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
-            if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
+            
+            GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");                    
+            if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))                     
                 this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
@@ -803,7 +811,8 @@ void Camera::getTrigMode(TrigMode& mode)
         this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
         acqStart =  this->Camera_->TriggerMode.GetValue();
 
-        if ( GenApi::IsAvailable(Camera_->TriggerSelector.GetEntryByName("FrameStart")))
+        GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");  
+        if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))            
         {
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
             frameStart =  this->Camera_->TriggerMode.GetValue();
@@ -823,9 +832,9 @@ void Camera::getTrigMode(TrigMode& mode)
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }        
-    DEB_RETURN() << DEB_VAR4(mode,acqStart, frameStart, expMode);
+   	
+    DEB_RETURN() << DEB_VAR4(mode,acqStart, frameStart, expMode);    
 }
-
 
 //-----------------------------------------------------
 //
@@ -852,6 +861,8 @@ void Camera::setExpTime(double exp_time)
                 Camera_->ExposureTimeRaw.SetValue(static_cast<int> (raw));
                 raw = static_cast<double> (Camera_->ExposureTimeRaw.GetValue());
                 Camera_->ExposureTimeBaseAbs.SetValue(1E6 * (exp_time / raw));
+		DEB_TRACE() << "raw = " << raw;
+		DEB_TRACE() << "ExposureTimeBaseAbs = " << (1E6 * (exp_time / raw));			
             }
             else
             {
@@ -1361,6 +1372,7 @@ void Camera::getAutoGain(bool& auto_gain) const
         else
         {
             auto_gain = false;
+//			THROW_HW_ERROR(Error)<<"GainAuto Parameter is not Available !";			
         }
     }
     catch (GenICam::GenericException &e)
@@ -1382,7 +1394,11 @@ void Camera::setGain(double gain)
     try
     {
         // you want to set the gain, remove autogain
-        setAutoGain(false);
+        if (GenApi::IsAvailable(Camera_->GainAuto))
+        {		
+			setAutoGain(false);
+		}
+		
         if (GenApi::IsWritable(Camera_->GainRaw) && GenApi::IsAvailable(Camera_->GainRaw))
         {
 
@@ -1405,11 +1421,15 @@ void Camera::setGain(double gain)
             Camera_->GainRaw.SetValue(gain_raw);
             DEB_TRACE() << "gain_raw = " << gain_raw;
         }
+		else
+		{
+			THROW_HW_ERROR(Error)<<"GainRaw Parameter is not Available !";
+		}
     }
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        THROW_HW_ERROR(Error) << e.GetDescription();
+        THROW_HW_ERROR(Error) << e.GetDescription();		
     }
 }
 
@@ -1481,4 +1501,31 @@ void Camera::isColor(bool& color_flag) const
 {
   color_flag = m_color_flag;
 }
+
 //---------------------------
+// The Total Buffer Count will count the number of all buffers with "status == succeeded" and "status == failed". 
+// That means, all successfully and all incompletely grabbed (error code: 0xE1000014) buffers. 
+// That means, the Failed Buffer Count will also be included into this number.
+//---------------------------
+void Camera::getStatisticsTotalBufferCount(long& count)
+{
+	DEB_MEMBER_FUNCT();
+	if(StreamGrabber_ != NULL)
+		count = StreamGrabber_->Statistic_Total_Buffer_Count.GetValue();
+	else
+		count = -1;//Because Not valid when acquisition is stopped
+}
+
+//---------------------------    
+// The Failed Buffer Count will count only buffers, which were received with "status == failed". 
+// That means, buffers that were incompletely grabbed (error code: 0xE1000014).
+//---------------------------
+void Camera::getStatisticsFailedBufferCount(long& count)
+{
+	DEB_MEMBER_FUNCT();
+	if(StreamGrabber_ != NULL)
+		count = StreamGrabber_->Statistic_Failed_Buffer_Count.GetValue();
+	else
+		count = -1;//Because Not valid when acquisition is stopped
+}
+//---------------------------    
