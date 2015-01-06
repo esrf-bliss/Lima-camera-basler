@@ -31,8 +31,8 @@
 #include <pylon/gige/BaslerGigEDeviceInfo.h>
 #include <stdlib.h>
 #include <limits>
-#include "HwMaxImageSizeCallback.h"
-#include "HwBufferMgr.h"
+#include "lima/HwMaxImageSizeCallback.h"
+#include "lima/HwBufferMgr.h"
 #include "BaslerCompatibility.h"
 
 using namespace Pylon;
