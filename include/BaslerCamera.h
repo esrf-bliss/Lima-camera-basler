@@ -123,8 +123,16 @@ class LIBBASLER_API Camera
     void getBin(Bin&);
 
     void getStatus(Camera::Status& status);
+    
+    // -- Transport Layer
+    void setPacketSize(int isize);
+    void getPacketSize(int& isize);    
     void setInterPacketDelay(int ipd);
-
+    void getInterPacketDelay(int& ipd);
+    void getMaxThroughput(int& ipd);    
+    void getCurrentThroughput(int& ipd);
+    void getBandwidthAssigned(int& ipd);
+        
     void setFrameTransmissionDelay(int ftd);
 
     // -- basler specific, LIMA don't worry about it !
