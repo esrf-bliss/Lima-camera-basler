@@ -62,3 +62,10 @@ Configuration
 .. code-block:: sh
 
   USER_RUNNING_DEVICE_SERVER	-	rtprio	99
+
+- If you are using a network allowing large MTU, you can optimize your Basler configuration by changing MTU default size. Yhis can be modified into the file ./applications/tango/camera/Basler.py in the get_control method, by modifying packet_size default parameter value.
+
+.. code-block:: Python
+
+  def get_control(cam_ip_address = "0", frame_transmission_delay = 0,
+                inter_packet_delay = 0, packet_size = 1500,**keys) :
