@@ -23,8 +23,8 @@
 #define BASLERDETINFOCTRLOBJ_H
 
 #include "BaslerCompatibility.h"
-#include "HwDetInfoCtrlObj.h"
-#include "Debug.h"
+#include "lima/HwDetInfoCtrlObj.h"
+#include "lima/Debug.h"
 
 namespace lima
 {

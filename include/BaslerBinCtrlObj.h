@@ -23,8 +23,8 @@
 #define BASLERBINCTRLOBJ_H
 
 #include "BaslerCompatibility.h"
-#include "HwBinCtrlObj.h"
-#include "HwInterface.h"
+#include "lima/HwBinCtrlObj.h"
+#include "lima/HwInterface.h"
 
 namespace lima
 {

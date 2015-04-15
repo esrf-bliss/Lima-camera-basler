@@ -23,7 +23,7 @@
 #define BASLERINTERFACE_H
 
 #include "BaslerCompatibility.h"
-#include "HwInterface.h"
+#include "lima/HwInterface.h"
 
 namespace lima
 {

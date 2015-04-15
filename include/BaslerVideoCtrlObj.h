@@ -21,7 +21,7 @@
 //###########################################################################
 #ifndef BASLERVIDEOCTRL_H
 #define BASLERVIDEOCTRL_H
-#include "HwVideoCtrlObj.h"
+#include "lima/HwVideoCtrlObj.h"
 #include "BaslerCamera.h"
 #include "BaslerCompatibility.h"
 

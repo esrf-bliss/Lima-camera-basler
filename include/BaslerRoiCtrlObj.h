@@ -23,8 +23,8 @@
 #define BASLERROICTRLOBJ_H
 
 #include "BaslerCompatibility.h"
-#include "HwRoiCtrlObj.h"
-#include "HwInterface.h"
+#include "lima/HwRoiCtrlObj.h"
+#include "lima/HwInterface.h"
 
 namespace lima
 {
