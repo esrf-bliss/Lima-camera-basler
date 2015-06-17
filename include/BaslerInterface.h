@@ -41,7 +41,7 @@ namespace lima
       DEB_CLASS_NAMESPC(DebModCamera, "BaslerInterface", "Basler");
 
     public:
-      Interface(Camera&);
+      Interface(Camera&,bool force_video_mode = false);
       virtual ~Interface();
 
       //- From HwInterface

@@ -71,6 +71,7 @@ namespace Basler
 	
     void getTemperature(double& temperature /Out/);    
     void isColor(bool& color_flag /Out/) const;
+    void hasVideoCapability(bool& video_flag /Out/) const;
   };
 
 };

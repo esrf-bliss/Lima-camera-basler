@@ -31,7 +31,7 @@ using namespace lima;
 using namespace lima::Basler;
 
 
-Interface::Interface(Camera& cam) :
+Interface::Interface(Camera& cam,bool force_video_mode) :
   m_cam(cam)
 {
   DEB_CONSTRUCTOR();
@@ -39,10 +39,14 @@ Interface::Interface(Camera& cam) :
   m_sync = new SyncCtrlObj(cam);
   m_roi = new RoiCtrlObj(cam);
   m_bin = new BinCtrlObj(cam);
-  bool is_color_flag;
-  m_cam.isColor(is_color_flag);
-  if(is_color_flag)
-    m_video = new VideoCtrlObj(cam);
+  bool has_video_capability;
+  m_cam.hasVideoCapability(has_video_capability);
+  if(has_video_capability || force_video_mode)
+    {
+      if(!has_video_capability)
+	m_cam._initColorStreamGrabber();
+      m_video = new VideoCtrlObj(cam);
+    }
   else
     m_video = NULL;
 }
