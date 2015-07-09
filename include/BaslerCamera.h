@@ -150,7 +150,8 @@ class LIBBASLER_API Camera
 
     void getTemperature(double& temperature);    
     void isColor(bool& color_flag) const;
-    
+    void hasVideoCapability(bool& video_flag) const;
+
     // -- Pylon buffers statistics
     void getStatisticsTotalBufferCount(long& count);    
     void getStatisticsFailedBufferCount(long& count);
@@ -192,6 +193,7 @@ class LIBBASLER_API Camera
     Cond                          m_cond;
     int                           m_receive_priority;
     bool			  m_color_flag;
+    bool			  m_video_flag_mode;
     void*			  m_color_buffer[NB_COLOR_BUFFER];
     VideoCtrlObj*		  m_video;
 };

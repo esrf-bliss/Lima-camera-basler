@@ -104,6 +104,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
           Camera_(NULL),
           StreamGrabber_(NULL),
           m_receive_priority(receive_priority),
+	  m_video_flag_mode(false),
 	  m_video(NULL)
 {
     DEB_CONSTRUCTOR();
@@ -255,7 +256,7 @@ Camera::~Camera()
         DEB_TRACE() << "Close camera";
         delete Camera_;
         Camera_ = NULL;
-	if (m_color_flag)
+	if (m_video_flag_mode)
 	  for(int i = 0;i < NB_COLOR_BUFFER;++i)
 #ifdef __unix
 	    free(m_color_buffer[i]);
@@ -276,7 +277,7 @@ void Camera::prepareAcq()
     DEB_MEMBER_FUNCT();
     m_image_number=0;
 
-    if(m_color_flag)
+    if(m_video_flag_mode)
       return;			// Nothing to do if color camera
 
     try
@@ -395,7 +396,7 @@ void Camera::_stopAcq(bool internalFlag)
             DEB_TRACE() << "Stop acquisition";
             Camera_->AcquisitionStop.Execute();
 
-	    if(!m_color_flag)
+	    if(!m_video_flag_mode)
 	      _freeStreamGrabber();
             _setStatus(Camera::Ready,false);
         }
@@ -456,6 +457,7 @@ void Camera::_initColorStreamGrabber(bool allocFlag)
 								   (const size_t)ImageSize_);
       StreamGrabber_->QueueBuffer(bufferId,NULL);
     }
+  m_video_flag_mode = true;
 }
 
 //---------------------------
@@ -514,7 +516,7 @@ void Camera::_AcqThread::threadFunction()
                                 // Grabbing was successful, process image
                                 m_cam._setStatus(Camera::Readout,false);
                                 DEB_TRACE()  << "image#" << DEB_VAR1(m_cam.m_image_number) <<" acquired !";
-				if(!m_cam.m_color_flag)
+				if(!m_cam.m_video_flag_mode)
 				  {
 				    int nb_buffers;
 				    buffer_mgr.getNbBuffers(nb_buffers);
@@ -1597,6 +1599,11 @@ void Camera::reset()
 void Camera::isColor(bool& color_flag) const
 {
   color_flag = m_color_flag;
+}
+
+void Camera::hasVideoCapability(bool& has_video_capability) const
+{
+  has_video_capability = m_video_flag_mode;
 }
 
 //---------------------------
