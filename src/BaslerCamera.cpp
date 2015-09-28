@@ -1367,6 +1367,27 @@ void Camera::getInterPacketDelay(int& ipd)
     }
 }
 
+
+
+
+//-----------------------------------------------------
+// isGainAvailable
+//-----------------------------------------------------
+bool Camera::isGainAvailable() const
+{
+    return GenApi::IsAvailable(Camera_->GainRaw);
+}
+
+
+//-----------------------------------------------------
+// isAutoGainAvailable
+//-----------------------------------------------------
+bool Camera::isAutoGainAvailable() const
+{
+    return GenApi::IsAvailable(Camera_->GainAuto);
+}
+
+
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
