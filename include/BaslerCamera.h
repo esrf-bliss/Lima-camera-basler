@@ -142,9 +142,11 @@ class LIBBASLER_API Camera
     void setTimeout(int TO);
     void reset();
 
+    bool isGainAvailable() const;
     void setGain(double gain);
     void getGain(double& gain) const;
 
+    bool isAutoGainAvailable() const;
     void setAutoGain(bool auto_gain);
     void getAutoGain(bool& auto_gain) const;
 
