@@ -123,8 +123,16 @@ class LIBBASLER_API Camera
     void getBin(Bin&);
 
     void getStatus(Camera::Status& status);
+    
+    // -- Transport Layer
+    void setPacketSize(int isize);
+    void getPacketSize(int& isize);    
     void setInterPacketDelay(int ipd);
-
+    void getInterPacketDelay(int& ipd);
+    void getMaxThroughput(int& ipd);    
+    void getCurrentThroughput(int& ipd);
+    void getBandwidthAssigned(int& ipd);
+        
     void setFrameTransmissionDelay(int ftd);
 
     // -- basler specific, LIMA don't worry about it !
@@ -134,9 +142,11 @@ class LIBBASLER_API Camera
     void setTimeout(int TO);
     void reset();
 
+    bool isGainAvailable() const;
     void setGain(double gain);
     void getGain(double& gain) const;
 
+    bool isAutoGainAvailable() const;
     void setAutoGain(bool auto_gain);
     void getAutoGain(bool& auto_gain) const;
 

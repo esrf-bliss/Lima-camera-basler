@@ -1277,6 +1277,9 @@ bool Camera::isBinningAvailable() const
     return isAvailable;
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
 bool Camera::isRoiAvailable() const
 {
   DEB_MEMBER_FUNCT();
@@ -1295,6 +1298,41 @@ bool Camera::isRoiAvailable() const
   DEB_RETURN() << DEB_VAR1(isAvailable);
   return isAvailable;
 }
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setPacketSize(int isize)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(isize);
+    DEB_TRACE()<<"setPacketSize : "<<isize;
+    try
+    {
+        Camera_->GevSCPSPacketSize.SetValue(isize);
+    }
+    catch (GenICam::GenericException &e)
+    {
+        DEB_WARNING() << e.GetDescription();
+    }
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getPacketSize(int& isize)
+{
+    DEB_MEMBER_FUNCT();
+    try
+    {
+        isize = Camera_->GevSCPSPacketSize.GetValue();
+    }
+    catch (GenICam::GenericException &e)
+    {
+        DEB_WARNING() << e.GetDescription();
+    }
+}
+
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -1302,6 +1340,7 @@ void Camera::setInterPacketDelay(int ipd)
 {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(ipd);
+    DEB_TRACE()<<"setInterPacketDelay : "<<ipd;
     try
     {
         Camera_->GevSCPD.SetValue(ipd);
@@ -1312,6 +1351,90 @@ void Camera::setInterPacketDelay(int ipd)
     }
 }
 
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getInterPacketDelay(int& ipd)
+{
+    DEB_MEMBER_FUNCT();
+    try
+    {
+        ipd = Camera_->GevSCPD.GetValue();
+    }
+    catch (GenICam::GenericException &e)
+    {
+        DEB_WARNING() << e.GetDescription();
+    }
+}
+
+
+
+
+//-----------------------------------------------------
+// isGainAvailable
+//-----------------------------------------------------
+bool Camera::isGainAvailable() const
+{
+    return GenApi::IsAvailable(Camera_->GainRaw);
+}
+
+
+//-----------------------------------------------------
+// isAutoGainAvailable
+//-----------------------------------------------------
+bool Camera::isAutoGainAvailable() const
+{
+    return GenApi::IsAvailable(Camera_->GainAuto);
+}
+
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getBandwidthAssigned(int& ipd)
+{
+    DEB_MEMBER_FUNCT();
+    try
+    {
+        ipd = Camera_->GevSCBWA.GetValue();
+    }
+    catch (GenICam::GenericException &e)
+    {
+        DEB_WARNING() << e.GetDescription();
+    }
+}   
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getMaxThroughput(int& ipd)
+{
+    DEB_MEMBER_FUNCT();
+    try
+    {
+        ipd = Camera_->GevSCDMT.GetValue();
+    }
+    catch (GenICam::GenericException &e)
+    {
+        DEB_WARNING() << e.GetDescription();
+    }
+}    
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getCurrentThroughput(int& ipd)
+{
+    DEB_MEMBER_FUNCT();
+    try
+    {
+        ipd = Camera_->GevSCDCT.GetValue();
+    }
+    catch (GenICam::GenericException &e)
+    {
+        DEB_WARNING() << e.GetDescription();
+    }
+}    
+    
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
