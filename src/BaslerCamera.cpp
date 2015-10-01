@@ -795,9 +795,6 @@ void Camera::setTrigMode(TrigMode mode)
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }        
-
-
-    
 }
 
 //-----------------------------------------------------
@@ -807,9 +804,9 @@ void Camera::getTrigMode(TrigMode& mode)
 {
     DEB_MEMBER_FUNCT();
     int frameStart = TriggerMode_Off, acqStart = TriggerMode_Off, expMode;
-    
+
     try
-    {
+    {              
         this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
         acqStart =  this->Camera_->TriggerMode.GetValue();
 
@@ -819,9 +816,8 @@ void Camera::getTrigMode(TrigMode& mode)
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
             frameStart =  this->Camera_->TriggerMode.GetValue();
         }
-
-        expMode = this->Camera_->ExposureMode.GetValue();
-    
+        
+        expMode = this->Camera_->ExposureMode.GetValue();        
         if ((acqStart ==  TriggerMode_Off) && (frameStart ==  TriggerMode_Off))
             mode = IntTrig;
         else if (expMode == ExposureMode_TriggerWidth)
@@ -845,8 +841,7 @@ void Camera::setExpTime(double exp_time)
 {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(exp_time);
-    
-    
+
     TrigMode mode;
     getTrigMode(mode);
     
