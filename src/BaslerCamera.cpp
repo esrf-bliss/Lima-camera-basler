@@ -212,7 +212,8 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
             DEB_TRACE() << "Set ExposureAuto to Off";           
             Camera_->ExposureAuto.SetValue(ExposureAuto_Off);
         }
-
+	// Start with internal trigger
+	setTrigMode(IntTrig);
         // Get the image buffer size
         DEB_TRACE() << "Get the image buffer size";
         ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
@@ -333,6 +334,8 @@ void Camera::prepareAcq()
             StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(ptr,(const size_t)ImageSize_);
             StreamGrabber_->QueueBuffer(bufferId, NULL);
         }
+	if(m_trigger_mode == IntTrigMult)
+	  _startAcq();
     }
     catch (GenICam::GenericException &e)
     {
@@ -348,26 +351,36 @@ void Camera::startAcq()
     DEB_MEMBER_FUNCT();
     try
     {
-        // Let the camera acquire images continuously ( Acquisiton mode equals Continuous! )
-        DEB_TRACE() << "Let the camera acquire images continuously";
-
-	if(m_video)
-	  m_video->getBuffer().setStartTimestamp(Timestamp::now());
+	if(!m_image_number)
+	  {
+	    if(m_video)
+	      m_video->getBuffer().setStartTimestamp(Timestamp::now());
+	    else
+	      m_buffer_ctrl_obj.getBuffer().setStartTimestamp(Timestamp::now());
+	  }
+	if(m_trigger_mode == IntTrigMult)
+	  {
+	    this->Camera_->TriggerSoftware.Execute();
+	  }
 	else
-	  m_buffer_ctrl_obj.getBuffer().setStartTimestamp(Timestamp::now());
-
-        Camera_->AcquisitionStart.Execute();
-
-	//Start acqusition thread
-	AutoMutex aLock(m_cond.mutex());
-        m_wait_flag = false;
-        m_cond.broadcast();
+	_startAcq();
     }
     catch (GenICam::GenericException &e)
     {
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
+}
+
+void Camera::_startAcq()
+{
+  DEB_MEMBER_FUNCT();
+  Camera_->AcquisitionStart.Execute();
+
+  //Start acqusition thread
+  AutoMutex aLock(m_cond.mutex());
+  m_wait_flag = false;
+  m_cond.broadcast();
 }
 //---------------------------
 //- Camera::stopAcq()
@@ -754,6 +767,9 @@ void Camera::setTrigMode(TrigMode mode)
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(mode);
 
+    if(mode == m_trigger_mode)
+      return;			// Nothing to do
+    
     try
     {        
         GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");
@@ -767,17 +783,27 @@ void Camera::setTrigMode(TrigMode mode)
             //- INTERNAL
             this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
             this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
+	    this->Camera_->AcquisitionFrameRateEnable.SetValue(true);
+	}
+        else if ( mode == IntTrigMult )
+        {
+	    this->Camera_->TriggerMode.SetValue(TriggerMode_On);
+	    this->Camera_->TriggerSource.SetValue(TriggerSource_Software);
+	    this->Camera_->AcquisitionFrameCount.SetValue(1);
+	    this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
         }
         else if ( mode == ExtGate )
         {
             //- EXTERNAL - TRIGGER WIDTH
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
+	    this->Camera_->TriggerSource.SetValue(TriggerSource_Line1);
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_TriggerWidth );
         }        
         else //ExtTrigSingle
         {
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
+	    this->Camera_->TriggerSource.SetValue(TriggerSource_Line1);
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_Timed );
         }
@@ -787,19 +813,28 @@ void Camera::setTrigMode(TrigMode mode)
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
+
+    m_trigger_mode = mode;
 }
 
+void Camera::getTrigMode(TrigMode& mode)
+{
+  DEB_MEMBER_FUNCT();
+
+  AutoMutex aLock(m_cond.mutex());
+  mode = m_trigger_mode;
+  
+  DEB_RETURN() << DEB_VAR1(m_trigger_mode);
+}
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getTrigMode(TrigMode& mode)
+void Camera::_readTrigMode()
 {
     DEB_MEMBER_FUNCT();
-    int frameStart = TriggerMode_Off, acqStart = TriggerMode_Off, expMode;
-    
+    int frameStart = TriggerMode_Off, acqStart, expMode;
     try
     {
-        this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
         acqStart =  this->Camera_->TriggerMode.GetValue();
 
         GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");  
@@ -811,12 +846,18 @@ void Camera::getTrigMode(TrigMode& mode)
 
         expMode = this->Camera_->ExposureMode.GetValue();
     
-        if ((acqStart ==  TriggerMode_Off) && (frameStart ==  TriggerMode_Off))
-            mode = IntTrig;
-        else if (expMode == ExposureMode_TriggerWidth)
-            mode = ExtGate;
-        else //ExposureMode_Timed
-            mode = ExtTrigSingle;
+	if(acqStart == TriggerMode_On)
+	  {
+	    int source = this->Camera_->TriggerSource.GetValue();
+	    if(source == TriggerSource_Software)
+	      m_trigger_mode = IntTrigMult;
+	    else if(expMode == ExposureMode_TriggerWidth)
+	      m_trigger_mode = ExtGate;
+	    else
+	      m_trigger_mode = ExtTrigSingle;
+	  }
+	else
+	  m_trigger_mode = IntTrig;
     }
     catch (GenICam::GenericException &e)
     {
@@ -824,7 +865,7 @@ void Camera::getTrigMode(TrigMode& mode)
         THROW_HW_ERROR(Error) << e.GetDescription();
     }        
    	
-    DEB_RETURN() << DEB_VAR4(mode,acqStart, frameStart, expMode);    
+    DEB_RETURN() << DEB_VAR4(m_trigger_mode,acqStart, frameStart, expMode);
 }
 
 //-----------------------------------------------------
@@ -1037,7 +1078,20 @@ void Camera::getStatus(Camera::Status& status)
     DEB_MEMBER_FUNCT();
     AutoMutex aLock(m_cond.mutex());
     status = m_status;
-    DEB_RETURN() << DEB_VAR1(DEB_HEX(status));
+    //Check if camera is not waiting for trigger
+    if(status == Camera::Exposure &&
+       m_trigger_mode == IntTrigMult)
+      {
+	// Check the frame start trigger acquisition status
+	// Set the acquisition status selector
+	Camera_->AcquisitionStatusSelector.SetValue
+	  (AcquisitionStatusSelector_FrameTriggerWait);
+	// Read the acquisition status
+	bool IsWaitingForFrameTrigger = Camera_->AcquisitionStatus.GetValue();
+	status = IsWaitingForFrameTrigger ? Camera::Ready : status;
+	DEB_TRACE() << DEB_VAR1(IsWaitingForFrameTrigger);
+      }
+    DEB_RETURN() << DEB_VAR1(status);
 }
 
 //-----------------------------------------------------

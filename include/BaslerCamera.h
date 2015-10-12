@@ -180,6 +180,8 @@ class LIBBASLER_API Camera
     void _setStatus(Camera::Status status,bool force);
     void _freeStreamGrabber();
     void _initColorStreamGrabber(bool = false);
+    void _startAcq();
+    void _readTrigMode();
 
     static const int NB_COLOR_BUFFER = 2;
     //- lima stuff
@@ -214,6 +216,7 @@ class LIBBASLER_API Camera
     bool			  m_video_flag_mode;
     void*			  m_color_buffer[NB_COLOR_BUFFER];
     VideoCtrlObj*		  m_video;
+    TrigMode			  m_trigger_mode;
 };
 } // namespace Basler
 } // namespace lima
