@@ -502,6 +502,7 @@ void Camera::_AcqThread::threadFunction()
             bool continueAcq = true;
             while(continueAcq && (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
             {
+	      m_cam._setStatus(Camera::Exposure,false);
                 unsigned int event_number;
                 if(waitset.WaitForAny(m_cam.m_timeout,&event_number)) // Wait m_timeout
                 {
