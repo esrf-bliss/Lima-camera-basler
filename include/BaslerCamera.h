@@ -132,6 +132,8 @@ class LIBBASLER_API Camera
     void getMaxThroughput(int& ipd);    
     void getCurrentThroughput(int& ipd);
     void getBandwidthAssigned(int& ipd);
+
+    void setSocketBufferSize(int sbs);
         
     void setFrameTransmissionDelay(int ftd);
 
@@ -178,6 +180,7 @@ class LIBBASLER_API Camera
     double                      m_exp_time;
     int                         m_timeout;
     double                      m_latency_time;
+    int                         m_socketBufferSize;
     
     //- basler stuff 
     string                      m_camera_ip;
