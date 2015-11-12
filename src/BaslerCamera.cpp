@@ -101,6 +101,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
           m_exp_time(1.),
           m_timeout(DEFAULT_TIME_OUT),
           m_latency_time(0.),
+          m_socketBufferSize(0),
           Camera_(NULL),
           StreamGrabber_(NULL),
           m_receive_priority(receive_priority),
@@ -292,6 +293,12 @@ void Camera::prepareAcq()
 	    StreamGrabber_->ReceiveThreadPriorityOverride.SetValue(true);
 	    StreamGrabber_->ReceiveThreadPriority.SetValue(m_receive_priority);
 	  }
+        // Set Socket Buffer Size
+        DEB_TRACE() << "Set Socket Buffer Size";
+        if (m_socketBufferSize >0 )
+        {
+            StreamGrabber_->SocketBufferSize.SetValue(m_socketBufferSize);
+          }
         // Open the stream grabber
         DEB_TRACE() << "Open the stream grabber";
         StreamGrabber_->Open();
@@ -1367,8 +1374,15 @@ void Camera::getInterPacketDelay(int& ipd)
     }
 }
 
-
-
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setSocketBufferSize(int sbs)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(sbs);
+    m_socketBufferSize = sbs;
+}
 
 //-----------------------------------------------------
 // isGainAvailable
