@@ -1628,6 +1628,83 @@ void Camera::hasVideoCapability(bool& has_video_capability) const
   has_video_capability = m_video_flag_mode;
 }
 
+void Camera::setOutput1LineSource(Camera::LineSource source)
+{
+  DEB_MEMBER_FUNCT();
+  DEB_PARAM() << DEB_VAR1(source);
+
+  Camera_->LineSelector.SetValue(LineSelector_Out1);
+
+  LineSourceEnums line_src;
+  switch(source)
+    {
+    case Camera::Off:				line_src = LineSource_Off;			break;
+    case Camera::ExposureActive:		line_src = LineSource_ExposureActive;		break;
+    case Camera::FrameTriggerWait:		line_src = LineSource_FrameTriggerWait;		break;
+    case Camera::LineTriggerWait:		line_src = LineSource_LineTriggerWait;		break;
+    case Camera::Timer1Active:			line_src = LineSource_Timer1Active;		break;
+    case Camera::Timer2Active:			line_src = LineSource_Timer2Active;		break;
+    case Camera::Timer3Active:			line_src = LineSource_Timer3Active;		break;
+    case Camera::Timer4Active:			line_src = LineSource_Timer4Active;		break;
+    case Camera::TimerActive:			line_src = LineSource_TimerActive;		break;
+    case Camera::UserOutput1:			line_src = LineSource_UserOutput1;		break;
+    case Camera::UserOutput2:			line_src = LineSource_UserOutput2;		break;
+    case Camera::UserOutput3:			line_src = LineSource_UserOutput3;		break;
+    case Camera::UserOutput4:			line_src = LineSource_UserOutput4;		break;
+    case Camera::UserOutput:			line_src = LineSource_UserOutput;		break;
+    case Camera::TriggerReady:			line_src = LineSource_TriggerReady;		break;
+    case Camera::SerialTx:			line_src = LineSource_SerialTx;			break;
+    case Camera::AcquisitionTriggerWait:	line_src = LineSource_AcquisitionTriggerWait;	break;
+    case Camera::ShaftEncoderModuleOut:		line_src = LineSource_ShaftEncoderModuleOut;	break;
+    case Camera::FrequencyConverter:		line_src = LineSource_FrequencyConverter;	break;
+    case Camera::PatternGenerator1:		line_src = LineSource_PatternGenerator1;	break;
+    case Camera::PatternGenerator2:		line_src = LineSource_PatternGenerator2;	break;
+    case Camera::PatternGenerator3:		line_src = LineSource_PatternGenerator3;	break;
+    case Camera::PatternGenerator4:		line_src = LineSource_PatternGenerator4;	break;
+    case Camera::AcquisitionTriggerReady:	line_src = LineSource_AcquisitionTriggerReady;	break;
+    default:
+      THROW_HW_ERROR(NotSupported) << "Not yet managed";
+    }
+  Camera_->LineSource.SetValue(line_src);
+}
+
+void Camera::getOutput1LineSource(Camera::LineSource& source) const
+{
+  DEB_MEMBER_FUNCT();
+
+  Camera_->LineSelector.SetValue(LineSelector_Out1);
+  switch(Camera_->LineSource.GetValue())
+    {
+    case LineSource_Off:			source = Off;				break;
+    case LineSource_ExposureActive:		source = ExposureActive;		break;
+    case LineSource_FrameTriggerWait:		source = FrameTriggerWait;		break;
+    case LineSource_LineTriggerWait:		source = LineTriggerWait;		break;
+    case LineSource_Timer1Active:		source = Timer1Active;			break;
+    case LineSource_Timer2Active:		source = Timer2Active;			break;
+    case LineSource_Timer3Active:		source = Timer3Active;			break;
+    case LineSource_Timer4Active:		source = Timer4Active;			break;
+    case LineSource_TimerActive:		source = TimerActive;			break;
+    case LineSource_UserOutput1:		source = UserOutput1;			break;
+    case LineSource_UserOutput2:		source = UserOutput2;			break;
+    case LineSource_UserOutput3:		source = UserOutput3;			break;
+    case LineSource_UserOutput4:		source = UserOutput4;			break;
+    case LineSource_UserOutput:			source = UserOutput;			break;
+    case LineSource_TriggerReady:		source = TriggerReady;			break;
+    case LineSource_SerialTx:			source = SerialTx;			break;
+    case LineSource_AcquisitionTriggerWait:	source = AcquisitionTriggerWait;	break;
+    case LineSource_ShaftEncoderModuleOut:	source = ShaftEncoderModuleOut;		break;
+    case LineSource_FrequencyConverter:		source = FrequencyConverter;		break;
+    case LineSource_PatternGenerator1:		source = PatternGenerator1;		break;
+    case LineSource_PatternGenerator2:		source = PatternGenerator2;		break;
+    case LineSource_PatternGenerator3:		source = PatternGenerator3;		break;
+    case LineSource_PatternGenerator4:		source = PatternGenerator4;		break;
+    case LineSource_AcquisitionTriggerReady:	source = AcquisitionTriggerReady;	break;
+    default:
+      THROW_HW_ERROR(Error) << "Don't know this value ;)";
+    }
+
+  DEB_RETURN() << DEB_VAR1(source);
+}
 //---------------------------
 // The Total Buffer Count will count the number of all buffers with "status == succeeded" and "status == failed". 
 // That means, all successfully and all incompletely grabbed (error code: 0xE1000014) buffers. 

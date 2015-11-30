@@ -79,6 +79,15 @@ class LIBBASLER_API Camera
       Ready, Exposure, Readout, Latency, Fault
     };
 
+    enum LineSource {
+      Off, ExposureActive, FrameTriggerWait, LineTriggerWait,
+      Timer1Active, Timer2Active, Timer3Active, Timer4Active, TimerActive,
+      UserOutput1, UserOutput2, UserOutput3, UserOutput4, UserOutput,
+      TriggerReady, SerialTx, AcquisitionTriggerWait, ShaftEncoderModuleOut, FrequencyConverter,
+      PatternGenerator1, PatternGenerator2, PatternGenerator3, PatternGenerator4,
+      AcquisitionTriggerReady,
+    };
+    
     Camera(const std::string& camera_ip,int packet_size = -1,int received_priority = 0);
     ~Camera();
 
@@ -155,6 +164,10 @@ class LIBBASLER_API Camera
     void getTemperature(double& temperature);    
     void isColor(bool& color_flag) const;
     void hasVideoCapability(bool& video_flag) const;
+
+    // -- change output line source
+    void setOutput1LineSource(LineSource);
+    void getOutput1LineSource(LineSource&) const;
 
     // -- Pylon buffers statistics
     void getStatisticsTotalBufferCount(long& count);    
