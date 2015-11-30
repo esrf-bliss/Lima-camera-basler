@@ -800,7 +800,7 @@ void Camera::setTrigMode(TrigMode mode)
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_TriggerWidth );
         }        
-        else //ExtTrigSingle
+        else //ExtTrigMult
         {
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
 	    this->Camera_->TriggerSource.SetValue(TriggerSource_Line1);
@@ -854,7 +854,7 @@ void Camera::_readTrigMode()
 	    else if(expMode == ExposureMode_TriggerWidth)
 	      m_trigger_mode = ExtGate;
 	    else
-	      m_trigger_mode = ExtTrigSingle;
+	      m_trigger_mode = ExtTrigMult;
 	  }
 	else
 	  m_trigger_mode = IntTrig;
