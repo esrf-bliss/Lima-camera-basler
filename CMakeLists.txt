@@ -1,23 +1,21 @@
 
-set(PYLON_ROOT "/opt/pylon" CACHE STRING "location of pylon sdk")
+SET(PYLON_ROOT "/opt/pylon" CACHE STRING "location of pylon sdk")
 
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--add-needed")
-link_directories(${PYLON_ROOT}/genicam/bin/Linux64_x64)
+SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--add-needed")
+LINK_DIRECTORIES(${PYLON_ROOT}/genicam/bin/Linux64_x64)
 
-set(basler_srcs src/BaslerCamera.cpp src/BaslerInterface.cpp src/BaslerDetInfoCtrlObj.cpp
+SET(basler_srcs src/BaslerCamera.cpp src/BaslerInterface.cpp src/BaslerDetInfoCtrlObj.cpp
                 src/BaslerSyncCtrlObj.cpp src/BaslerRoiCtrlObj.cpp
                 src/BaslerBinCtrlObj.cpp src/BaslerVideoCtrlObj.cpp)
 
-file(STRINGS "VERSION" basler_ver)
-add_library(limabasler SHARED
+FILE(STRINGS "VERSION" basler_ver)
+ADD_LIBRARY(limabasler SHARED
     ${basler_srcs}
 )
-TARGET_INCLUDE_DIRECTORIES(limabasler PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-TARGET_INCLUDE_DIRECTORIES(limabasler PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../common/include")
-TARGET_INCLUDE_DIRECTORIES(limabasler PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../hardware/include")
-TARGET_INCLUDE_DIRECTORIES(limabasler PRIVATE "${PYLON_ROOT}/include")
-TARGET_INCLUDE_DIRECTORIES(limabasler PRIVATE "${PYLON_ROOT}/genicam/library/CPP/include")
-target_compile_definitions(limabasler PRIVATE USE_GIGE)
+TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${PYLON_ROOT}/include")
+TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${PYLON_ROOT}/genicam/library/CPP/include")
+TARGET_COMPILE_DEFINITIONS(limabasler PUBLIC USE_GIGE)
 TARGET_LINK_LIBRARIES(limabasler limacore)
 FIND_LIBRARY(PYLONBASE pylonbase ${PYLON_ROOT}/lib ${PYLON_ROOT}/lib64)
 TARGET_LINK_LIBRARIES(limabasler ${PYLONBASE})
@@ -26,3 +24,33 @@ TARGET_LINK_LIBRARIES(limabasler ${PYLONGIGESUPP})
 SET_TARGET_PROPERTIES(limabasler PROPERTIES VERSION ${basler_ver} SOVERSION "1")
 INSTALL(TARGETS limabasler
         LIBRARY DESTINATION lib)
+
+IF(COMPILE_SIP)
+    SET(NAME "basler")
+    SET(INCLUDES)
+    FILE(GLOB sipfiles
+         RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/sip"
+         "${CMAKE_CURRENT_SOURCE_DIR}/sip/*.sip")
+    FOREACH(sipfile ${sipfiles})
+        SET(INCLUDES
+"${INCLUDES}
+%Include ${sipfile}")
+    ENDFOREACH()
+
+    CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/sip/limamodules.sip.in sip/limabasler.sip)
+    SET(SIP_INCLUDES ${SIP_INCLUDES}
+        "${CMAKE_SOURCE_DIR}/third-party/Processlib/sip"
+        "${CMAKE_BINARY_DIR}/sip/core"
+        "${CMAKE_SOURCE_DIR}/third-party/Processlib/tasks/sip"
+        "${CMAKE_SOURCE_DIR}/common/sip"
+        "${CMAKE_SOURCE_DIR}/hardware/sip"
+        "${CMAKE_SOURCE_DIR}/control/sip"
+        "${CMAKE_SOURCE_DIR}/control/software_operation/sip"
+        "${CMAKE_CURRENT_SOURCE_DIR}/sip")
+    ADD_SIP_PYTHON_MODULE(limabasler ${CMAKE_CURRENT_BINARY_DIR}/sip/limabasler.sip)
+    TARGET_INCLUDE_DIRECTORIES(python_module_limabasler PRIVATE
+                               ${PYTHON_INCLUDE_DIRS}
+                               "${CMAKE_SOURCE_DIR}/sip"
+                               "${CMAKE_SOURCE_DIR}/sip/core")
+    TARGET_LINK_LIBRARIES(python_module_limabasler limabasler)
+ENDIF()
