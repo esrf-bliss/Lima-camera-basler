@@ -212,7 +212,8 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
             DEB_TRACE() << "Set ExposureAuto to Off";           
             Camera_->ExposureAuto.SetValue(ExposureAuto_Off);
         }
-
+	// Start with internal trigger
+	setTrigMode(IntTrig);
         // Get the image buffer size
         DEB_TRACE() << "Get the image buffer size";
         ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
@@ -333,6 +334,8 @@ void Camera::prepareAcq()
             StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(ptr,(const size_t)ImageSize_);
             StreamGrabber_->QueueBuffer(bufferId, NULL);
         }
+	if(m_trigger_mode == IntTrigMult)
+	  _startAcq();
     }
     catch (GenICam::GenericException &e)
     {
@@ -348,26 +351,36 @@ void Camera::startAcq()
     DEB_MEMBER_FUNCT();
     try
     {
-        // Let the camera acquire images continuously ( Acquisiton mode equals Continuous! )
-        DEB_TRACE() << "Let the camera acquire images continuously";
-
-	if(m_video)
-	  m_video->getBuffer().setStartTimestamp(Timestamp::now());
+	if(!m_image_number)
+	  {
+	    if(m_video)
+	      m_video->getBuffer().setStartTimestamp(Timestamp::now());
+	    else
+	      m_buffer_ctrl_obj.getBuffer().setStartTimestamp(Timestamp::now());
+	  }
+	if(m_trigger_mode == IntTrigMult)
+	  {
+	    this->Camera_->TriggerSoftware.Execute();
+	  }
 	else
-	  m_buffer_ctrl_obj.getBuffer().setStartTimestamp(Timestamp::now());
-
-        Camera_->AcquisitionStart.Execute();
-
-	//Start acqusition thread
-	AutoMutex aLock(m_cond.mutex());
-        m_wait_flag = false;
-        m_cond.broadcast();
+	_startAcq();
     }
     catch (GenICam::GenericException &e)
     {
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
+}
+
+void Camera::_startAcq()
+{
+  DEB_MEMBER_FUNCT();
+  Camera_->AcquisitionStart.Execute();
+
+  //Start acqusition thread
+  AutoMutex aLock(m_cond.mutex());
+  m_wait_flag = false;
+  m_cond.broadcast();
 }
 //---------------------------
 //- Camera::stopAcq()
@@ -502,6 +515,7 @@ void Camera::_AcqThread::threadFunction()
             bool continueAcq = true;
             while(continueAcq && (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
             {
+	      m_cam._setStatus(Camera::Exposure,false);
                 unsigned int event_number;
                 if(waitset.WaitForAny(m_cam.m_timeout,&event_number)) // Wait m_timeout
                 {
@@ -753,71 +767,74 @@ void Camera::setTrigMode(TrigMode mode)
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(mode);
 
+    if(mode == m_trigger_mode)
+      return;			// Nothing to do
+    
     try
     {        
-        if ( mode == IntTrig )
-        {
-            //- INTERNAL 
+        GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");
+        if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))
+            this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
+        else
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
-            this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
-                        
-            GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");                    
-            if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))            
-                this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
-            
+
+    	if ( mode == IntTrig )
+        {
+            //- INTERNAL
             this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
             this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
+	    this->Camera_->AcquisitionFrameRateEnable.SetValue(true);
+	}
+        else if ( mode == IntTrigMult )
+        {
+	    this->Camera_->TriggerMode.SetValue(TriggerMode_On);
+	    this->Camera_->TriggerSource.SetValue(TriggerSource_Software);
+	    this->Camera_->AcquisitionFrameCount.SetValue(1);
+	    this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
         }
         else if ( mode == ExtGate )
         {
             //- EXTERNAL - TRIGGER WIDTH
-            this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
-            
-            GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");                    
-            if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))                    
-                this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
-            
-            this->Camera_->TriggerMode.SetValue( TriggerMode_On );
+	    this->Camera_->TriggerSource.SetValue(TriggerSource_Line1);
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_TriggerWidth );
         }        
-        else //ExtTrigSingle
+        else //ExtTrigMult
         {
-            //- EXTERNAL - TIMED
-            
-            this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
             this->Camera_->TriggerMode.SetValue( TriggerMode_On );
-            
-            GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");                    
-            if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))                     
-                this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
-            this->Camera_->TriggerMode.SetValue( TriggerMode_On );
+	    this->Camera_->TriggerSource.SetValue(TriggerSource_Line1);
             this->Camera_->AcquisitionFrameRateEnable.SetValue( false );
             this->Camera_->ExposureMode.SetValue( ExposureMode_Timed );
         }
     }
-     catch (GenICam::GenericException &e)
+    catch (GenICam::GenericException &e)
     {
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
-    }        
+    }
 
-
-    
+    m_trigger_mode = mode;
 }
 
+void Camera::getTrigMode(TrigMode& mode)
+{
+  DEB_MEMBER_FUNCT();
+
+  AutoMutex aLock(m_cond.mutex());
+  mode = m_trigger_mode;
+  
+  DEB_RETURN() << DEB_VAR1(m_trigger_mode);
+}
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getTrigMode(TrigMode& mode)
+void Camera::_readTrigMode()
 {
     DEB_MEMBER_FUNCT();
-    int frameStart = TriggerMode_Off, acqStart = TriggerMode_Off, expMode;
-    
+    int frameStart = TriggerMode_Off, acqStart, expMode;
     try
     {
-        this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
         acqStart =  this->Camera_->TriggerMode.GetValue();
 
         GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");  
@@ -829,12 +846,18 @@ void Camera::getTrigMode(TrigMode& mode)
 
         expMode = this->Camera_->ExposureMode.GetValue();
     
-        if ((acqStart ==  TriggerMode_Off) && (frameStart ==  TriggerMode_Off))
-            mode = IntTrig;
-        else if (expMode == ExposureMode_TriggerWidth)
-            mode = ExtGate;
-        else //ExposureMode_Timed
-            mode = ExtTrigSingle;
+	if(acqStart == TriggerMode_On)
+	  {
+	    int source = this->Camera_->TriggerSource.GetValue();
+	    if(source == TriggerSource_Software)
+	      m_trigger_mode = IntTrigMult;
+	    else if(expMode == ExposureMode_TriggerWidth)
+	      m_trigger_mode = ExtGate;
+	    else
+	      m_trigger_mode = ExtTrigMult;
+	  }
+	else
+	  m_trigger_mode = IntTrig;
     }
     catch (GenICam::GenericException &e)
     {
@@ -842,7 +865,7 @@ void Camera::getTrigMode(TrigMode& mode)
         THROW_HW_ERROR(Error) << e.GetDescription();
     }        
    	
-    DEB_RETURN() << DEB_VAR4(mode,acqStart, frameStart, expMode);    
+    DEB_RETURN() << DEB_VAR4(m_trigger_mode,acqStart, frameStart, expMode);
 }
 
 //-----------------------------------------------------
@@ -1055,7 +1078,20 @@ void Camera::getStatus(Camera::Status& status)
     DEB_MEMBER_FUNCT();
     AutoMutex aLock(m_cond.mutex());
     status = m_status;
-    DEB_RETURN() << DEB_VAR1(DEB_HEX(status));
+    //Check if camera is not waiting for trigger
+    if(status == Camera::Exposure &&
+       m_trigger_mode == IntTrigMult)
+      {
+	// Check the frame start trigger acquisition status
+	// Set the acquisition status selector
+	Camera_->AcquisitionStatusSelector.SetValue
+	  (AcquisitionStatusSelector_FrameTriggerWait);
+	// Read the acquisition status
+	bool IsWaitingForFrameTrigger = Camera_->AcquisitionStatus.GetValue();
+	status = IsWaitingForFrameTrigger ? Camera::Ready : status;
+	DEB_TRACE() << DEB_VAR1(IsWaitingForFrameTrigger);
+      }
+    DEB_RETURN() << DEB_VAR1(status);
 }
 
 //-----------------------------------------------------
@@ -1646,6 +1682,83 @@ void Camera::hasVideoCapability(bool& has_video_capability) const
   has_video_capability = m_video_flag_mode;
 }
 
+void Camera::setOutput1LineSource(Camera::LineSource source)
+{
+  DEB_MEMBER_FUNCT();
+  DEB_PARAM() << DEB_VAR1(source);
+
+  Camera_->LineSelector.SetValue(LineSelector_Out1);
+
+  LineSourceEnums line_src;
+  switch(source)
+    {
+    case Camera::Off:				line_src = LineSource_Off;			break;
+    case Camera::ExposureActive:		line_src = LineSource_ExposureActive;		break;
+    case Camera::FrameTriggerWait:		line_src = LineSource_FrameTriggerWait;		break;
+    case Camera::LineTriggerWait:		line_src = LineSource_LineTriggerWait;		break;
+    case Camera::Timer1Active:			line_src = LineSource_Timer1Active;		break;
+    case Camera::Timer2Active:			line_src = LineSource_Timer2Active;		break;
+    case Camera::Timer3Active:			line_src = LineSource_Timer3Active;		break;
+    case Camera::Timer4Active:			line_src = LineSource_Timer4Active;		break;
+    case Camera::TimerActive:			line_src = LineSource_TimerActive;		break;
+    case Camera::UserOutput1:			line_src = LineSource_UserOutput1;		break;
+    case Camera::UserOutput2:			line_src = LineSource_UserOutput2;		break;
+    case Camera::UserOutput3:			line_src = LineSource_UserOutput3;		break;
+    case Camera::UserOutput4:			line_src = LineSource_UserOutput4;		break;
+    case Camera::UserOutput:			line_src = LineSource_UserOutput;		break;
+    case Camera::TriggerReady:			line_src = LineSource_TriggerReady;		break;
+    case Camera::SerialTx:			line_src = LineSource_SerialTx;			break;
+    case Camera::AcquisitionTriggerWait:	line_src = LineSource_AcquisitionTriggerWait;	break;
+    case Camera::ShaftEncoderModuleOut:		line_src = LineSource_ShaftEncoderModuleOut;	break;
+    case Camera::FrequencyConverter:		line_src = LineSource_FrequencyConverter;	break;
+    case Camera::PatternGenerator1:		line_src = LineSource_PatternGenerator1;	break;
+    case Camera::PatternGenerator2:		line_src = LineSource_PatternGenerator2;	break;
+    case Camera::PatternGenerator3:		line_src = LineSource_PatternGenerator3;	break;
+    case Camera::PatternGenerator4:		line_src = LineSource_PatternGenerator4;	break;
+    case Camera::AcquisitionTriggerReady:	line_src = LineSource_AcquisitionTriggerReady;	break;
+    default:
+      THROW_HW_ERROR(NotSupported) << "Not yet managed";
+    }
+  Camera_->LineSource.SetValue(line_src);
+}
+
+void Camera::getOutput1LineSource(Camera::LineSource& source) const
+{
+  DEB_MEMBER_FUNCT();
+
+  Camera_->LineSelector.SetValue(LineSelector_Out1);
+  switch(Camera_->LineSource.GetValue())
+    {
+    case LineSource_Off:			source = Off;				break;
+    case LineSource_ExposureActive:		source = ExposureActive;		break;
+    case LineSource_FrameTriggerWait:		source = FrameTriggerWait;		break;
+    case LineSource_LineTriggerWait:		source = LineTriggerWait;		break;
+    case LineSource_Timer1Active:		source = Timer1Active;			break;
+    case LineSource_Timer2Active:		source = Timer2Active;			break;
+    case LineSource_Timer3Active:		source = Timer3Active;			break;
+    case LineSource_Timer4Active:		source = Timer4Active;			break;
+    case LineSource_TimerActive:		source = TimerActive;			break;
+    case LineSource_UserOutput1:		source = UserOutput1;			break;
+    case LineSource_UserOutput2:		source = UserOutput2;			break;
+    case LineSource_UserOutput3:		source = UserOutput3;			break;
+    case LineSource_UserOutput4:		source = UserOutput4;			break;
+    case LineSource_UserOutput:			source = UserOutput;			break;
+    case LineSource_TriggerReady:		source = TriggerReady;			break;
+    case LineSource_SerialTx:			source = SerialTx;			break;
+    case LineSource_AcquisitionTriggerWait:	source = AcquisitionTriggerWait;	break;
+    case LineSource_ShaftEncoderModuleOut:	source = ShaftEncoderModuleOut;		break;
+    case LineSource_FrequencyConverter:		source = FrequencyConverter;		break;
+    case LineSource_PatternGenerator1:		source = PatternGenerator1;		break;
+    case LineSource_PatternGenerator2:		source = PatternGenerator2;		break;
+    case LineSource_PatternGenerator3:		source = PatternGenerator3;		break;
+    case LineSource_PatternGenerator4:		source = PatternGenerator4;		break;
+    case LineSource_AcquisitionTriggerReady:	source = AcquisitionTriggerReady;	break;
+    default:
+      THROW_HW_ERROR(Error) << "Don't know this value ;)";
+    }
+
+  DEB_RETURN() << DEB_VAR1(source);
+}
 //---------------------------
 // The Total Buffer Count will count the number of all buffers with "status == succeeded" and "status == failed". 
 // That means, all successfully and all incompletely grabbed (error code: 0xE1000014) buffers. 

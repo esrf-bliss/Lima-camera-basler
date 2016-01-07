@@ -13,6 +13,15 @@ namespace Basler
       Ready, Exposure, Readout, Latency,
     };
 
+    enum LineSource {
+      Off, ExposureActive, FrameTriggerWait, LineTriggerWait,
+      Timer1Active, Timer2Active, Timer3Active, Timer4Active, TimerActive,
+      UserOutput1, UserOutput2, UserOutput3, UserOutput4, UserOutput,
+      TriggerReady, SerialTx, AcquisitionTriggerWait, ShaftEncoderModuleOut, FrequencyConverter,
+      PatternGenerator1, PatternGenerator2, PatternGenerator3, PatternGenerator4,
+      AcquisitionTriggerReady,
+    };
+
     Camera(const std::string& camera_ip,int mtu_size = -1,int received_priority = 0);
     ~Camera();
 
@@ -74,6 +83,13 @@ namespace Basler
     void getTemperature(double& temperature /Out/);    
     void isColor(bool& color_flag /Out/) const;
     void hasVideoCapability(bool& video_flag /Out/) const;
+    // -- change output line source
+    void setOutput1LineSource(Basler::Camera::LineSource);
+    void getOutput1LineSource(Basler::Camera::LineSource&) const;
+
+    // -- Pylon buffers statistics
+    void getStatisticsTotalBufferCount(long& count);    
+    void getStatisticsFailedBufferCount(long& count);
   };
 
 };
