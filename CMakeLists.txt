@@ -59,4 +59,6 @@ IF(COMPILE_SIP)
                                "${CMAKE_SOURCE_DIR}/sip"
                                "${CMAKE_SOURCE_DIR}/sip/core")
     TARGET_LINK_LIBRARIES(python_module_limabasler limabasler)
+
+    INSTALL(FILES python/__init__.py DESTINATION "${PYTHON_SITE_PACKAGES_DIR}/Lima/Basler")
 ENDIF()
