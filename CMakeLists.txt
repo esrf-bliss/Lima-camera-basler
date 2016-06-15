@@ -53,6 +53,7 @@ IF(COMPILE_SIP)
         "${CMAKE_SOURCE_DIR}/control/sip"
         "${CMAKE_SOURCE_DIR}/control/software_operation/sip"
         "${CMAKE_CURRENT_SOURCE_DIR}/sip")
+    set(SIP_DISABLE_FEATURES WITH_CONFIG)
     ADD_SIP_PYTHON_MODULE(limabasler ${CMAKE_CURRENT_BINARY_DIR}/sip/limabasler.sip)
     TARGET_INCLUDE_DIRECTORIES(python_module_limabasler PRIVATE
                                ${PYTHON_INCLUDE_DIRS}
