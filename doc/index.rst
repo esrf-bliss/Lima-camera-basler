@@ -53,11 +53,11 @@ Installation
 Configuration
 ``````````````
 
-- First you have to setup ip addresse of the Basler Camera by using *IpConfigurator* (/opt/pylon/bin/IpConfigurator)
+- First you have to setup ip addresse of the Basler Camera by using *IpConfigurator* (/opt/pylon/bin/IpConfigurator) or by matching the MAC address with a choosen IP into the DHCP.
 
 - Then in the Basler Tango device set the property *cam_ip_address* to the address previously set.
 
-- If you are running the server with linux kernel >= 2.6.13, you should add this line into *etc/security/limits.conf*. With this line, the acquisition thread will be in real time mode.
+- If you are running the server with linux kernel >= 2.6.13, you should add this line into */etc/security/limits.conf*. With this line, the acquisition thread will be in real time mode.
 
 .. code-block:: sh
 
