@@ -77,9 +77,9 @@ are supported by the SDK. **Video**,  Roi and Binning are available.
 
 * HwVideo
 
-  The prosilica cameras are pure video device, so video format for image are supported:
-   For color cameras, 
+  The basler cameras are pure video device, so video format for image are supported:
 
+  **Color cameras ONLY** 
    - BAYER_RG8
    - BAYER_BG8
    - BAYER_RG16
@@ -92,12 +92,11 @@ are supported by the SDK. **Video**,  Roi and Binning are available.
    - YUV422
    - YUV444
    
-   For color and monochrome cameras,
+  **Color and Monochrome cameras**
+   - Y8   
+   - Y16   
 
-    - Y8   
-    - Y16   
-
-  Use get/setVideoMode() on video object for video format.
+  Use get/setMode() methods of the *video* object (i.e. CtControl::video()) to read or set the format.
 
 * HwBin 
 
