@@ -116,7 +116,6 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
     m_camera_id = camera_id;
     try
     {
-        Pylon::PylonInitialize( );
         // Create the transport layer object needed to enumerate or
         // create a camera object of type Camera_t::DeviceClass()
         DEB_TRACE() << "Create a camera object of type Camera_t::DeviceClass()";
@@ -157,14 +156,12 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
  	}
 	else 
         {
-            Pylon::PylonTerminate( );
 	    THROW_CTL_ERROR(InvalidValue) << "Unrecognized camera id: " << camera_id;
         }
 
         IPylonDevice* device = TlFactory.CreateDevice( di);
         if (!device)
         {
-            Pylon::PylonTerminate( );
             THROW_HW_ERROR(Error) << "Unable to find camera with selected IP!";
         }
 
@@ -173,7 +170,6 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
         Camera_ = new Camera_t(device);
         if(!Camera_)
         {
-            Pylon::PylonTerminate( );
             THROW_HW_ERROR(Error) << "Unable to get the camera from transport_layer!";
         }
 
@@ -261,7 +257,6 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        Pylon::PylonTerminate( );
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
     if(m_color_flag)
@@ -304,7 +299,6 @@ Camera::~Camera()
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        Pylon::PylonTerminate( );
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
 }
