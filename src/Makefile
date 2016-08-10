@@ -31,7 +31,7 @@ clean:
 	rm -f *.o *.P
 
 %.o : %.cpp
-	$(COMPILE.cpp) -MD $(CXXFLAGS) -o $@ $<
+	$(COMPILE.cpp) -MD -o $@ $<
 	@cp $*.d $*.P; \
 	sed -e 's/#.*//' -e 's/^[^:]*: *//' -e 's/ *\\$$//' \
 	-e '/^$$/ d' -e 's/$$/ :/' < $*.d >> $*.P; \
