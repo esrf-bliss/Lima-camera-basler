@@ -7,14 +7,20 @@ ifndef PYLON_ROOT
 PYLON_ROOT = /opt/pylon
 endif
 
+PYLON_CONFIG := $(PYLON_ROOT)/bin/pylon-config
+
+CXXFLAGS += -I../include -I../../../hardware/include -I../../../common/include \
+            -DUSE_GIGE -Wall -pthread -fPIC -g
+
+ifeq ("$(wildcard $(PYLON_CONFIG))", "")
 ifndef GENICAM_ROOT_V2_1
 GENICAM_ROOT_V2_1 = $(PYLON_ROOT)/genicam
 endif
+CXXFLAGS += -I$(PYLON_ROOT)/include -I$(GENICAM_ROOT_V2_1)/library/CPP/include
+else
+CXXFLAGS += $(shell $(PYLON_CONFIG) --cflags-only-I)
+endif
 
-CXXFLAGS += -I../include -I../../../hardware/include -I../../../common/include \
-			-I$(PYLON_ROOT)/include \
-			-I$(GENICAM_ROOT_V2_1)/library/CPP/include \
-			-DUSE_GIGE -Wall -pthread -fPIC -g
 
 all:	Basler.o
 
