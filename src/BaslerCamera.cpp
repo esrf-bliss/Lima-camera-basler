@@ -47,6 +47,10 @@ using namespace std;
 
 const static int DEFAULT_TIME_OUT = 600000; // 10 minutes
 
+const static std::string IP_PREFIX = "ip://";
+const static std::string SN_PREFIX = "sn://";
+const static std::string UNAME_PREFIX = "uname://";
+
 //---------------------------
 //- utility function
 //---------------------------
@@ -91,7 +95,7 @@ class Camera::_AcqThread : public Thread
 //---------------------------
 //- Ctor
 //---------------------------
-Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority)
+Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority)
         : m_nb_frames(1),
           m_status(Ready),
           m_wait_flag(true),
@@ -109,7 +113,7 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
 	  m_video(NULL)
 {
     DEB_CONSTRUCTOR();
-    m_camera_ip = camera_ip;
+    m_camera_id = camera_id;
     try
     {
         Pylon::PylonInitialize( );
@@ -118,14 +122,45 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
         DEB_TRACE() << "Create a camera object of type Camera_t::DeviceClass()";
         CTlFactory& TlFactory = CTlFactory::GetInstance();
 
-        // camera_ip is not really necessarily an IP, it may also be a DNS name
-        // pylon_camera_ip IS an IP
-        Pylon::String_t pylon_camera_ip(_get_ip_addresse(m_camera_ip.c_str()));
-
-        //- Find the Pylon device thanks to its IP Address
         CBaslerGigEDeviceInfo di;
-        di.SetIpAddress( pylon_camera_ip);
-        DEB_TRACE() << "Create the Pylon device attached to ip address : " << DEB_VAR1(m_camera_ip);
+
+	// by default use ip:// scheme if none is given
+	if (m_camera_id.find("://") == std::string::npos)
+	{
+            m_camera_id = "ip://" + m_camera_id;
+	}
+
+	if(!m_camera_id.compare(0, IP_PREFIX.size(), IP_PREFIX))
+        {
+            // m_camera_id is not really necessarily an IP, it may also be a DNS name
+            Pylon::String_t pylon_camera_ip(_get_ip_addresse(m_camera_id.substr(IP_PREFIX.size()).c_str()));
+            //- Find the Pylon device thanks to its IP Address
+            di.SetIpAddress( pylon_camera_ip);
+            DEB_TRACE() << "Create the Pylon device attached to ip address: "
+			<< DEB_VAR1(m_camera_id);
+ 	}
+        else if (!m_camera_id.compare(0, SN_PREFIX.size(), SN_PREFIX))
+	{
+            Pylon::String_t serial_number(m_camera_id.substr(SN_PREFIX.size()).c_str());
+            //- Find the Pylon device thanks to its serial number
+            di.SetSerialNumber(serial_number);
+            DEB_TRACE() << "Create the Pylon device attached to serial number: "
+			<< DEB_VAR1(m_camera_id);
+	}
+	else if(!m_camera_id.compare(0, UNAME_PREFIX.size(), UNAME_PREFIX))
+        {
+            Pylon::String_t user_name(m_camera_id.substr(UNAME_PREFIX.size()).c_str());
+            //- Find the Pylon device thanks to its user name
+            di.SetUserDefinedName(user_name);
+            DEB_TRACE() << "Create the Pylon device attached to user name: "
+			<< DEB_VAR1(m_camera_id);
+ 	}
+	else 
+        {
+            Pylon::PylonTerminate( );
+	    THROW_CTL_ERROR(InvalidValue) << "Unrecognized camera id: " << camera_id;
+        }
+
         IPylonDevice* device = TlFactory.CreateDevice( di);
         if (!device)
         {
