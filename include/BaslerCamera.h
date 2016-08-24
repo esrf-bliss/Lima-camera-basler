@@ -204,6 +204,7 @@ class LIBBASLER_API Camera
     Size                        m_detector_size;
     
     //- Pylon stuff
+    PylonAutoInitTerm             auto_init_term_;
     DeviceInfoList_t              devices_;
     Camera_t*                     Camera_;
     Camera_t::StreamGrabber_t*    StreamGrabber_;

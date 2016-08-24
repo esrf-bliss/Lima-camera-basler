@@ -9,12 +9,15 @@ Intoduction
 ```````````
 Basler's area scan cameras are designed for industrial users who demand superior image quality and an excellent price/performance ratio. You can choose from an area scan portfolio that includes monochrome or color models with various resolutions, frame rates, and sensor technologies.
 
-The Lima module as been tested only with this GigE cameras models:
+The Lima module has been tested only with this GigE cameras models:
   - Scout
   - Pilot
   - Ace
 
-Monochrome and color cameras are supported, using the **SDK 3.2.2**.
+The Lima module has been tested with Pylon SDK versions **3.2.2** and **5.0.1**.
+
+Monochrome and color cameras are supported with these SDK versions.
+
 
 Installation & Module configuration
 ````````````````````````````````````
@@ -51,8 +54,33 @@ Initialisation and Capabilities
 Camera initialisation
 ......................
 
-The camera will be initialized   by creating Basler ::Camera object.  The Camera contructor
-sets the camera with default parameters, only the ip address or hostname of the camera is mandatory.
+The camera will be initialized by creating Basler ::Camera object. The Basler camera can be idenfified
+either by:
+
+* IP/hostname (examples: `ip://192.168.5.2`, `ip://white_beam_viewer1.esrf.fr`) or
+* Basler serial number (example: `sn://12345678`) or
+* Basler user name (example: `uname://white_beam_viewer1`)
+
+In case an IP is given, the `ip://` scheme prefix is optional.
+
+Only the camera ID is mandatory.
+
+Small example showing possible ways to initialize:
+
+.. code-block:: python
+
+  from Lima import Basler
+  from lima import Core
+
+  # From an IP (notice ip:// prefix is optional)
+  cam = Basler.Camera('192.168.5.2')
+
+  # From a basler serial number
+  cam = Basler.Camera('sn://12345678')
+
+  # From a basler user name
+  cam = Basler.Camera('uname://white_beam_viewer1')
+
 
 Std capabilites
 ................
@@ -110,9 +138,15 @@ are supported by the SDK. **Video**,  Roi and Binning are available.
 Configuration
 ``````````````
 
-- First you have to setup ip addresse of the Basler Camera by using *IpConfigurator* (/opt/pylon/bin/IpConfigurator) or by matching the MAC address with a choosen IP into the DHCP.
+- First you need to decide how to want to reference your camera (by IP/hostname, serial number or user name)
 
-- Then in the Basler Tango device set the property *cam_ip_address* to the address previously set.
+- Second, you have to setup IP address of the Basler Camera by using *IpConfigurator* (/opt/pylon/bin/IpConfigurator) 
+  or by matching the MAC address with a choosen IP into the DHCP. If you plan to reference the camera by
+  user name you should also set it in *IpConfigurator*. If you plan to reference the camera by serial number
+  you should note down the serial number that appears in the label of your camera.
+
+- Then in the Basler Tango device, set the property *camera_id* according to the type of ID you choose
+  (see :ref:`lima-tango-basler` for more details)
 
 - If you are running the server with linux kernel >= 2.6.13, you should add this line into */etc/security/limits.conf*. With this line, the acquisition thread will be in real time mode.
 
@@ -143,7 +177,6 @@ This is a python code example for a simple test:
   # cam ip or hostname |             |  |  |
   #                    v             v  v  v 
   cam = Basler.Camera('192.168.1.1', 0, 0, 8000)
-
 
   hwint = Basler.Interface(cam)
   ct = Core.CtControl(hwint)
