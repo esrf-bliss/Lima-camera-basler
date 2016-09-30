@@ -64,7 +64,7 @@ void VideoCtrlObj::getSupportedVideoMode(std::list<VideoMode>& aList) const
   for(const _VideoMode* pt = BaslerVideoMode;pt->stringMode;++pt)
     {
       GenApi::IEnumEntry *anEntry = 
-	m_cam.Camera_->PixelFormat.GetEntryByName(pt->stringMode);
+	m_cam._getBasler().camera.PixelFormat.GetEntryByName(pt->stringMode);
       if(anEntry && GenApi::IsAvailable(anEntry))
 	aList.push_back(pt->mode);
     }
@@ -73,7 +73,7 @@ void VideoCtrlObj::getVideoMode(VideoMode &mode) const
 {
   DEB_MEMBER_FUNCT();
 
-  PixelFormatEnums aCurrentPixelFormat = m_cam.Camera_->PixelFormat.GetValue();
+  PixelFormatEnums aCurrentPixelFormat = m_cam._getBasler().camera.PixelFormat.GetValue();
   switch(aCurrentPixelFormat)
     {
     case PixelFormat_Mono8:             mode = Y8;		break;
@@ -103,6 +103,9 @@ void VideoCtrlObj::getVideoMode(VideoMode &mode) const
 void VideoCtrlObj::setVideoMode(VideoMode mode)
 {
   DEB_MEMBER_FUNCT();
+
+  Camera::Basler basler_cam = m_cam._getBasler();
+  Camera_t& camera = basler_cam.camera;
 
   std::list<PixelFormatEnums> pixelformat;
   switch(mode)
@@ -163,7 +166,7 @@ void VideoCtrlObj::setVideoMode(VideoMode mode)
     {
       try
 	{
-	  m_cam.Camera_->PixelFormat.SetValue(*i);
+	  camera.PixelFormat.SetValue(*i);
 	  succeed = true;
 	}
       catch (GenICam::GenericException &e)
@@ -209,16 +212,21 @@ void VideoCtrlObj::checkBin(Bin &bin)
 
 void VideoCtrlObj::checkRoi(const Roi&,Roi& hw_roi)
 {
+  Camera::Basler basler_cam = m_cam._getBasler();
+  Camera_t& camera = basler_cam.camera;
+
   hw_roi = Roi(0,0,
-	       m_cam.Camera_->Width.GetMax(),
-	       m_cam.Camera_->Height.GetMax());
+	       camera.Width.GetMax(),
+	       camera.Height.GetMax());
 }
 
 bool VideoCtrlObj::checkAutoGainMode(AutoGainMode mode) const
 {
+  Camera::Basler basler_cam = m_cam._getBasler();
+  Camera_t& camera = basler_cam.camera;
   return mode == OFF ? true :
-    GenApi::IsAvailable(m_cam.Camera_->GainAuto) && 
-    GenApi::IsAvailable(m_cam.Camera_->GainSelector);
+    GenApi::IsAvailable(camera.GainAuto) && 
+    GenApi::IsAvailable(camera.GainSelector);
 }
 
 void VideoCtrlObj::setHwAutoGainMode(AutoGainMode mode)
