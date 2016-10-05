@@ -116,8 +116,11 @@ bool SyncCtrlObj::checkAutoExposureMode(HwSyncCtrlObj::AutoExposureMode mode) co
 {
   DEB_MEMBER_FUNCT();
   DEB_PARAM() << DEB_VAR1(mode);
+  Camera::Basler basler_cam = m_cam._getBasler();
+  Camera_t& camera = basler_cam.camera;
+
   bool checkFlag = mode == HwSyncCtrlObj::ON ?
-    GenApi::IsAvailable(m_cam.Camera_->ExposureAuto) : true;
+    GenApi::IsAvailable(camera.ExposureAuto) : true;
   DEB_RETURN() << DEB_VAR1(checkFlag);
   return checkFlag;
 }
@@ -126,12 +129,14 @@ void SyncCtrlObj::setHwAutoExposureMode(AutoExposureMode mode)
 {
   DEB_MEMBER_FUNCT();
   DEB_PARAM() << DEB_VAR1(mode);
+  Camera::Basler basler_cam = m_cam._getBasler();
+  Camera_t& camera = basler_cam.camera;
   try
     {
-       if ( GenApi::IsAvailable(m_cam.Camera_->ExposureAuto ))
+       if ( GenApi::IsAvailable(camera.ExposureAuto ))
        {
-            m_cam.Camera_->ExposureAuto.SetValue(mode == HwSyncCtrlObj::ON ?
-					   ExposureAuto_Continuous : ExposureAuto_Off);
+	   camera.ExposureAuto.SetValue(mode == HwSyncCtrlObj::ON ?
+					ExposureAuto_Continuous : ExposureAuto_Off);
        }
     }
   catch(GenICam::GenericException& e)

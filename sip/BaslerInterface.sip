@@ -32,7 +32,7 @@ namespace Basler
 %MethodCode
 	sipCpp->getCamera().setGain(a0);
 %End
-    void		getGain(double& gain /Out/) const;
+    void		getGain(double& gain /Out/);
 %MethodCode
 	sipCpp->getCamera().getGain(a0);
 %End
@@ -40,7 +40,7 @@ namespace Basler
 %MethodCode
 	sipCpp->getCamera().setAutoGain(a0);
 %End
-    void		getAutoGain(bool& auto_gain /Out/) const;
+    void		getAutoGain(bool& auto_gain /Out/);
 %MethodCode
 	sipCpp->getCamera().getAutoGain(a0);
 %End

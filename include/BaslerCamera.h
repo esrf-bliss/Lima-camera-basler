@@ -116,8 +116,8 @@ class LIBBASLER_API Camera
     void setLatTime(double  lat_time);
     void getLatTime(double& lat_time);
 
-    void getExposureTimeRange(double& min_expo, double& max_expo) const;
-    void getLatTimeRange(double& min_lat, double& max_lat) const;    
+    void getExposureTimeRange(double& min_expo, double& max_expo);
+    void getLatTimeRange(double& min_lat, double& max_lat);
 
     void setNbFrames(int  nb_frames);
     void getNbFrames(int& nb_frames);
@@ -147,19 +147,19 @@ class LIBBASLER_API Camera
     void setFrameTransmissionDelay(int ftd);
 
     // -- basler specific, LIMA don't worry about it !
-    void getFrameRate(double& frame_rate) const;
-    bool isBinningAvailable() const;
-    bool isRoiAvailable() const;
+    void getFrameRate(double& frame_rate);
+    bool isBinningAvailable();
+    bool isRoiAvailable();
     void setTimeout(int TO);
     void reset();
 
-    bool isGainAvailable() const;
+    bool isGainAvailable();
     void setGain(double gain);
-    void getGain(double& gain) const;
+    void getGain(double& gain);
 
-    bool isAutoGainAvailable() const;
+    bool isAutoGainAvailable();
     void setAutoGain(bool auto_gain);
-    void getAutoGain(bool& auto_gain) const;
+    void getAutoGain(bool& auto_gain);
 
     void getTemperature(double& temperature);    
     void isColor(bool& color_flag) const;
@@ -167,7 +167,7 @@ class LIBBASLER_API Camera
 
     // -- change output line source
     void setOutput1LineSource(LineSource);
-    void getOutput1LineSource(LineSource&) const;
+    void getOutput1LineSource(LineSource&);
 
     // -- Pylon buffers statistics
     void getStatisticsTotalBufferCount(long& count);    
@@ -176,14 +176,39 @@ class LIBBASLER_API Camera
  private:
     class _AcqThread;
     friend class _AcqThread;
+    struct Basler
+    {
+      Basler(Camera&, Camera_t*);
+      Basler(const Basler&);
+      ~Basler();
+
+      Camera_t& camera;
+
+    private:
+      Camera& _camera;
+
+    };
+    friend struct Basler;
+
+    Basler _getBasler();
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
     void _freeStreamGrabber();
-    void _initColorStreamGrabber(bool = false);
+    void _initColorStreamGrabber();
     void _startAcq();
     void _readTrigMode();
+    void _disconnect();
+    void _onRemoval(Pylon::IPylonDevice* );
+    bool _isRoiAvailable(Camera_t& );
+    bool _isBinningAvailable(Camera_t& );
+    void _setTrigMode(Camera_t&, TrigMode );
+    void _getRoi(Camera_t&, Roi& );
+    void _setRoi(Camera_t&, const Roi& );
+    void _checkRoi(Camera_t&, const Roi& set_roi, Roi& hw_roi);
+    void _setAutoGain(Camera_t&, bool);
 
     static const int NB_COLOR_BUFFER = 2;
+
     //- lima stuff
     SoftBufferCtrlObj		m_buffer_ctrl_obj;
     int                         m_nb_frames;    
@@ -199,14 +224,14 @@ class LIBBASLER_API Camera
     
     //- basler stuff 
     string                      m_camera_id;
-    string                      m_detector_model;
-    string                      m_detector_type;
-    Size                        m_detector_size;
-    
+    int                         m_packet_size;
     //- Pylon stuff
-    PylonAutoInitTerm             auto_init_term_;
+    PylonAutoInitTerm             m_auto_init_term;
     DeviceInfoList_t              devices_;
-    Camera_t*                     Camera_;
+    Camera_t*                     m_camera;
+    int                           m_basler_inuse;
+    Pylon::DeviceCallbackHandle   m_callback_handle;
+    Pylon::CDeviceInfo            m_device_info;
     Camera_t::StreamGrabber_t*    StreamGrabber_;
     WaitObjectEx                  WaitObject_;
     size_t                        ImageSize_;

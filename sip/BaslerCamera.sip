@@ -46,8 +46,8 @@ namespace Basler
     void setLatTime(double  lat_time);
     void getLatTime(double& lat_time /Out/);
 
-    void getExposureTimeRange(double& min_expo /Out/, double& max_expo /Out/) const;
-    void getLatTimeRange(double& min_lat /Out/, double& max_lat /Out/) const;
+    void getExposureTimeRange(double& min_expo /Out/, double& max_expo /Out/);
+    void getLatTimeRange(double& min_lat /Out/, double& max_lat /Out/);
 
     void setNbFrames(int  nb_frames);
     void getNbFrames(int& nb_frames /Out/);
@@ -66,17 +66,17 @@ namespace Basler
 
     void setFrameTransmissionDelay(int ftd);
 
-    void getFrameRate(double& frame_rate /Out/) const;
-    bool isBinningAvailable() const;
-    bool isRoiAvailable() const;
+    void getFrameRate(double& frame_rate /Out/);
+    bool isBinningAvailable();
+    bool isRoiAvailable();
     void setTimeout(int TO);
     void reset();
 
     void setAutoGain(bool auto_gain);
-    void getAutoGain(bool& auto_gain /Out/) const;
+    void getAutoGain(bool& auto_gain /Out/);
 
     void setGain(double gain);
-    void getGain(double& gain /Out/) const;
+    void getGain(double& gain /Out/);
 
     void getStatus(Basler::Camera::Status& status /Out/);
 	
@@ -85,7 +85,7 @@ namespace Basler
     void hasVideoCapability(bool& video_flag /Out/) const;
     // -- change output line source
     void setOutput1LineSource(Basler::Camera::LineSource);
-    void getOutput1LineSource(Basler::Camera::LineSource&) const;
+    void getOutput1LineSource(Basler::Camera::LineSource&);
 
     // -- Pylon buffers statistics
     void getStatisticsTotalBufferCount(long& count);    
