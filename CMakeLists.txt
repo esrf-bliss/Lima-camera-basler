@@ -28,8 +28,13 @@ TARGET_LINK_LIBRARIES(limabasler limacore)
 TARGET_LINK_LIBRARIES(limabasler ${PYLONBASE})
 TARGET_LINK_LIBRARIES(limabasler ${PYLONGIGESUPP})
 SET_TARGET_PROPERTIES(limabasler PROPERTIES VERSION ${basler_ver} SOVERSION "1")
-INSTALL(TARGETS limabasler
-        LIBRARY DESTINATION lib)
+if(WIN32)
+    INSTALL(TARGETS limabasler
+            DESTINATION lib)
+else()
+    INSTALL(TARGETS limabasler
+            LIBRARY DESTINATION lib)
+endif()
 
 IF(COMPILE_SIP)
     SET(NAME "basler")
