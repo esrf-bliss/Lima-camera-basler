@@ -1,5 +1,5 @@
 
-SET(PYLON_ROOT "/opt/pylon" CACHE STRING "location of pylon sdk")
+SET(PYLON_ROOT "/opt/pylon" CACHE PATH "location of pylon sdk")
 
 SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--add-needed")
 LINK_DIRECTORIES(${PYLON_ROOT}/genicam/bin/Linux64_x64)
