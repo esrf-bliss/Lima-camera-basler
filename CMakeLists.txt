@@ -14,7 +14,11 @@ ADD_LIBRARY(limabasler SHARED
 )
 TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${PYLON_ROOT}/include")
-TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${PYLON_ROOT}/genicam/library/CPP/include")
+if(WIN32)
+    TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${PYLON_ROOT}/../genicam/library/cpp/include")
+ELSE()
+    TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${PYLON_ROOT}/genicam/library/CPP/include")
+ENDIF()
 TARGET_COMPILE_DEFINITIONS(limabasler PUBLIC USE_GIGE)
 
 IF (WIN32)
