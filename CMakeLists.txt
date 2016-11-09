@@ -77,6 +77,7 @@ IF(COMPILE_SIP)
     ENDFOREACH()
 
     CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/sip/limamodules.sip.in sip/limabasler.sip)
+    SET(SIP_CONCAT_PARTS 1)
     SET(SIP_INCLUDES ${SIP_INCLUDES}
         "${CMAKE_SOURCE_DIR}/third-party/Processlib/sip"
         "${CMAKE_BINARY_DIR}/sip/core"
