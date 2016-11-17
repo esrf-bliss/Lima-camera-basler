@@ -57,6 +57,10 @@ IF(WIN32)
 ENDIF()
 SET_TARGET_PROPERTIES(limabasler PROPERTIES VERSION ${basler_ver} SOVERSION "1")
 if(WIN32)
+    SET_TARGET_PROPERTIES(limabasler PROPERTIES PREFIX "lib")
+endif()
+
+if(WIN32)
     INSTALL(TARGETS limabasler
             DESTINATION lib)
 else()
