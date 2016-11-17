@@ -1194,14 +1194,12 @@ void Camera::setRoi(const Roi& ask_roi)
 {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(ask_roi);
-    Roi set_roi;
-    checkRoi(ask_roi,set_roi);
     Roi r;    
     try
     {
         //- backup old roi, in order to rollback if error
         getRoi(r);
-        if(r == set_roi) return;
+        if(r == ask_roi) return;
         
         //- first reset the ROI
         Camera_->OffsetX.SetValue(Camera_->OffsetX.GetMin());
@@ -1213,14 +1211,14 @@ void Camera::setRoi(const Roi& ask_roi)
 						Camera_->OffsetY.GetMin(),
 						Camera_->Width.GetMax(),
 						Camera_->Height.GetMax());
-        
-        if(set_roi.isActive() && fullFrame != set_roi)
+
+        if(ask_roi.isActive() && fullFrame != ask_roi)
         {
             //- then fix the new ROI
-            Camera_->Width.SetValue( set_roi.getSize().getWidth());
-            Camera_->Height.SetValue(set_roi.getSize().getHeight());
-            Camera_->OffsetX.SetValue(set_roi.getTopLeft().x);
-            Camera_->OffsetY.SetValue(set_roi.getTopLeft().y);
+            Camera_->Width.SetValue(ask_roi.getSize().getWidth());
+            Camera_->Height.SetValue(ask_roi.getSize().getHeight());
+            Camera_->OffsetX.SetValue(ask_roi.getTopLeft().x);
+            Camera_->OffsetY.SetValue(ask_roi.getTopLeft().y);
         }
     }
     catch (GenICam::GenericException &e)
