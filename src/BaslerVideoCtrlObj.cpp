@@ -80,13 +80,16 @@ void VideoCtrlObj::getVideoMode(VideoMode &mode) const
     case PixelFormat_Mono8:             mode = Y8;		break;
     case PixelFormat_Mono10: 		mode = Y16;		break;
     case PixelFormat_Mono12:  		mode = Y16;		break;
+#if defined (USE_GIGE)      
     case PixelFormat_Mono16:  		mode = Y16;		break;
+#endif      
     case PixelFormat_BayerRG8:  	mode = BAYER_RG8;	break;
     case PixelFormat_BayerBG8: 		mode = BAYER_BG8;	break;  
     case PixelFormat_BayerRG10:  	mode = BAYER_RG16;	break;
     case PixelFormat_BayerBG10:    	mode = BAYER_BG16;	break;
     case PixelFormat_BayerRG12:    	mode = BAYER_RG16;	break;
     case PixelFormat_BayerBG12:      	mode = BAYER_BG16;	break;
+#if defined (USE_GIGE)      
     case PixelFormat_RGB8Packed:  	mode = RGB24;		break;
     case PixelFormat_BGR8Packed:  	mode = BGR24;		break;
     case PixelFormat_RGBA8Packed:  	mode = RGB32;		break;
@@ -96,6 +99,7 @@ void VideoCtrlObj::getVideoMode(VideoMode &mode) const
     case PixelFormat_YUV444Packed:  	mode = YUV444PACKED;	break;
     case PixelFormat_BayerRG16:    	mode = BAYER_RG16;	break;
     case PixelFormat_BayerBG16:    	mode = BAYER_BG16;	break;
+#endif      
     default:
       THROW_HW_ERROR(NotSupported) << "Pixel type not supported yet";
     }
@@ -111,8 +115,10 @@ void VideoCtrlObj::setVideoMode(VideoMode mode)
     case Y8:
       pixelformat.push_back(PixelFormat_Mono8);
       break;
-    case Y16: 
+    case Y16:
+#if defined (USE_GIGE)      
       pixelformat.push_back(PixelFormat_Mono16);
+#endif      
       pixelformat.push_back(PixelFormat_Mono12);
       pixelformat.push_back(PixelFormat_Mono10);
       break;
@@ -123,15 +129,20 @@ void VideoCtrlObj::setVideoMode(VideoMode mode)
       pixelformat.push_back(PixelFormat_BayerBG8);
       break;  
     case BAYER_RG16: 
+#if defined (USE_GIGE)      
       pixelformat.push_back(PixelFormat_BayerRG16);
+#endif
       pixelformat.push_back(PixelFormat_BayerRG12);
       pixelformat.push_back(PixelFormat_BayerRG10);
       break;
     case BAYER_BG16:
+#if defined (USE_GIGE)      
       pixelformat.push_back(PixelFormat_BayerBG16);
+#endif
       pixelformat.push_back(PixelFormat_BayerBG12);
       pixelformat.push_back(PixelFormat_BayerBG10);
       break;
+#if defined (USE_GIGE)      
     case RGB24: 
       pixelformat.push_back(PixelFormat_RGB8Packed);
       break;
@@ -153,6 +164,7 @@ void VideoCtrlObj::setVideoMode(VideoMode mode)
     case YUV444PACKED:
       pixelformat.push_back(PixelFormat_YUV444Packed);
       break;
+#endif      
     default:
       THROW_HW_ERROR(NotSupported) << "Mode type not supported yet";
     }

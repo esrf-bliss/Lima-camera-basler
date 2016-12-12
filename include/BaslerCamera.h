@@ -31,6 +31,7 @@
 #endif
 
 #include <pylon/PylonIncludes.h>
+#include <pylon/usb/BaslerUsbDeviceInfo.h>
 #include <pylon/gige/BaslerGigEDeviceInfo.h>
 
 #include <basler_export.h>
@@ -41,19 +42,18 @@
 
 using namespace Pylon;
 
-#if defined( USE_1394 )
-// Settings to use  Basler 1394 cameras
-#include <pylon/1394/Basler1394Camera.h>
-typedef Pylon::CBasler1394Camera Camera_t;
-using namespace Basler_IIDC1394CameraParams;
-using namespace Basler_IIDC1394StreamParams;
-
-#elif defined ( USE_GIGE )
+#if defined ( USE_GIGE )
 // settings to use Basler GigE cameras
 #include <pylon/gige/BaslerGigECamera.h>
 typedef Pylon::CBaslerGigECamera Camera_t;
 using namespace Basler_GigECameraParams;
 using namespace Basler_GigEStreamParams;
+#elif defined ( USE_USB )
+// settings to use Basler USB cameras
+#include <pylon/usb/BaslerUsbCamera.h>
+typedef Pylon::CBaslerUsbCamera Camera_t;
+using namespace Basler_UsbCameraParams;
+using namespace Basler_UsbStreamParams;
 #else
 #error Camera type is not specified. For example, define USE_GIGE for using GigE cameras
 #endif
@@ -79,7 +79,8 @@ class BASLER_EXPORT Camera
     enum Status {
       Ready, Exposure, Readout, Latency, Fault
     };
-
+    
+#if defined (USE_GIGE)
     enum LineSource {
       Off, ExposureActive, FrameTriggerWait, LineTriggerWait,
       Timer1Active, Timer2Active, Timer3Active, Timer4Active, TimerActive,
@@ -88,6 +89,13 @@ class BASLER_EXPORT Camera
       PatternGenerator1, PatternGenerator2, PatternGenerator3, PatternGenerator4,
       AcquisitionTriggerReady,
     };
+#elif defined (USE_USB)
+    enum LineSource {
+      Off, ExposureActive, FrameTriggerWait,FrameBurstTriggerWait,
+      UserOutput0, UserOutput1, UserOutput2, UserOutput3,
+      FlashWindow,
+    };
+#endif    
 
     enum TrigActivation {
         RisingEdge=Basler_GigECamera::TriggerActivation_RisingEdge,
@@ -157,6 +165,7 @@ class BASLER_EXPORT Camera
     void getStatus(Camera::Status& status);
     
     // -- Transport Layer
+#if defined (USE_GIGE)    
     void setPacketSize(int isize);
     void getPacketSize(int& isize);    
     void setInterPacketDelay(int ipd);
@@ -164,11 +173,11 @@ class BASLER_EXPORT Camera
     void getMaxThroughput(int& ipd);    
     void getCurrentThroughput(int& ipd);
     void getBandwidthAssigned(int& ipd);
-
-    void setSocketBufferSize(int sbs);
-        
+    void setSocketBufferSize(int sbs);        
     void setFrameTransmissionDelay(int ftd);
-
+#elif defined (USE_USB)
+#endif
+    
     // -- basler specific, LIMA don't worry about it !
     void getFrameRate(double& frame_rate) const;
     bool isBinningAvailable() const;

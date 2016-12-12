@@ -122,8 +122,10 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
         DEB_TRACE() << "Create a camera object of type Camera_t::DeviceClass()";
         CTlFactory& TlFactory = CTlFactory::GetInstance();
 
-        CBaslerGigEDeviceInfo di;
-
+        CBaslerGigEDeviceInfo gige_di;
+	CDeviceInfo di;
+        IPylonDevice* device = NULL;
+	
 	// by default use ip:// scheme if none is given
 	if (m_camera_id.find("://") == std::string::npos)
 	{
@@ -135,9 +137,11 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
             // m_camera_id is not really necessarily an IP, it may also be a DNS name
             Pylon::String_t pylon_camera_ip(_get_ip_addresse(m_camera_id.substr(IP_PREFIX.size()).c_str()));
             //- Find the Pylon device thanks to its IP Address
-            di.SetIpAddress( pylon_camera_ip);
+            gige_di.SetIpAddress( pylon_camera_ip);
             DEB_TRACE() << "Create the Pylon device attached to ip address: "
 			<< DEB_VAR1(m_camera_id);
+	    device = TlFactory.CreateDevice(gige_di);
+	    
  	}
         else if (!m_camera_id.compare(0, SN_PREFIX.size(), SN_PREFIX))
 	{
@@ -146,6 +150,8 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
             di.SetSerialNumber(serial_number);
             DEB_TRACE() << "Create the Pylon device attached to serial number: "
 			<< DEB_VAR1(m_camera_id);
+	    device = TlFactory.CreateDevice(di);
+
 	}
 	else if(!m_camera_id.compare(0, UNAME_PREFIX.size(), UNAME_PREFIX))
         {
@@ -154,13 +160,13 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
             di.SetUserDefinedName(user_name);
             DEB_TRACE() << "Create the Pylon device attached to user name: "
 			<< DEB_VAR1(m_camera_id);
+	    device = TlFactory.CreateDevice(di);
  	}
 	else 
         {
 	    THROW_CTL_ERROR(InvalidValue) << "Unrecognized camera id: " << camera_id;
         }
 
-        IPylonDevice* device = TlFactory.CreateDevice( di);
         if (!device)
         {
             THROW_HW_ERROR(Error) << "Unable to find camera with selected IP!";
@@ -168,7 +174,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 
         //- Create the Basler Camera object
         DEB_TRACE() << "Create the Camera object corresponding to the created Pylon device";
-        Camera_ = new Camera_t(device);
+        Camera_ = new  Camera_t(device);
         if(!Camera_)
         {
             THROW_HW_ERROR(Error) << "Unable to get the camera from transport_layer!";
@@ -191,10 +197,15 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
         // Open the camera
         DEB_TRACE() << "Open camera";        
         Camera_->Open();
-    
-        if(packet_size > 0)
-          Camera_->GevSCPSPacketSize.SetValue(packet_size);
-    
+
+#if defined( USE_1394 )
+	if ( GenApi::IsAvailable(Camera_->GevSCPSPacketSize ))
+        {
+            DEB_TRACE() << "Set packet size (GigE camera only)";           
+	    if(packet_size > 0)
+	      Camera_->GevSCPSPacketSize.SetValue(packet_size);
+	}
+#endif     
         // Set the image format and AOI
         DEB_TRACE() << "Set the image format and AOI";
 	// basler model string last character codes for color (c) or monochrome (m)
@@ -258,7 +269,11 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 
         // Set the camera to continuous frame mode
         DEB_TRACE() << "Set the camera to continuous frame mode";
+#if defined (USE_GIGE)	
         Camera_->TriggerSelector.SetValue(TriggerSelector_AcquisitionStart);
+#elif defined ( USE_USB )
+        Camera_->TriggerSelector.SetValue(TriggerSelector_FrameStart);	
+#endif
         Camera_->AcquisitionMode.SetValue(AcquisitionMode_Continuous);
         
         if ( GenApi::IsAvailable(Camera_->ExposureAuto ))
@@ -665,13 +680,16 @@ void Camera::_AcqThread::threadFunction()
 				      case PixelType_Mono8:		mode = Y8;		break;
 				      case PixelType_Mono10: 		mode = Y16;		break;
 				      case PixelType_Mono12:  		mode = Y16;		break;
+#if defined (USE_GIGE)					
 				      case PixelType_Mono16:  		mode = Y16;		break;
+#endif					
 				      case PixelType_BayerRG8:  	mode = BAYER_RG8;	break;
 				      case PixelType_BayerBG8: 		mode = BAYER_BG8;	break;  
 				      case PixelType_BayerRG10:  	mode = BAYER_RG16;	break;
 				      case PixelType_BayerBG10:    	mode = BAYER_BG16;	break;
 				      case PixelType_BayerRG12:    	mode = BAYER_RG16;	break;
 				      case PixelType_BayerBG12:      	mode = BAYER_BG16;	break;
+#if defined (USE_GIGE)					
 				      case PixelType_RGB8packed:  	mode = RGB24;		break;
 				      case PixelType_BGR8packed:  	mode = BGR24;		break;
 				      case PixelType_RGBA8packed:  	mode = RGB32;		break;
@@ -681,6 +699,7 @@ void Camera::_AcqThread::threadFunction()
 				      case PixelType_YUV444packed:  	mode = YUV444PACKED;	break;
 				      case PixelType_BayerRG16:    	mode = BAYER_RG16;	break;
 				      case PixelType_BayerBG16:    	mode = BAYER_BG16;	break;
+#endif					
 				      default:
 					DEB_ERROR() << "Image type not managed";
 					return;
@@ -780,7 +799,29 @@ void Camera::getImageType(ImageType& type)
     PixelFormatEnums ps;
     try
     {
+<<<<<<< HEAD
         ps = Camera_->PixelFormat.GetValue();
+=======
+        PixelFormatEnums ps = Camera_->PixelFormat.GetValue();
+        switch( ps )
+        {
+            case PixelFormat_Mono8:
+                type= Bpp8;
+            break;
+              
+            case PixelFormat_Mono12:
+                type= Bpp12;
+            break;
+#if defined (USE_GIGE)              
+            case PixelFormat_Mono16: //- this is in fact 12 bpp inside a 16bpp image
+                type= Bpp16;
+            break;
+#endif              
+            default:
+                type= Bpp10;
+            break;
+        }
+>>>>>>> USB3 try
     }
     catch (GenICam::GenericException &e)
     {
@@ -837,6 +878,7 @@ void Camera::setImageType(ImageType type)
         switch( type )
         {
             case Bpp8:
+<<<<<<< HEAD
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
                 break;
             case Bpp12:
@@ -849,6 +891,21 @@ void Camera::setImageType(ImageType type)
             default:
                 THROW_HW_ERROR(NotSupported) << "Cannot change the pixel format of the camera !";
                 break;
+=======
+	      this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
+            break;
+            case Bpp12:
+	      this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
+	      break;
+#if defined (USE_GIGE)
+            case Bpp16:
+	      this->Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
+            break;
+#endif              
+            default:
+	      THROW_HW_ERROR(Error) << "Cannot change the format of the camera !";
+            break;
+>>>>>>> USB3 try
         }
     }
     catch (GenICam::GenericException &e)
@@ -898,12 +955,15 @@ void Camera::setTrigMode(TrigMode mode)
     
     try
     {        
-        GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");
+#if defined (USE_GIGE)
+      GenApi::IEnumEntry *enumEntryFrameStart = Camera_->TriggerSelector.GetEntryByName("FrameStart");
         if(enumEntryFrameStart && GenApi::IsAvailable(enumEntryFrameStart))
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );
         else
             this->Camera_->TriggerSelector.SetValue( TriggerSelector_AcquisitionStart );
-
+#elif defined (USE_USB)
+	this->Camera_->TriggerSelector.SetValue( TriggerSelector_FrameStart );	
+#endif
     	if ( mode == IntTrig )
         {
             //- INTERNAL
@@ -915,7 +975,13 @@ void Camera::setTrigMode(TrigMode mode)
         {
 	    this->Camera_->TriggerMode.SetValue(TriggerMode_On);
 	    this->Camera_->TriggerSource.SetValue(TriggerSource_Software);
+<<<<<<< HEAD
 	    this->setAcquisitionFrameCount(1);
+=======
+#if defined (USE_GIGE)
+	    this->Camera_->AcquisitionFrameCount.SetValue(1);
+#endif       
+>>>>>>> USB3 try
 	    this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
         }
         else if ( mode == ExtGate )
@@ -1053,6 +1119,7 @@ void Camera::setExpTime(double exp_time)
     try
     {
         if(mode !=  ExtGate) { // the expTime can not be set in ExtGate!
+#if defined (USE_GIGE)	  
             if (GenApi::IsAvailable(Camera_->ExposureTimeBaseAbs))
             {
                 //If scout or pilot, exposure time has to be adjusted using
@@ -1072,6 +1139,9 @@ void Camera::setExpTime(double exp_time)
                 // the exposure time absolute.
                 Camera_->ExposureTimeAbs.SetValue(1E6 * exp_time);
             }
+#elif defined (USE_USB)
+	    Camera_->ExposureTime.SetValue(1E6 * exp_time);
+#endif	    
         }
         
         m_exp_time = exp_time;
@@ -1085,8 +1155,13 @@ void Camera::setExpTime(double exp_time)
         {
             double periode = m_latency_time + m_exp_time;
             Camera_->AcquisitionFrameRateEnable.SetValue(true);
+#if defined (USE_GIGE)
             Camera_->AcquisitionFrameRateAbs.SetValue(1 / periode);
             DEB_TRACE() << DEB_VAR1(Camera_->AcquisitionFrameRateAbs.GetValue());
+#elif defined (USE_USB)
+            Camera_->AcquisitionFrameRate.SetValue(1 / periode);
+            DEB_TRACE() << DEB_VAR1(Camera_->AcquisitionFrameRate.GetValue());
+#endif 	    
         }
 
     }
@@ -1105,7 +1180,11 @@ void Camera::getExpTime(double& exp_time)
     DEB_MEMBER_FUNCT();
     try
     {
-        double value = 1.0E-6 * static_cast<double>(Camera_->ExposureTimeAbs.GetValue());    
+#if defined (USE_GIGE)      
+        double value = 1.0E-6 * static_cast<double>(Camera_->ExposureTimeAbs.GetValue());
+#elif defined (USE_USB)
+        double value = 1.0E-6 * static_cast<double>(Camera_->ExposureTime.GetValue());
+#endif	
         exp_time = value;
     }
     catch (GenICam::GenericException &e)
@@ -1145,7 +1224,8 @@ void Camera::getExposureTimeRange(double& min_expo, double& max_expo) const
 
     try
     {
-        // Pilot and and Scout do not have TimeAbs capability
+#if defined (USE_GIGE)
+      // Pilot and and Scout do not have TimeAbs capability
         if (GenApi::IsAvailable(Camera_->ExposureTimeBaseAbs))
         {
             // memorize initial value of exposure time
@@ -1177,6 +1257,10 @@ void Camera::getExposureTimeRange(double& min_expo, double& max_expo) const
             min_expo = Camera_->ExposureTimeAbs.GetMin()*1e-6;
             max_expo = Camera_->ExposureTimeAbs.GetMax()*1e-6;
         }
+#elif defined (USE_USB)
+	min_expo = Camera_->ExposureTime.GetMin()*1e-6;
+	max_expo = Camera_->ExposureTime.GetMax()*1e-6;
+#endif
     }
     catch (GenICam::GenericException &e)
     {
@@ -1197,7 +1281,11 @@ void Camera::getLatTimeRange(double& min_lat, double& max_lat) const
     try
     {
         min_lat = 0;
+#if defined (USE_GIGE)
         double minAcqFrameRate = Camera_->AcquisitionFrameRateAbs.GetMin();
+#elif defined (USE_USB)
+        double minAcqFrameRate = Camera_->AcquisitionFrameRate.GetMin();
+#endif	
         if (minAcqFrameRate > 0)
             max_lat = 1 / minAcqFrameRate;
         else
@@ -1283,7 +1371,11 @@ void Camera::getFrameRate(double& frame_rate) const
     DEB_MEMBER_FUNCT();
     try
     {
-        frame_rate = static_cast<double>(Camera_->ResultingFrameRateAbs.GetValue());        
+#if defined (USE_GIGE)      
+        frame_rate = static_cast<double>(Camera_->ResultingFrameRateAbs.GetValue());
+#elif defined (USE_USB)
+        frame_rate = static_cast<double>(Camera_->ResultingFrameRate.GetValue());
+#endif	
     }
     catch (GenICam::GenericException &e)
     {
@@ -1520,6 +1612,7 @@ bool Camera::isRoiAvailable() const
   return isAvailable;
 }
 
+#if defined (USE_GIGE)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -1597,13 +1690,18 @@ void Camera::setSocketBufferSize(int sbs)
     DEB_PARAM() << DEB_VAR1(sbs);
     m_socketBufferSize = sbs;
 }
+#endif
 
 //-----------------------------------------------------
 // isGainAvailable
 //-----------------------------------------------------
 bool Camera::isGainAvailable() const
 {
+#if defined (USE_GIGE)  
     return GenApi::IsAvailable(Camera_->GainRaw);
+#elif defined (USE_USB)
+    return GenApi::IsAvailable(Camera_->Gain);
+#endif    
 }
 
 
@@ -1615,7 +1713,7 @@ bool Camera::isAutoGainAvailable() const
     return GenApi::IsAvailable(Camera_->GainAuto);
 }
 
-
+#if defined (USE_GIGE)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -1630,7 +1728,8 @@ void Camera::getBandwidthAssigned(int& ipd)
     {
         DEB_WARNING() << e.GetDescription();
     }
-}   
+}
+ 
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -1662,6 +1761,7 @@ void Camera::getCurrentThroughput(int& ipd)
         DEB_WARNING() << e.GetDescription();
     }
 }    
+<<<<<<< HEAD
 
 //-----------------------------------------------------
 // isTemperatureAvailable
@@ -1671,6 +1771,9 @@ bool Camera::isTemperatureAvailable() const
     return GenApi::IsAvailable(Camera_->TemperatureAbs);
 }
 
+=======
+#endif    
+>>>>>>> USB3 try
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -1680,9 +1783,18 @@ void Camera::getTemperature(double& temperature)
     DEB_MEMBER_FUNCT();
     try
     {
-        // If the parameter TemperatureAbs is available for this camera
+#if defined (USE_GIGE)
+      // If the parameter TemperatureAbs is available for this camera
         if (GenApi::IsAvailable(Camera_->TemperatureAbs))
             temperature = Camera_->TemperatureAbs.GetValue();
+#elif defined (USE_USB)
+	if (GenApi::IsAvailable(Camera_->DeviceTemperature))
+	  {
+	    Camera_->DeviceTemperatureSelector.SetValue(DeviceTemperatureSelector_Sensorboard);
+	    temperature = Camera_->DeviceTemperature.GetValue();
+	  }
+#elif defined (USE_USB)
+#endif	
     }
     catch (GenICam::GenericException &e)
     {
@@ -1758,8 +1870,8 @@ void Camera::setGain(double gain)
         if (GenApi::IsAvailable(Camera_->GainAuto))
         {		
 			setAutoGain(false);
-		}
-		
+	}
+#if defined (USE_GIGE)		
         if (GenApi::IsWritable(Camera_->GainRaw) && GenApi::IsAvailable(Camera_->GainRaw))
         {
 
@@ -1781,6 +1893,29 @@ void Camera::setGain(double gain)
             }
             Camera_->GainRaw.SetValue(gain_raw);
             DEB_TRACE() << "gain_raw = " << gain_raw;
+#elif defined (USE_USB)
+        if (GenApi::IsWritable(Camera_->Gain) && GenApi::IsAvailable(Camera_->Gain))
+        {
+
+            int low_limit = Camera_->Gain.GetMin();
+            DEB_TRACE() << "low_limit = " << low_limit;
+
+            int hight_limit = Camera_->Gain.GetMax();
+            DEB_TRACE() << "hight_limit = " << hight_limit;
+
+            int gain_raw = int((hight_limit - low_limit) * gain + low_limit);
+
+            if (gain_raw < low_limit)
+            {
+                gain_raw = low_limit;
+            }
+            else if (gain_raw > hight_limit)
+            {
+                gain_raw = hight_limit;
+            }
+            Camera_->Gain.SetValue(gain_raw);
+            DEB_TRACE() << "gain_raw = " << gain_raw;
+#endif	    
         }
 		else
 		{
@@ -1802,7 +1937,8 @@ void Camera::getGain(double& gain) const
     DEB_MEMBER_FUNCT();
     try
     {
-        if (GenApi::IsAvailable(Camera_->GainRaw))
+#if defined (USE_GIGE)
+      if (GenApi::IsAvailable(Camera_->GainRaw))
         {
             int gain_raw = Camera_->GainRaw.GetValue();
             int low_limit = Camera_->GainRaw.GetMin();
@@ -1814,6 +1950,20 @@ void Camera::getGain(double& gain) const
         {
             gain = 0.;
         }
+#elif defined (USE_USB)
+      if (GenApi::IsAvailable(Camera_->Gain))
+        {
+            int gain_raw = Camera_->Gain.GetValue();
+            int low_limit = Camera_->Gain.GetMin();
+            int hight_limit = Camera_->Gain.GetMax();
+
+            gain = double(gain_raw - low_limit) / (hight_limit - low_limit);
+        }
+        else
+        {
+            gain = 0.;
+        }
+#endif      
     }
     catch (GenICam::GenericException &e)
     {
@@ -1823,6 +1973,7 @@ void Camera::getGain(double& gain) const
     DEB_RETURN() << DEB_VAR1(gain);
 }
 
+#if defined (USE_GIGE)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -1840,6 +1991,7 @@ void Camera::setFrameTransmissionDelay(int ftd)
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
 }
+#endif
 
 //--------------------------------------------------------
 //
@@ -1962,12 +2114,15 @@ void Camera::setOutput1LineSource(Camera::LineSource source)
 {
   DEB_MEMBER_FUNCT();
   DEB_PARAM() << DEB_VAR1(source);
-
+#if defined (USE_GIGE)
   Camera_->LineSelector.SetValue(LineSelector_Out1);
-
+#elif defined (USE_USB)
+  Camera_->LineSelector.SetValue(LineSelector_Line1);
+#endif  
   LineSourceEnums line_src;
   switch(source)
     {
+#if defined (USE_GIGE)
     case Camera::Off:				line_src = LineSource_Off;			break;
     case Camera::ExposureActive:		line_src = LineSource_ExposureActive;		break;
     case Camera::FrameTriggerWait:		line_src = LineSource_FrameTriggerWait;		break;
@@ -1992,6 +2147,18 @@ void Camera::setOutput1LineSource(Camera::LineSource source)
     case Camera::PatternGenerator3:		line_src = LineSource_PatternGenerator3;	break;
     case Camera::PatternGenerator4:		line_src = LineSource_PatternGenerator4;	break;
     case Camera::AcquisitionTriggerReady:	line_src = LineSource_AcquisitionTriggerReady;	break;
+#elif defined (USE_USB)
+    case Camera::Off:				line_src = LineSource_Off;			break;
+    case Camera::ExposureActive:		line_src = LineSource_ExposureActive;		break;
+    case Camera::FrameTriggerWait:		line_src = LineSource_FrameTriggerWait;		break;
+    case Camera::FrameBurstTriggerWait:	        line_src = LineSource_FrameBurstTriggerWait;		break;
+    case Camera::UserOutput0:			line_src = LineSource_UserOutput0;		break;
+    case Camera::UserOutput1:			line_src = LineSource_UserOutput1;		break;
+    case Camera::UserOutput2:			line_src = LineSource_UserOutput2;		break;
+    case Camera::UserOutput3:			line_src = LineSource_UserOutput3;		break;
+    case Camera::FlashWindow:	                line_src = LineSource_FlashWindow;		break;
+      
+#endif      
     default:
       THROW_HW_ERROR(NotSupported) << "Not yet managed";
     }
@@ -2002,9 +2169,14 @@ void Camera::getOutput1LineSource(Camera::LineSource& source) const
 {
   DEB_MEMBER_FUNCT();
 
+ #if defined (USE_GIGE)
   Camera_->LineSelector.SetValue(LineSelector_Out1);
+#elif defined (USE_USB)
+  Camera_->LineSelector.SetValue(LineSelector_Line1);
+#endif  
   switch(Camera_->LineSource.GetValue())
     {
+#if defined (USE_GIGE)
     case LineSource_Off:			source = Off;				break;
     case LineSource_ExposureActive:		source = ExposureActive;		break;
     case LineSource_FrameTriggerWait:		source = FrameTriggerWait;		break;
@@ -2029,6 +2201,17 @@ void Camera::getOutput1LineSource(Camera::LineSource& source) const
     case LineSource_PatternGenerator3:		source = PatternGenerator3;		break;
     case LineSource_PatternGenerator4:		source = PatternGenerator4;		break;
     case LineSource_AcquisitionTriggerReady:	source = AcquisitionTriggerReady;	break;
+#elif defined (USE_USB)
+    case LineSource_Off:			source = Off;				break;
+    case LineSource_ExposureActive:		source = ExposureActive;		break;
+    case LineSource_FrameTriggerWait:		source = FrameTriggerWait;		break;
+    case LineSource_FrameBurstTriggerWait:	source = FrameBurstTriggerWait;	        break;
+    case LineSource_UserOutput0:		source = UserOutput0;			break;
+    case LineSource_UserOutput1:		source = UserOutput1;			break;
+    case LineSource_UserOutput2:		source = UserOutput2;			break;
+    case LineSource_UserOutput3:		source = UserOutput3;			break;
+    case LineSource_FlashWindow:	        source = FlashWindow;            	break;
+#endif      
     default:
       THROW_HW_ERROR(Error) << "Don't know this value ;)";
     }

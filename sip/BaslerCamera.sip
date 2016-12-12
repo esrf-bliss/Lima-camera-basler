@@ -83,12 +83,6 @@ namespace Basler
     void setBin(const Bin&);
     void getBin(Bin& /Out/);
 
-    void setInterPacketDelay(int ipd);
-
-    void setSocketBufferSize(int sbs);
-
-    void setFrameTransmissionDelay(int ftd);
-
     void getFrameRate(double& frame_rate /Out/) const;
     bool isBinningAvailable() const;
     bool isRoiAvailable() const;
