@@ -1171,6 +1171,16 @@ void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
     {
         if (set_roi.isActive())
         {
+	    // Taking care of the value increment, round up the ROI, 
+	    // some cameras have increment > 1, ie. acA1920-50gm (Sony CMOS) Inc is 4 for width and offset X
+	    const Roi rup_roi (ceil(set_roi.getSize().getWidth()/Camera_->Width.GetInc())/Camera_->Width.GetInc(),
+			 ceil(set_roi.getSize().getHeight()/Camera_->Height.GetInc())/Camera_->Height.GetInc(),
+			 ceil(set_roi.getTopLeft().x/Camera_->OffsetX.GetInc())/Camera_->OffsetX.GetInc(),
+			 ceil(set_roi.getTopLeft().y/Camera_->OffsetY.GetInc())/Camera_->OffsetY.GetInc());
+	    
+	    hw_roi = rup_roi;
+
+	    // size at minimum 
             const Size& aSetRoiSize = set_roi.getSize();
             Size aRoiSize = Size(max(aSetRoiSize.getWidth(),
 				     int(Camera_->Width.GetMin())),
@@ -1208,12 +1218,12 @@ void Camera::setRoi(const Roi& ask_roi)
         Camera_->Height.SetValue(Camera_->Height.GetMax());
         
         Roi fullFrame(  Camera_->OffsetX.GetMin(),
-						Camera_->OffsetY.GetMin(),
-						Camera_->Width.GetMax(),
-						Camera_->Height.GetMax());
+			Camera_->OffsetY.GetMin(),
+			Camera_->Width.GetMax(),
+			Camera_->Height.GetMax());
 
         if(ask_roi.isActive() && fullFrame != ask_roi)
-        {
+	{
             //- then fix the new ROI
             Camera_->Width.SetValue(ask_roi.getSize().getWidth());
             Camera_->Height.SetValue(ask_roi.getSize().getHeight());
