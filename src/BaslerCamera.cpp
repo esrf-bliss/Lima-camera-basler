@@ -199,6 +199,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
         static const char* PixelFormatStr[] = {"BayerRG16","BayerBG16",
 					       "BayerRG12","BayerBG12",
 					       "BayerRG8","BayerBG8",
+					       "YUV422Packed",
 					       "Mono16", "Mono12", "Mono8",NULL};
         bool formatSetFlag = false;
         for(const char** pt = PixelFormatStr;*pt;++pt)
@@ -207,7 +208,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
             if(anEntry && GenApi::IsAvailable(anEntry))
             {
                 formatSetFlag = true;
-		m_color_flag = *pt[0] == 'B';
+		m_color_flag = (*pt[0] == 'B' || *pt[0] == 'Y');
 		Camera_->PixelFormat.SetIntValue(anEntry->GetValue());
                 DEB_TRACE() << "Set pixel format to " << *pt;
                 break;
@@ -599,9 +600,9 @@ void Camera::_AcqThread::threadFunction()
 				      case PixelType_BGR8packed:  	mode = BGR24;		break;
 				      case PixelType_RGBA8packed:  	mode = RGB32;		break;
 				      case PixelType_BGRA8packed:  	mode = BGR32;		break;
-				      case PixelType_YUV411packed:  	mode = YUV411;		break;
-				      case PixelType_YUV422packed:  	mode = YUV422;		break;
-				      case PixelType_YUV444packed:  	mode = YUV444;		break;
+				      case PixelType_YUV411packed:  	mode = YUV411PACKED;	break;
+				      case PixelType_YUV422packed:  	mode = YUV422PACKED;	break;
+				      case PixelType_YUV444packed:  	mode = YUV444PACKED;	break;
 				      case PixelType_BayerRG16:    	mode = BAYER_RG16;	break;
 				      case PixelType_BayerBG16:    	mode = BAYER_BG16;	break;
 				      default:
