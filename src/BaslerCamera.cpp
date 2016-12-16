@@ -196,10 +196,14 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
     
         // Set the image format and AOI
         DEB_TRACE() << "Set the image format and AOI";
+	// The list Order here has sense, if found supported, the first format in the list will be applied
+	// as default one, and in case of color camera the default will defined the max buffer
+	// size for the memory allocation. Since YUV422Packed is 1.5 byte per pixel it is available
+	// before the Bayer 8bit (1 byte per pixel).
         static const char* PixelFormatStr[] = {"BayerRG16","BayerBG16",
 					       "BayerRG12","BayerBG12",
-					       "BayerRG8","BayerBG8",
 					       "YUV422Packed",
+					       "BayerRG8","BayerBG8",
 					       "Mono16", "Mono12", "Mono8",NULL};
         bool formatSetFlag = false;
         for(const char** pt = PixelFormatStr;*pt;++pt)
@@ -262,8 +266,9 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
-    if(m_color_flag)
-      _initColorStreamGrabber(true);
+    if(m_color_flag) {
+      _allocColorBuffer();
+    }
     else
       {
 	for(int i = 0;i < NB_COLOR_BUFFER;++i)
@@ -407,6 +412,10 @@ void Camera::startAcq()
 void Camera::_startAcq()
 {
   DEB_MEMBER_FUNCT();
+
+  if(m_video_flag_mode)
+    _initColorStreamGrabber();
+  
   Camera_->AcquisitionStart.Execute();
 
   //Start acqusition thread
@@ -447,9 +456,9 @@ void Camera::_stopAcq(bool internalFlag)
             // Stop acquisition
             DEB_TRACE() << "Stop acquisition";
             Camera_->AcquisitionStop.Execute();
-
-	    if(!m_video_flag_mode)
-	      _freeStreamGrabber();
+	    
+	    // always free for both video or acquisition
+	    _freeStreamGrabber();
             _setStatus(Camera::Ready,false);
         }
     }
@@ -481,7 +490,21 @@ void Camera::_freeStreamGrabber()
     }
 }
 
-void Camera::_initColorStreamGrabber(bool allocFlag)
+void Camera::_allocColorBuffer()
+{
+  DEB_MEMBER_FUNCT();
+  for(int i = 0;i < NB_COLOR_BUFFER;++i)
+    {
+#ifdef __unix
+      posix_memalign(&m_color_buffer[i],16,ImageSize_);
+#else
+      m_color_buffer[i] = _aligned_malloc(ImageSize_,16);
+#endif
+      m_video_flag_mode = true;
+    }
+}
+
+void Camera::_initColorStreamGrabber()
 {
   DEB_MEMBER_FUNCT();
 
@@ -499,17 +522,10 @@ void Camera::_initColorStreamGrabber(bool allocFlag)
 
   for(int i = 0;i < NB_COLOR_BUFFER;++i)
     {
-      if(allocFlag)
-#ifdef __unix
-	posix_memalign(&m_color_buffer[i],16,ImageSize_);
-#else
-        m_color_buffer[i] = _aligned_malloc(ImageSize_,16);
-#endif
       StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_color_buffer[i],
 								   (const size_t)ImageSize_);
       StreamGrabber_->QueueBuffer(bufferId,NULL);
     }
-  m_video_flag_mode = true;
 }
 
 //---------------------------
@@ -1308,7 +1324,6 @@ void Camera::checkBin(Bin &aBin)
 void Camera::setBin(const Bin &aBin)
 {
     DEB_MEMBER_FUNCT();
-    _freeStreamGrabber();
     try
     {
         Camera_->BinningVertical.SetValue(aBin.getY());

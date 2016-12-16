@@ -43,8 +43,13 @@ Interface::Interface(Camera& cam,bool force_video_mode) :
   m_cam.hasVideoCapability(has_video_capability);
   if(has_video_capability || force_video_mode)
     {
-      if(!has_video_capability)
+      if(!has_video_capability) {
+	// for greyscale camera but for having true video interface
+	// with gain/autogain and other true video features available
+	// one can force here for video interface.
+	m_cam._allocColorBuffer();
 	m_cam._initColorStreamGrabber();
+      }
       m_video = new VideoCtrlObj(cam);
     }
   else

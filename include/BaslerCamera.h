@@ -179,7 +179,8 @@ class LIBBASLER_API Camera
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
     void _freeStreamGrabber();
-    void _initColorStreamGrabber(bool = false);
+    void _allocColorBuffer();
+    void _initColorStreamGrabber();
     void _startAcq();
     void _readTrigMode();
 

@@ -155,7 +155,7 @@ void VideoCtrlObj::setVideoMode(VideoMode mode)
     default:
       THROW_HW_ERROR(NotSupported) << "Mode type not supported yet";
     }
-  m_cam._freeStreamGrabber();
+ 
   bool succeed = false;
   std::string errorMsg;
   for(std::list<PixelFormatEnums>::iterator i = pixelformat.begin();
@@ -171,7 +171,7 @@ void VideoCtrlObj::setVideoMode(VideoMode mode)
 	  errorMsg += e.GetDescription() + '\n';
 	}
     }
-  m_cam._initColorStreamGrabber();
+ 
   if(!succeed)
     THROW_HW_ERROR(Error) << errorMsg;
 }
