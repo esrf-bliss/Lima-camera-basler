@@ -245,6 +245,8 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
             Camera_->ExposureAuto.SetValue(ExposureAuto_Off);
         }
 	// Start with internal trigger
+	// Force cache variable to get trigger really initialized at first call
+	m_trigger_mode = ExtTrigSingle;
 	setTrigMode(IntTrig);
         // Get the image buffer size
         DEB_TRACE() << "Get the image buffer size";
