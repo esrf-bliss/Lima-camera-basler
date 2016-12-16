@@ -196,7 +196,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
     
         // Set the image format and AOI
         DEB_TRACE() << "Set the image format and AOI";
-	// The list Order here has sense, if found supported, the first format in the list will be applied
+	// The list Order here has sense, if supported, the first format in the list will be applied
 	// as default one, and in case of color camera the default will defined the max buffer
 	// size for the memory allocation. Since YUV422Packed is 1.5 byte per pixel it is available
 	// before the Bayer 8bit (1 byte per pixel).
@@ -719,33 +719,53 @@ void Camera::getDetectorImageSize(Size& size)
 void Camera::getImageType(ImageType& type)
 {
     DEB_MEMBER_FUNCT();
+    PixelFormatEnums ps;
     try
     {
-        PixelFormatEnums ps = Camera_->PixelFormat.GetValue();
-        switch( ps )
-        {
-            case PixelFormat_Mono8:
-                type= Bpp8;
-            break;
-              
-            case PixelFormat_Mono12:
-                type= Bpp12;
-            break;
-              
-            case PixelFormat_Mono16: //- this is in fact 12 bpp inside a 16bpp image
-                type= Bpp16;
-            break;
-              
-            default:
-                type= Bpp10;
-            break;
-        }
+        ps = Camera_->PixelFormat.GetValue();
     }
     catch (GenICam::GenericException &e)
     {
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
+    switch( ps )
+      {
+      case PixelFormat_Mono8:
+      case PixelFormat_BayerRG8:
+      case PixelFormat_BayerBG8:
+      case PixelFormat_RGB8Packed:
+      case PixelFormat_BGR8Packed:
+      case PixelFormat_RGBA8Packed:
+      case PixelFormat_BGRA8Packed:
+      case PixelFormat_YUV411Packed:
+      case PixelFormat_YUV422Packed:
+      case PixelFormat_YUV444Packed:
+	type= Bpp8;
+	break;
+
+      case PixelFormat_Mono10:
+      case PixelFormat_BayerRG10:
+      case PixelFormat_BayerBG10:
+	type = Bpp10;
+	break;
+	
+      case PixelFormat_Mono12:
+      case PixelFormat_BayerRG12:
+      case PixelFormat_BayerBG12:
+	type= Bpp12;
+	break;
+        
+      case PixelFormat_Mono16: //- this is in fact 12 bpp inside a 16bpp image
+      case PixelFormat_BayerRG16:
+      case PixelFormat_BayerBG16:
+	type= Bpp16;
+	break;
+	    
+      default:
+	THROW_HW_ERROR(Error) << "Unsupported Pixel Format : " << ps;
+	break;
+      }
 }
 
 //-----------------------------------------------------
@@ -762,14 +782,14 @@ void Camera::setImageType(ImageType type)
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
             break;
             case Bpp12:
-				this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
+	      this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
 			break;
             case Bpp16:
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
             break;
               
             default:
-                THROW_HW_ERROR(Error) << "Cannot change the format of the camera !";
+                THROW_HW_ERROR(NotSupported) << "Cannot change the format of the camera !";
             break;
         }
     }
