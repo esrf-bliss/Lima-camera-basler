@@ -259,13 +259,9 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
-    if(m_color_flag)
-      _initColorStreamGrabber(true);
-    else
-      {
-	for(int i = 0;i < NB_COLOR_BUFFER;++i)
-	  m_color_buffer[i] = NULL;
-      }
+    
+    _initStreamGrabber(true);
+
 }
 
 //---------------------------
@@ -289,11 +285,11 @@ Camera::~Camera()
         delete Camera_;
         Camera_ = NULL;
 	if (m_video_flag_mode)
-	  for(int i = 0;i < NB_COLOR_BUFFER;++i)
+	  for(int i = 0;i < NB_STREAM_BUFFER;++i)
 #ifdef __unix
-	    free(m_color_buffer[i]);
+	    free(m_stream_buffer[i]);
 #else
-	_aligned_free(m_color_buffer[i]);
+	_aligned_free(m_stream_buffer[i]);
 #endif
     }
     catch (GenICam::GenericException &e)
@@ -309,7 +305,7 @@ void Camera::prepareAcq()
     m_image_number=0;
 
     if(m_video_flag_mode)
-      return;			// Nothing to do if color camera
+      return;			// Nothing to do if has video
 
     try
     {
@@ -358,9 +354,10 @@ void Camera::prepareAcq()
         DEB_TRACE() << "Put buffer into the grab queue for grabbing";
         for(int i = 0;i < nb_buffers;++i)
         {
-            void *ptr = buffer_mgr.getFrameBufferPtr(i);
             // The registration returns a handle to be used for queuing the buffer.
-            StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(ptr,(const size_t)ImageSize_);
+	    m_stream_buffer[i] = buffer_mgr.getFrameBufferPtr(i);
+            StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_stream_buffer[i],
+                                                                   (const size_t)ImageSize_);
             StreamGrabber_->QueueBuffer(bufferId, NULL);
         }
 	if(m_trigger_mode == IntTrigMult)
@@ -478,7 +475,7 @@ void Camera::_freeStreamGrabber()
     }
 }
 
-void Camera::_initColorStreamGrabber(bool allocFlag)
+void Camera::_initStreamGrabber(bool allocFlag)
 {
   DEB_MEMBER_FUNCT();
 
@@ -491,18 +488,18 @@ void Camera::_initColorStreamGrabber(bool allocFlag)
       THROW_HW_ERROR(Error) << "Unable to open the steam grabber!";
     }
   StreamGrabber_->MaxBufferSize.SetValue((const size_t)ImageSize_);
-  StreamGrabber_->MaxNumBuffer.SetValue(NB_COLOR_BUFFER);
+  StreamGrabber_->MaxNumBuffer.SetValue(NB_STREAM_BUFFER);
   StreamGrabber_->PrepareGrab();
 
-  for(int i = 0;i < NB_COLOR_BUFFER;++i)
+  for(int i = 0;i < NB_STREAM_BUFFER;++i)
     {
       if(allocFlag)
 #ifdef __unix
-	posix_memalign(&m_color_buffer[i],16,ImageSize_);
+	posix_memalign(&m_stream_buffer[i],16,ImageSize_);
 #else
-        m_color_buffer[i] = _aligned_malloc(ImageSize_,16);
+        m_stream_buffer[i] = _aligned_malloc(ImageSize_,16);
 #endif
-      StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_color_buffer[i],
+      StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_stream_buffer[i],
 								   (const size_t)ImageSize_);
       StreamGrabber_->QueueBuffer(bufferId,NULL);
     }

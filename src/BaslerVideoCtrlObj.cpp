@@ -171,7 +171,7 @@ void VideoCtrlObj::setVideoMode(VideoMode mode)
 	  errorMsg += e.GetDescription() + '\n';
 	}
     }
-  m_cam._initColorStreamGrabber();
+  m_cam._initStreamGrabber();
   if(!succeed)
     THROW_HW_ERROR(Error) << errorMsg;
 }

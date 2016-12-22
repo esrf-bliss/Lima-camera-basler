@@ -179,11 +179,11 @@ class LIBBASLER_API Camera
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
     void _freeStreamGrabber();
-    void _initColorStreamGrabber(bool = false);
+    void _initStreamGrabber(bool = false);
     void _startAcq();
     void _readTrigMode();
 
-    static const int NB_COLOR_BUFFER = 2;
+    static const int NB_STREAM_BUFFER = 2;
     //- lima stuff
     SoftBufferCtrlObj		m_buffer_ctrl_obj;
     int                         m_nb_frames;    
@@ -215,7 +215,7 @@ class LIBBASLER_API Camera
     int                           m_receive_priority;
     bool			  m_color_flag;
     bool			  m_video_flag_mode;
-    void*			  m_color_buffer[NB_COLOR_BUFFER];
+    void*			  m_stream_buffer[NB_STREAM_BUFFER];
     VideoCtrlObj*		  m_video;
     TrigMode			  m_trigger_mode;
 };

@@ -43,8 +43,6 @@ Interface::Interface(Camera& cam,bool force_video_mode) :
   m_cam.hasVideoCapability(has_video_capability);
   if(has_video_capability || force_video_mode)
     {
-      if(!has_video_capability)
-	m_cam._initColorStreamGrabber();
       m_video = new VideoCtrlObj(cam);
     }
   else
