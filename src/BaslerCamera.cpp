@@ -196,25 +196,42 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
     
         // Set the image format and AOI
         DEB_TRACE() << "Set the image format and AOI";
-	// The list Order here has sense, if supported, the first format in the list will be applied
-	// as default one, and in case of color camera the default will defined the max buffer
-	// size for the memory allocation. Since YUV422Packed is 1.5 byte per pixel it is available
-	// before the Bayer 8bit (1 byte per pixel).
-        static const char* PixelFormatStr[] = {"BayerRG16","BayerBG16",
-					       "BayerRG12","BayerBG12",
-					       "YUV422Packed",
-					       "BayerRG8","BayerBG8",
-					       "Mono16", "Mono12", "Mono8",NULL};
+	// basler model string last character codes for color (c) or monochrome (m)
+	std::list<string> formatList;
+
+	if (m_detector_model.find("gc") != std::string::npos)
+	  {
+	    // The list Order here has sense, if supported, the first format in the list will be applied
+	    // as default one, and in case of color camera the default will defined the max buffer
+	    // size for the memory allocation. Since YUV422Packed is 1.5 byte per pixel it is available
+	    // before the Bayer 8bit (1 byte per pixel).
+
+	    formatList.push_back(string("BayerRG16"));
+	    formatList.push_back(string("BayerBG16"));
+	    formatList.push_back(string("BayerRG12"));
+	    formatList.push_back(string("BayerBG12"));
+	    formatList.push_back(string("YUV422Packed"));
+	    formatList.push_back(string("BayerRG8"));
+	    formatList.push_back(string("BayerBG8"));
+	    m_color_flag = true;
+	  }
+	else
+	  {
+	    formatList.push_back(string("Mono16"));
+	    formatList.push_back(string("Mono12"));
+	    formatList.push_back(string("Mono8"));
+	    m_color_flag = false;
+	  }
+
         bool formatSetFlag = false;
-        for(const char** pt = PixelFormatStr;*pt;++pt)
+	for(list<string>::iterator it = formatList.begin(); it != formatList.end(); it++)
         {
-            GenApi::IEnumEntry *anEntry = Camera_->PixelFormat.GetEntryByName(*pt);
+	  GenApi::IEnumEntry *anEntry = Camera_->PixelFormat.GetEntryByName((*it).c_str());
             if(anEntry && GenApi::IsAvailable(anEntry))
             {
                 formatSetFlag = true;
-		m_color_flag = (*pt[0] == 'B' || *pt[0] == 'Y');
 		Camera_->PixelFormat.SetIntValue(anEntry->GetValue());
-                DEB_TRACE() << "Set pixel format to " << *pt;
+                DEB_TRACE() << "Set pixel format to " << *it;
                 break;
             }
         }
