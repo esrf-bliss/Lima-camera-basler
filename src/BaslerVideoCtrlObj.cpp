@@ -53,9 +53,9 @@ void VideoCtrlObj::getSupportedVideoMode(std::list<VideoMode>& aList) const
       {"BayerBG8",BAYER_BG8},
       {"RGB8Packed",RGB24},
       {"BGR8Packed",BGR24},
-      {"YUV411Packed",YUV411},
-      {"YUV422Packed",YUV422},
-      {"YUV444Packed",YUV444},
+      {"YUV411Packed",YUV411PACKED},
+      {"YUV422Packed",YUV422PACKED},
+      {"YUV444Packed",YUV444PACKED},
       {"Mono16",Y16},
       {"Mono12",Y16},
       {"Mono8",Y8},
@@ -90,9 +90,9 @@ void VideoCtrlObj::getVideoMode(VideoMode &mode) const
     case PixelFormat_BGR8Packed:  	mode = BGR24;		break;
     case PixelFormat_RGBA8Packed:  	mode = RGB32;		break;
     case PixelFormat_BGRA8Packed:  	mode = BGR32;		break;
-    case PixelFormat_YUV411Packed:  	mode = YUV411;		break;
-    case PixelFormat_YUV422Packed:  	mode = YUV422;		break;
-    case PixelFormat_YUV444Packed:  	mode = YUV444;		break;
+    case PixelFormat_YUV411Packed:  	mode = YUV411PACKED;	break;
+    case PixelFormat_YUV422Packed:  	mode = YUV422PACKED;	break;
+    case PixelFormat_YUV444Packed:  	mode = YUV444PACKED;	break;
     case PixelFormat_BayerRG16:    	mode = BAYER_RG16;	break;
     case PixelFormat_BayerBG16:    	mode = BAYER_BG16;	break;
     default:
@@ -143,19 +143,19 @@ void VideoCtrlObj::setVideoMode(VideoMode mode)
     case BGR32:
       pixelformat.push_back(PixelFormat_BGRA8Packed);
       break;
-    case YUV411:
+    case YUV411PACKED:
       pixelformat.push_back(PixelFormat_YUV411Packed);
       break;
-    case YUV422:
+    case YUV422PACKED:
       pixelformat.push_back(PixelFormat_YUV422Packed);
       break;
-    case YUV444:
+    case YUV444PACKED:
       pixelformat.push_back(PixelFormat_YUV444Packed);
       break;
     default:
       THROW_HW_ERROR(NotSupported) << "Mode type not supported yet";
     }
-  m_cam._freeStreamGrabber();
+ 
   bool succeed = false;
   std::string errorMsg;
   for(std::list<PixelFormatEnums>::iterator i = pixelformat.begin();
@@ -171,7 +171,7 @@ void VideoCtrlObj::setVideoMode(VideoMode mode)
 	  errorMsg += e.GetDescription() + '\n';
 	}
     }
-  m_cam._initColorStreamGrabber();
+ 
   if(!succeed)
     THROW_HW_ERROR(Error) << errorMsg;
 }

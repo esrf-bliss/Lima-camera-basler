@@ -47,6 +47,10 @@ using namespace std;
 
 const static int DEFAULT_TIME_OUT = 600000; // 10 minutes
 
+const static std::string IP_PREFIX = "ip://";
+const static std::string SN_PREFIX = "sn://";
+const static std::string UNAME_PREFIX = "uname://";
+
 //---------------------------
 //- utility function
 //---------------------------
@@ -91,7 +95,7 @@ class Camera::_AcqThread : public Thread
 //---------------------------
 //- Ctor
 //---------------------------
-Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority)
+Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority)
         : m_nb_frames(1),
           m_status(Ready),
           m_wait_flag(true),
@@ -109,27 +113,55 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
 	  m_video(NULL)
 {
     DEB_CONSTRUCTOR();
-    m_camera_ip = camera_ip;
+    m_camera_id = camera_id;
     try
     {
-        Pylon::PylonInitialize( );
         // Create the transport layer object needed to enumerate or
         // create a camera object of type Camera_t::DeviceClass()
         DEB_TRACE() << "Create a camera object of type Camera_t::DeviceClass()";
         CTlFactory& TlFactory = CTlFactory::GetInstance();
 
-        // camera_ip is not really necessarily an IP, it may also be a DNS name
-        // pylon_camera_ip IS an IP
-        Pylon::String_t pylon_camera_ip(_get_ip_addresse(m_camera_ip.c_str()));
-
-        //- Find the Pylon device thanks to its IP Address
         CBaslerGigEDeviceInfo di;
-        di.SetIpAddress( pylon_camera_ip);
-        DEB_TRACE() << "Create the Pylon device attached to ip address : " << DEB_VAR1(m_camera_ip);
+
+	// by default use ip:// scheme if none is given
+	if (m_camera_id.find("://") == std::string::npos)
+	{
+            m_camera_id = "ip://" + m_camera_id;
+	}
+
+	if(!m_camera_id.compare(0, IP_PREFIX.size(), IP_PREFIX))
+        {
+            // m_camera_id is not really necessarily an IP, it may also be a DNS name
+            Pylon::String_t pylon_camera_ip(_get_ip_addresse(m_camera_id.substr(IP_PREFIX.size()).c_str()));
+            //- Find the Pylon device thanks to its IP Address
+            di.SetIpAddress( pylon_camera_ip);
+            DEB_TRACE() << "Create the Pylon device attached to ip address: "
+			<< DEB_VAR1(m_camera_id);
+ 	}
+        else if (!m_camera_id.compare(0, SN_PREFIX.size(), SN_PREFIX))
+	{
+            Pylon::String_t serial_number(m_camera_id.substr(SN_PREFIX.size()).c_str());
+            //- Find the Pylon device thanks to its serial number
+            di.SetSerialNumber(serial_number);
+            DEB_TRACE() << "Create the Pylon device attached to serial number: "
+			<< DEB_VAR1(m_camera_id);
+	}
+	else if(!m_camera_id.compare(0, UNAME_PREFIX.size(), UNAME_PREFIX))
+        {
+            Pylon::String_t user_name(m_camera_id.substr(UNAME_PREFIX.size()).c_str());
+            //- Find the Pylon device thanks to its user name
+            di.SetUserDefinedName(user_name);
+            DEB_TRACE() << "Create the Pylon device attached to user name: "
+			<< DEB_VAR1(m_camera_id);
+ 	}
+	else 
+        {
+	    THROW_CTL_ERROR(InvalidValue) << "Unrecognized camera id: " << camera_id;
+        }
+
         IPylonDevice* device = TlFactory.CreateDevice( di);
         if (!device)
         {
-            Pylon::PylonTerminate( );
             THROW_HW_ERROR(Error) << "Unable to find camera with selected IP!";
         }
 
@@ -138,7 +170,6 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
         Camera_ = new Camera_t(device);
         if(!Camera_)
         {
-            Pylon::PylonTerminate( );
             THROW_HW_ERROR(Error) << "Unable to get the camera from transport_layer!";
         }
 
@@ -165,20 +196,42 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
     
         // Set the image format and AOI
         DEB_TRACE() << "Set the image format and AOI";
-        static const char* PixelFormatStr[] = {"BayerRG16","BayerBG16",
-					       "BayerRG12","BayerBG12",
-					       "BayerRG8","BayerBG8",
-					       "Mono16", "Mono12", "Mono8",NULL};
+	// basler model string last character codes for color (c) or monochrome (m)
+	std::list<string> formatList;
+
+	if (m_detector_model.find("gc") != std::string::npos)
+	  {
+	    // The list Order here has sense, if supported, the first format in the list will be applied
+	    // as default one, and in case of color camera the default will defined the max buffer
+	    // size for the memory allocation. Since YUV422Packed is 1.5 byte per pixel it is available
+	    // before the Bayer 8bit (1 byte per pixel).
+
+	    formatList.push_back(string("BayerRG16"));
+	    formatList.push_back(string("BayerBG16"));
+	    formatList.push_back(string("BayerRG12"));
+	    formatList.push_back(string("BayerBG12"));
+	    formatList.push_back(string("YUV422Packed"));
+	    formatList.push_back(string("BayerRG8"));
+	    formatList.push_back(string("BayerBG8"));
+	    m_color_flag = true;
+	  }
+	else
+	  {
+	    formatList.push_back(string("Mono16"));
+	    formatList.push_back(string("Mono12"));
+	    formatList.push_back(string("Mono8"));
+	    m_color_flag = false;
+	  }
+
         bool formatSetFlag = false;
-        for(const char** pt = PixelFormatStr;*pt;++pt)
+	for(list<string>::iterator it = formatList.begin(); it != formatList.end(); it++)
         {
-            GenApi::IEnumEntry *anEntry = Camera_->PixelFormat.GetEntryByName(*pt);
+	  GenApi::IEnumEntry *anEntry = Camera_->PixelFormat.GetEntryByName((*it).c_str());
             if(anEntry && GenApi::IsAvailable(anEntry))
             {
                 formatSetFlag = true;
-		m_color_flag = *pt[0] == 'B';
 		Camera_->PixelFormat.SetIntValue(anEntry->GetValue());
-                DEB_TRACE() << "Set pixel format to " << *pt;
+                DEB_TRACE() << "Set pixel format to " << *it;
                 break;
             }
         }
@@ -213,6 +266,8 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
             Camera_->ExposureAuto.SetValue(ExposureAuto_Off);
         }
 	// Start with internal trigger
+	// Force cache variable to get trigger really initialized at first call
+	m_trigger_mode = ExtTrigSingle;
 	setTrigMode(IntTrig);
         // Get the image buffer size
         DEB_TRACE() << "Get the image buffer size";
@@ -226,11 +281,11 @@ Camera::Camera(const std::string& camera_ip,int packet_size,int receive_priority
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        Pylon::PylonTerminate( );
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
-    if(m_color_flag)
-      _initColorStreamGrabber(true);
+    if(m_color_flag) {
+      _allocColorBuffer();
+    }
     else
       {
 	for(int i = 0;i < NB_COLOR_BUFFER;++i)
@@ -269,7 +324,6 @@ Camera::~Camera()
     catch (GenICam::GenericException &e)
     {
         // Error handling
-        Pylon::PylonTerminate( );
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
 }
@@ -375,6 +429,10 @@ void Camera::startAcq()
 void Camera::_startAcq()
 {
   DEB_MEMBER_FUNCT();
+
+  if(m_video_flag_mode)
+    _initColorStreamGrabber();
+  
   Camera_->AcquisitionStart.Execute();
 
   //Start acqusition thread
@@ -415,9 +473,9 @@ void Camera::_stopAcq(bool internalFlag)
             // Stop acquisition
             DEB_TRACE() << "Stop acquisition";
             Camera_->AcquisitionStop.Execute();
-
-	    if(!m_video_flag_mode)
-	      _freeStreamGrabber();
+	    
+	    // always free for both video or acquisition
+	    _freeStreamGrabber();
             _setStatus(Camera::Ready,false);
         }
     }
@@ -449,7 +507,21 @@ void Camera::_freeStreamGrabber()
     }
 }
 
-void Camera::_initColorStreamGrabber(bool allocFlag)
+void Camera::_allocColorBuffer()
+{
+  DEB_MEMBER_FUNCT();
+  for(int i = 0;i < NB_COLOR_BUFFER;++i)
+    {
+#ifdef __unix
+      posix_memalign(&m_color_buffer[i],16,ImageSize_);
+#else
+      m_color_buffer[i] = _aligned_malloc(ImageSize_,16);
+#endif
+      m_video_flag_mode = true;
+    }
+}
+
+void Camera::_initColorStreamGrabber()
 {
   DEB_MEMBER_FUNCT();
 
@@ -467,17 +539,10 @@ void Camera::_initColorStreamGrabber(bool allocFlag)
 
   for(int i = 0;i < NB_COLOR_BUFFER;++i)
     {
-      if(allocFlag)
-#ifdef __unix
-	posix_memalign(&m_color_buffer[i],16,ImageSize_);
-#else
-        m_color_buffer[i] = _aligned_malloc(ImageSize_,16);
-#endif
       StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_color_buffer[i],
 								   (const size_t)ImageSize_);
       StreamGrabber_->QueueBuffer(bufferId,NULL);
     }
-  m_video_flag_mode = true;
 }
 
 //---------------------------
@@ -570,9 +635,9 @@ void Camera::_AcqThread::threadFunction()
 				      case PixelType_BGR8packed:  	mode = BGR24;		break;
 				      case PixelType_RGBA8packed:  	mode = RGB32;		break;
 				      case PixelType_BGRA8packed:  	mode = BGR32;		break;
-				      case PixelType_YUV411packed:  	mode = YUV411;		break;
-				      case PixelType_YUV422packed:  	mode = YUV422;		break;
-				      case PixelType_YUV444packed:  	mode = YUV444;		break;
+				      case PixelType_YUV411packed:  	mode = YUV411PACKED;	break;
+				      case PixelType_YUV422packed:  	mode = YUV422PACKED;	break;
+				      case PixelType_YUV444packed:  	mode = YUV444PACKED;	break;
 				      case PixelType_BayerRG16:    	mode = BAYER_RG16;	break;
 				      case PixelType_BayerBG16:    	mode = BAYER_BG16;	break;
 				      default:
@@ -671,33 +736,53 @@ void Camera::getDetectorImageSize(Size& size)
 void Camera::getImageType(ImageType& type)
 {
     DEB_MEMBER_FUNCT();
+    PixelFormatEnums ps;
     try
     {
-        PixelFormatEnums ps = Camera_->PixelFormat.GetValue();
-        switch( ps )
-        {
-            case PixelFormat_Mono8:
-                type= Bpp8;
-            break;
-              
-            case PixelFormat_Mono12:
-                type= Bpp12;
-            break;
-              
-            case PixelFormat_Mono16: //- this is in fact 12 bpp inside a 16bpp image
-                type= Bpp16;
-            break;
-              
-            default:
-                type= Bpp10;
-            break;
-        }
+        ps = Camera_->PixelFormat.GetValue();
     }
     catch (GenICam::GenericException &e)
     {
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
+    switch( ps )
+      {
+      case PixelFormat_Mono8:
+      case PixelFormat_BayerRG8:
+      case PixelFormat_BayerBG8:
+      case PixelFormat_RGB8Packed:
+      case PixelFormat_BGR8Packed:
+      case PixelFormat_RGBA8Packed:
+      case PixelFormat_BGRA8Packed:
+      case PixelFormat_YUV411Packed:
+      case PixelFormat_YUV422Packed:
+      case PixelFormat_YUV444Packed:
+	type= Bpp8;
+	break;
+
+      case PixelFormat_Mono10:
+      case PixelFormat_BayerRG10:
+      case PixelFormat_BayerBG10:
+	type = Bpp10;
+	break;
+	
+      case PixelFormat_Mono12:
+      case PixelFormat_BayerRG12:
+      case PixelFormat_BayerBG12:
+	type= Bpp12;
+	break;
+        
+      case PixelFormat_Mono16: //- this is in fact 12 bpp inside a 16bpp image
+      case PixelFormat_BayerRG16:
+      case PixelFormat_BayerBG16:
+	type= Bpp16;
+	break;
+	    
+      default:
+	THROW_HW_ERROR(Error) << "Unsupported Pixel Format : " << ps;
+	break;
+      }
 }
 
 //-----------------------------------------------------
@@ -714,14 +799,14 @@ void Camera::setImageType(ImageType type)
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
             break;
             case Bpp12:
-				this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
+	      this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
 			break;
             case Bpp16:
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
             break;
               
             default:
-                THROW_HW_ERROR(Error) << "Cannot change the format of the camera !";
+                THROW_HW_ERROR(NotSupported) << "Cannot change the format of the camera !";
             break;
         }
     }
@@ -1142,12 +1227,23 @@ void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
     {
         if (set_roi.isActive())
         {
-            const Size& aSetRoiSize = set_roi.getSize();
+	    // Taking care of the value increment, round up the ROI, 
+	    // some cameras have increment > 1, ie. acA1920-50gm (Sony CMOS) Inc is 4 for width and offset X
+	    const Roi rup_roi (
+			       ceil(set_roi.getTopLeft().x*1.0/Camera_->OffsetX.GetInc()) * Camera_->OffsetX.GetInc(),
+			       ceil(set_roi.getTopLeft().y*1.0/Camera_->OffsetY.GetInc()) * Camera_->OffsetY.GetInc(),
+			       ceil(set_roi.getSize().getWidth()*1.0/Camera_->Width.GetInc()) * Camera_->Width.GetInc(),
+			       ceil(set_roi.getSize().getHeight()*1.0/Camera_->Height.GetInc()) * Camera_->Height.GetInc());
+	    
+	    hw_roi = rup_roi;
+
+	    // size at minimum 
+            const Size& aSetRoiSize = hw_roi.getSize();
             Size aRoiSize = Size(max(aSetRoiSize.getWidth(),
 				     int(Camera_->Width.GetMin())),
                                  max(aSetRoiSize.getHeight(),
 				     int(Camera_->Height.GetMin())));
-            hw_roi = Roi(set_roi.getTopLeft(), aRoiSize);
+            hw_roi.setSize(aRoiSize);
         }
         else
             hw_roi = set_roi;
@@ -1165,14 +1261,12 @@ void Camera::setRoi(const Roi& ask_roi)
 {
     DEB_MEMBER_FUNCT();
     DEB_PARAM() << DEB_VAR1(ask_roi);
-    Roi set_roi;
-    checkRoi(ask_roi,set_roi);
     Roi r;    
     try
     {
         //- backup old roi, in order to rollback if error
         getRoi(r);
-        if(r == set_roi) return;
+        if(r == ask_roi) return;
         
         //- first reset the ROI
         Camera_->OffsetX.SetValue(Camera_->OffsetX.GetMin());
@@ -1181,17 +1275,17 @@ void Camera::setRoi(const Roi& ask_roi)
         Camera_->Height.SetValue(Camera_->Height.GetMax());
         
         Roi fullFrame(  Camera_->OffsetX.GetMin(),
-						Camera_->OffsetY.GetMin(),
-						Camera_->Width.GetMax(),
-						Camera_->Height.GetMax());
-        
-        if(set_roi.isActive() && fullFrame != set_roi)
-        {
+			Camera_->OffsetY.GetMin(),
+			Camera_->Width.GetMax(),
+			Camera_->Height.GetMax());
+
+        if(ask_roi.isActive() && fullFrame != ask_roi)
+	{
             //- then fix the new ROI
-            Camera_->Width.SetValue( set_roi.getSize().getWidth());
-            Camera_->Height.SetValue(set_roi.getSize().getHeight());
-            Camera_->OffsetX.SetValue(set_roi.getTopLeft().x);
-            Camera_->OffsetY.SetValue(set_roi.getTopLeft().y);
+            Camera_->Width.SetValue(ask_roi.getSize().getWidth());
+            Camera_->Height.SetValue(ask_roi.getSize().getHeight());
+            Camera_->OffsetX.SetValue(ask_roi.getTopLeft().x);
+            Camera_->OffsetY.SetValue(ask_roi.getTopLeft().y);
         }
     }
     catch (GenICam::GenericException &e)
@@ -1268,7 +1362,6 @@ void Camera::checkBin(Bin &aBin)
 void Camera::setBin(const Bin &aBin)
 {
     DEB_MEMBER_FUNCT();
-    _freeStreamGrabber();
     try
     {
         Camera_->BinningVertical.SetValue(aBin.getY());

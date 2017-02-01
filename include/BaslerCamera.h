@@ -87,8 +87,8 @@ class LIBBASLER_API Camera
       PatternGenerator1, PatternGenerator2, PatternGenerator3, PatternGenerator4,
       AcquisitionTriggerReady,
     };
-    
-    Camera(const std::string& camera_ip,int packet_size = -1,int received_priority = 0);
+
+    Camera(const std::string& camera_id,int packet_size = -1,int received_priority = 0);
     ~Camera();
 
     void prepareAcq();
@@ -179,7 +179,8 @@ class LIBBASLER_API Camera
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
     void _freeStreamGrabber();
-    void _initColorStreamGrabber(bool = false);
+    void _allocColorBuffer();
+    void _initColorStreamGrabber();
     void _startAcq();
     void _readTrigMode();
 
@@ -198,12 +199,13 @@ class LIBBASLER_API Camera
     int                         m_socketBufferSize;
     
     //- basler stuff 
-    string                      m_camera_ip;
+    string                      m_camera_id;
     string                      m_detector_model;
     string                      m_detector_type;
     Size                        m_detector_size;
     
     //- Pylon stuff
+    PylonAutoInitTerm             auto_init_term_;
     DeviceInfoList_t              devices_;
     Camera_t*                     Camera_;
     Camera_t::StreamGrabber_t*    StreamGrabber_;
