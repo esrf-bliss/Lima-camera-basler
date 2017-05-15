@@ -793,22 +793,29 @@ void Camera::setImageType(ImageType type)
     DEB_MEMBER_FUNCT();
     try
     {
-        switch( type )
-        {
-            case Bpp8:
-                this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
-            break;
-            case Bpp12:
-	      this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
-			break;
-            case Bpp16:
-                this->Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
-            break;
-              
-            default:
-                THROW_HW_ERROR(NotSupported) << "Cannot change the format of the camera !";
-            break;
+        if((GenApi::IsAvailable(Camera_->PixelFormat) && GenApi::IsWritable(Camera_->PixelFormat)))
+        {		
+			switch( type )
+			{
+				case Bpp8:
+					this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
+				break;
+				case Bpp12:
+			  this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
+				break;
+				case Bpp16:
+					this->Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
+				break;
+				  
+				default:
+					THROW_HW_ERROR(NotSupported) << "Cannot change the format of the camera !";
+				break;
+			}
         }
+        else
+        {
+            DEB_TRACE()<<"PixelFormat is Not Available or/and Not Writable !";
+        }		
     }
     catch (GenICam::GenericException &e)
     {
