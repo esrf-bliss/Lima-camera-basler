@@ -22,6 +22,14 @@ namespace Basler
       AcquisitionTriggerReady,
     };
 
+    enum TrigActivation {
+        RisingEdge=Basler_GigECamera::TriggerActivation_RisingEdge,
+        FallingEdge=Basler_GigECamera::TriggerActivation_FallingEdge,
+        AnyEdge=Basler_GigECamera::TriggerActivation_AnyEdge,
+        LevelHigh=Basler_GigECamera::TriggerActivation_LevelHigh,
+        LevelLow=Basler_GigECamera::TriggerActivation_LevelLow
+    };
+
     Camera(const std::string& camera_ip,int mtu_size = -1,int received_priority = 0);
     ~Camera();
 
@@ -30,6 +38,7 @@ namespace Basler
     void stopAcq();
 
     // -- detector info
+    void setImageType(ImageType type);
     void getImageType(ImageType& type /Out/);
 
     void getDetectorType(std::string& type /Out/);
@@ -39,7 +48,10 @@ namespace Basler
 	
     void setTrigMode(TrigMode  mode);
     void getTrigMode(TrigMode& mode /Out/);
-	
+
+    void setTrigActivation(TrigActivation activation);
+    void getTrigActivation(TrigActivation& activation /Out/);
+
     void setExpTime(double  exp_time);
     void getExpTime(double& exp_time /Out/);
 
@@ -83,9 +95,14 @@ namespace Basler
     void getTemperature(double& temperature /Out/);    
     void isColor(bool& color_flag /Out/) const;
     void hasVideoCapability(bool& video_flag /Out/) const;
+
     // -- change output line source
     void setOutput1LineSource(Basler::Camera::LineSource);
     void getOutput1LineSource(Basler::Camera::LineSource&) const;
+
+    // -- change acq frame count
+    void setAcquisitionFrameCount(int AFC);
+    void getAcquisitionFrameCount(int& AFC /Out/) const;
 
     // -- Pylon buffers statistics
     void getStatisticsTotalBufferCount(long& count);    
