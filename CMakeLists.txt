@@ -38,7 +38,6 @@ IF(WIN32)
     SET(PYLON_LIB_DIR ${PYLON_ROOT}/lib/x64)
   ELSE()
     SET (PYLON_LIB_DIR ${PYLON_ROOT}/lib/win32)
-    MESSAGE ("OK")
   ENDIF()
 ENDIF()
 
