@@ -129,7 +129,7 @@ if(WIN32)
 endif()
   
   
-include(CameraVERSION)
+limatools_set_library_soversion(lima${NAME} "VERSION")
 if(WIN32)
     set_target_properties(lima${NAME} PROPERTIES PREFIX "lib")
     install(TARGETS lima${NAME}
