@@ -1621,7 +1621,15 @@ void Camera::getCurrentThroughput(int& ipd)
         DEB_WARNING() << e.GetDescription();
     }
 }    
-    
+
+//-----------------------------------------------------
+// isTemperatureAvailable
+//-----------------------------------------------------
+bool Camera::isTemperatureAvailable() const
+{
+    return GenApi::IsAvailable(Camera_->TemperatureAbs);
+}
+
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
