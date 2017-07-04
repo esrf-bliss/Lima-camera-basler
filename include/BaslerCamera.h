@@ -172,6 +172,7 @@ class LIBBASLER_API Camera
     void setAutoGain(bool auto_gain);
     void getAutoGain(bool& auto_gain) const;
 
+    bool isTemperatureAvailable() const;
     void getTemperature(double& temperature);    
     void isColor(bool& color_flag) const;
     void hasVideoCapability(bool& video_flag) const;

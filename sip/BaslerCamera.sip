@@ -92,7 +92,9 @@ namespace Basler
 
     void getStatus(Basler::Camera::Status& status /Out/);
 	
-    void getTemperature(double& temperature /Out/);    
+
+    bool isTemperatureAvailable() const;
+    void getTemperature(double& temperature /Out/);
     void isColor(bool& color_flag /Out/) const;
     void hasVideoCapability(bool& video_flag /Out/) const;
 
