@@ -1,153 +1,145 @@
+###########################################################################
+# This file is part of LImA, a Library for Image Acquisition
+#
+#  Copyright (C) : 2009-2017
+#  European Synchrotron Radiation Facility
+#  CS40220 38043 Grenoble Cedex 9 
+#  FRANCE
+# 
+#  Contact: lima@esrf.fr
+# 
+#  This is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 3 of the License, or
+#  (at your option) any later version.
+# 
+#  This software is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+# 
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, see <http://www.gnu.org/licenses/>.
+############################################################################
+set(NAME "basler")
 
-SET(PYLON_ROOT "/opt/pylon" CACHE PATH "location of pylon sdk")
-SET(PYLON_VERSION "5" CACHE STRING "Pylon version 3 or 5")
+if(WIN32)
+	set(PYLON_ROOT "C:/Program Files/Basler/pylon 5/Development" CACHE PATH "location of pylon sdk")
+else()
+	set(PYLON_ROOT "/opt/pylon" CACHE PATH "location of pylon sdk")
+endif()
 
-IF(UNIX)
-  SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--add-needed")
-ENDIF()
+set(PYLON_VERSION "5" CACHE STRING "Pylon version 3 or 5")
+if(UNIX)
+  set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--add-needed")
+endif()
 
 # Pylon SDK installer installs both 32 and 64 libs, so give find_library() single path 
-IF(WIN32)
-  MESSAGE ("Win arch is  " ${CMAKE_SYSTEM_PROCESSOR})
-  IF(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
-    SET(PYLON_LIB_DIR ${PYLON_ROOT}/lib/x64)
-    SET(GENICAM_LIB_DIR ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_x64)
-  ELSE()
-    SET (PYLON_LIB_DIR ${PYLON_ROOT}/lib/win32)    
-    SET(GENICAM_LIB_DIR ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86)    
-  ENDIF()
-ENDIF()
+if(WIN32)
+  message ("Win arch is  " ${CMAKE_SYSTEM_PROCESSOR})
+  if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
+    set(PYLON_LIB_DIR ${PYLON_ROOT}/lib/x64)
+  else()
+    set (PYLON_LIB_DIR ${PYLON_ROOT}/lib/win32)
+  endif()
+endif()
 
-LINK_DIRECTORIES(${PYLON_ROOT}/genicam/bin/Linux64_x64)
+link_directories(${PYLON_ROOT}/genicam/bin/Linux64_x64)
 
-SET(basler_srcs src/BaslerCamera.cpp src/BaslerInterface.cpp src/BaslerDetInfoCtrlObj.cpp
+set(${NAME}_srcs src/BaslerCamera.cpp src/BaslerInterface.cpp src/BaslerDetInfoCtrlObj.cpp
                 src/BaslerSyncCtrlObj.cpp src/BaslerRoiCtrlObj.cpp
                 src/BaslerBinCtrlObj.cpp src/BaslerVideoCtrlObj.cpp)
 
-FILE(STRINGS "VERSION" basler_ver)
-ADD_LIBRARY(limabasler SHARED
-    ${basler_srcs}
+add_library(lima${NAME} SHARED
+    ${${NAME}_srcs}
 )
-TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${PYLON_ROOT}/include")
-IF ("${PYLON_VERSION}" STREQUAL "3")
-  IF(WIN32)
-    TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${PYLON_ROOT}/../genicam/library/cpp/include")
-  ELSE()
-    TARGET_INCLUDE_DIRECTORIES(limabasler PUBLIC "${PYLON_ROOT}/genicam/library/CPP/include")
-  ENDIF()
-ENDIF()
+target_include_directories(lima${NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(lima${NAME} PUBLIC "${PYLON_ROOT}/include")
+if ("${PYLON_VERSION}" STREQUAL "3")
+  if(WIN32)
+    target_include_directories(lima${NAME} PUBLIC "${PYLON_ROOT}/../genicam/library/cpp/include")
+  else()
+    target_include_directories(lima${NAME} PUBLIC "${PYLON_ROOT}/genicam/library/CPP/include")
+  endif()
+endif()
 
-TARGET_COMPILE_DEFINITIONS(limabasler PUBLIC USE_GIGE)
-IF(WIN32)
-    TARGET_COMPILE_DEFINITIONS(limabasler PRIVATE LIBBASLER_EXPORTS)
-ENDIF()
-
-IF ("${PYLON_VERSION}" STREQUAL "3")
-  IF (WIN32)
-    SET(PYLON_SUFFIX "_MD_VC100" CACHE STRING "Suffix used in Windows for naming Pylon files")
-    FIND_LIBRARY(PYLONBASE PylonBase${PYLON_SUFFIX} ${PYLON_LIB_DIR})
-    FIND_LIBRARY(PYLONGIGESUPP PylonGigE${PYLON_SUFFIX}_TL ${PYLON_LIB_DIR})
-  ELSE()
-    FIND_LIBRARY(PYLONBASE pylonbase ${PYLON_ROOT}/lib ${PYLON_ROOT}/lib64)
-    FIND_LIBRARY(PYLONGIGESUPP pylongigesupp ${PYLON_ROOT}/lib ${PYLON_ROOT}/lib64)
-  ENDIF()
-  
-  IF (("${PYLONBASE}" STREQUAL "PYLONBASE-NOTFOUND") OR ("${PYLONGIGESUPP}" STREQUAL "PYLONGIGESUPP-NOTFOUND"))
-    MESSAGE(FATAL_ERROR "pylonbase or pylongige not found")
-  ENDIF()
-ELSE()
-  IF (WIN32)
-    SET(PYLON_SUFFIX "_MD_VC120" CACHE STRING "Suffix used in Windows for naming Pylon files")
-    FIND_LIBRARY(PYLONBASE PylonBase${PYLON_SUFFIX}_v5_0 ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
-  ELSE()
-    FIND_LIBRARY(PYLONBASE pylonbase ${PYLON_ROOT}/lib ${PYLON_ROOT}/lib64)
-  ENDIF()
-
-  IF (("${PYLONBASE}" STREQUAL "PYLONBASE-NOTFOUND"))
-    MESSAGE(FATAL_ERROR "pylonbase not found")
-  ENDIF()  
-ENDIF()
-
-IF (WIN32)
-  TARGET_LINK_LIBRARIES(limabasler ws2_32)
-ENDIF()
-TARGET_LINK_LIBRARIES(limabasler limacore)
-TARGET_LINK_LIBRARIES(limabasler ${PYLONBASE})
-IF ("${PYLON_VERSION}" STREQUAL "3")
-  TARGET_LINK_LIBRARIES(limabasler ${PYLONGIGESUPP})
-ENDIF()
-
-IF(WIN32)
-  IF ("${PYLON_VERSION}" STREQUAL "3")
-    FIND_LIBRARY(PYLONGUI PylonGUI${PYLON_SUFFIX} ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
-    FIND_LIBRARY(PYLONUTILITY PylonUtility${PYLON_SUFFIX} ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
-    FIND_LIBRARY(PYLONBOOTSTRAPPER PylonBootstrapper ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
-    FIND_LIBRARY(PYLONGCBASE GCBase${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    FIND_LIBRARY(PYLONGENAPI GenApi${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    FIND_LIBRARY(PYLONMATHPARSER MathParser${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    FIND_LIBRARY(PYLONLOG Log${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    FIND_LIBRARY(PYLONLOG4CPP log4cpp${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    FIND_LIBRARY(PYLONLOG4CPPSTATIC log4cpp-static${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    FIND_LIBRARY(PYLONCLALLSERIAL CLAllSerial${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    FIND_LIBRARY(PYLONCLPROTOCOL CLProtocol${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    FIND_LIBRARY(PYLONCLSERCOM CLSerCOM ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    TARGET_LINK_LIBRARIES(limabasler ${PYLONGUI} ${PYLONUTILITY} ${PYLONBOOTSTRAPPER} ${PYLONGCBASE} ${PYLONGENAPI} ${PYLONMATHPARSER} ${PYLONLOG} ${PYLONLOG4CPP} ${PYLONLOG4CPPSTATIC} ${PYLONCLALLSERIAL} ${PYLONCLPROTOCOL} ${PYLONCLSERCOM})
-  ELSE()
-    FIND_LIBRARY(PYLONGUI PylonGUI${PYLON_SUFFIX}_v5_0  ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
-    FIND_LIBRARY(PYLONUTILITY PylonUtility${PYLON_SUFFIX}_v5_0  ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
-    FIND_LIBRARY(PYLONGCBASE GCBase${PYLON_SUFFIX}_v3_0_Basler_pylon_v5_0 ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)   
-    FIND_LIBRARY(PYLONGENAPI GenApi${PYLON_SUFFIX}_v3_0_Basler_pylon_v5_0 ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
-    TARGET_LINK_LIBRARIES(limabasler ${PYLONGUI} ${PYLONUTILITY} ${PYLONGCBASE} ${PYLONGENAPI})     
-  ENDIF()
-ENDIF()
-  
-  
-SET_TARGET_PROPERTIES(limabasler PROPERTIES VERSION ${basler_ver} SOVERSION "1")
-
+target_compile_definitions(lima${NAME} PUBLIC USE_GIGE)
 if(WIN32)
-    SET_TARGET_PROPERTIES(limabasler PROPERTIES PREFIX "lib")
+    target_compile_definitions(lima${NAME} PRIVATE LIBBASLER_EXPORTS)
+endif()
+
+if ("${PYLON_VERSION}" STREQUAL "3")
+  if (WIN32)
+    set(PYLON_SUFFIX "_MD_VC100" CACHE STRING "Suffix used in Windows for naming Pylon files")
+    find_library(BASLER_PYLONBASE_LIB PylonBase${PYLON_SUFFIX} ${PYLON_LIB_DIR})
+    find_library(BASLER_PYLONGIGESUPP_LIB PylonGigE${PYLON_SUFFIX}_TL ${PYLON_LIB_DIR})
+  else()
+    find_library(BASLER_PYLONBASE_LIB pylonbase ${PYLON_ROOT}/lib ${PYLON_ROOT}/lib64)
+    find_library(BASLER_PYLONGIGESUPP_LIB pylongigesupp ${PYLON_ROOT}/lib ${PYLON_ROOT}/lib64)
+  endif()
+  
+  if (("${BASLER_PYLONBASE_LIB}" STREQUAL "BASLER_PYLONBASE_LIB-NOTFOUND") OR ("${BASLER_PYLONGIGESUPP_LIB}" STREQUAL "BASLER_PYLONGIGESUPP_LIB-NOTFOUND"))
+    message(FATAL_ERROR "${NAME} : pylonbase or pylongige not found")
+  endif()
+#if("${PYLON_VERSION}" STREQUAL "5")
+else()
+  if (WIN32)
+    set(PYLON_SUFFIX "_MD_VC120" CACHE STRING "Suffix used in Windows for naming Pylon files")
+    find_library(BASLER_PYLONBASE_LIB PylonBase${PYLON_SUFFIX}_v5_0 ${PYLON_LIB_DIR})
+  else()
+    find_library(BASLER_PYLONBASE_LIB pylonbase ${PYLON_ROOT}/lib ${PYLON_ROOT}/lib64)
+  endif()
+
+  if (("${BASLER_PYLONBASE_LIB}" STREQUAL "BASLER_PYLONBASE_LIB-NOTFOUND"))
+    message(FATAL_ERROR "${NAME} : pylonbase not found")
+  endif()  
+endif()
+
+if (WIN32)
+  target_link_libraries(lima${NAME} ws2_32)
+endif()
+target_link_libraries(lima${NAME} limacore)
+target_link_libraries(lima${NAME} ${BASLER_PYLONBASE_LIB})
+if ("${PYLON_VERSION}" STREQUAL "3")
+  target_link_libraries(lima${NAME} ${BASLER_PYLONGIGESUPP_LIB})
 endif()
 
 if(WIN32)
-    INSTALL(TARGETS limabasler
+  if ("${PYLON_VERSION}" STREQUAL "3")
+    find_library(BASLER_PYLONGUI_LIB PylonGUI${PYLON_SUFFIX} ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
+    find_library(BASLER_PYLONUTILITY_LIB PylonUtility${PYLON_SUFFIX} ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
+    find_library(BASLER_PYLONBOOTSTRAPPER_LIB PylonBootstrapper ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
+    find_library(BASLER_PYLONGCBASE_LIB GCBase${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
+    find_library(BASLER_PYLONGENAPI_LIB GenApi${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
+    find_library(BASLER_PYLONMATHPARSER_LIB MathParser${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
+    find_library(BASLER_PYLONLOG_LIB Log${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
+    find_library(BASLER_PYLONLOG4CPP_LIB log4cpp${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
+    find_library(BASLER_PYLONLOG4CPPSTATIC_LIB log4cpp-static${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
+    find_library(BASLER_PYLONCLALLSERIAL_LIB CLAllSerial${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
+    find_library(BASLER_PYLONCLPROTOCOL_LIB CLProtocol${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
+    find_library(BASLER_PYLONCLSERCOM_LIB CLSerCOM ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
+    target_link_libraries(lima${NAME} ${BASLER_PYLONGUI_LIB} ${BASLER_PYLONUTILITY_LIB}	${BASLER_PYLONBOOTSTRAPPER_LIB} ${BASLER_PYLONGCBASE_LIB} ${BASLER_PYLONGENAPI_LIB} ${BASLER_PYLONMATHPARSER_LIB} ${BASLER_PYLONLOG_LIB} ${BASLER_PYLONLOG4CPP_LIB}	${BASLER_PYLONLOG4CPPSTATIC_LIB} ${BASLER_PYLONCLALLSERIAL_LIB}	${BASLER_PYLONCLPROTOCOL_LIB} ${BASLER_PYLONCLSERCOM_LIB})
+  else()
+    find_library(BASLER_PYLONGUI_LIB PylonGUI${PYLON_SUFFIX}_v5_0  ${PYLON_LIB_DIR})
+    find_library(BASLER_PYLONUTILITY_LIB PylonUtility${PYLON_SUFFIX}_v5_0  ${PYLON_LIB_DIR})
+    find_library(BASLER_PYLONGCBASE_LIB GCBase${PYLON_SUFFIX}_v3_0_Basler_pylon_v5_0 ${PYLON_LIB_DIR})   
+    find_library(BASLER_PYLONGENAPI_LIB GenApi${PYLON_SUFFIX}_v3_0_Basler_pylon_v5_0 ${PYLON_LIB_DIR})
+    target_link_libraries(lima${NAME} ${BASLER_PYLONGUI_LIB} ${BASLER_PYLONUTILITY_LIB} ${BASLER_PYLONGCBASE_LIB} ${BASLER_PYLONGENAPI_LIB})     
+  endif()
+endif()
+  
+  
+limatools_set_library_soversion(lima${NAME} "VERSION")
+if(WIN32)
+    set_target_properties(lima${NAME} PROPERTIES PREFIX "lib")
+    install(TARGETS lima${NAME}
             DESTINATION lib)
 else()
-    INSTALL(TARGETS limabasler
+    install(TARGETS lima${NAME}
             LIBRARY DESTINATION lib)
 endif()
 
-IF(COMPILE_SIP)
-    SET(NAME "basler")
-    SET(INCLUDES)
-    FILE(GLOB sipfiles
-         RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/sip"
-         "${CMAKE_CURRENT_SOURCE_DIR}/sip/*.sip")
-    FOREACH(sipfile ${sipfiles})
-        SET(INCLUDES
-"${INCLUDES}
-%Include ${sipfile}")
-    ENDFOREACH()
-
-    CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/sip/limamodules.sip.in sip/limabasler.sip)
-    SET(SIP_CONCAT_PARTS 1)
-    SET(SIP_INCLUDES ${SIP_INCLUDES}
-        "${CMAKE_SOURCE_DIR}/third-party/Processlib/sip"
-        "${CMAKE_BINARY_DIR}/sip/core"
-        "${CMAKE_SOURCE_DIR}/third-party/Processlib/tasks/sip"
-        "${CMAKE_SOURCE_DIR}/common/sip"
-        "${CMAKE_SOURCE_DIR}/hardware/sip"
-        "${CMAKE_SOURCE_DIR}/control/sip"
-        "${CMAKE_SOURCE_DIR}/control/software_operation/sip"
-        "${CMAKE_CURRENT_SOURCE_DIR}/sip")
-    set(SIP_DISABLE_FEATURES WITH_CONFIG)
-    set(SIP_CHECK_EXC ON)
-    ADD_SIP_PYTHON_MODULE(limabasler ${CMAKE_CURRENT_BINARY_DIR}/sip/limabasler.sip)
-    TARGET_INCLUDE_DIRECTORIES(python_module_limabasler PRIVATE
-                               ${PYTHON_INCLUDE_DIRS}
-                               "${CMAKE_SOURCE_DIR}/sip"
-                               "${CMAKE_SOURCE_DIR}/sip/core")
-    TARGET_LINK_LIBRARIES(python_module_limabasler limabasler)
-
-    INSTALL(FILES python/__init__.py DESTINATION "${PYTHON_SITE_PACKAGES_DIR}/Lima/Basler")
-ENDIF()
+if(LIMA_ENABLE_PYTHON)
+    limatools_run_sip_for_camera(${NAME})
+    install(FILES python/__init__.py DESTINATION "${PYTHON_SITE_PACKAGES_DIR}/Lima/Basler")
+endif()
