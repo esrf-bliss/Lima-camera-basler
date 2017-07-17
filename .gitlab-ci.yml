@@ -1,0 +1,26 @@
+stages:
+  - build
+
+build :
+  stage: build
+  script:
+    - cd ..
+    - git clone -b cmake git@gitlab.esrf.fr:limagroup/lima.git
+    - ls
+    - pwd
+    - cd
+    - ls -l
+    - pwd
+  only:
+    - cmake
+
+
+#test :
+#  stage: test
+#  dependencies:
+#    - build
+#  script:
+#    - cd cmake-build/
+#    - ctest --timeout 10
+#  only:
+#    - cmake
