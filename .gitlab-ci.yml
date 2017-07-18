@@ -15,14 +15,9 @@ build :
     - cp -R ../../../lima-camera-basler/* .
     - cd ../..
     - ./install.sh camera/basler python tests
-    - ls -l
-    - cd ../lima-camera-basler/
-    - cp -R ../lima/cmake-build .
-    - ls -l
-    - pwd
   artifacts:
     paths:
-    - cmake-build/
+    - ../lima/
   only:
     - cmake
 
@@ -32,6 +27,7 @@ test :
   dependencies:
     - build
   script:
+    - pwd
     - cd cmake-build/
     - ctest --timeout 10
   only:
