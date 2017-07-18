@@ -5,12 +5,16 @@ build :
   stage: build
   script:
     - cd ..
-    - git clone -b cmake git@gitlab.esrf.fr:limagroup/lima.git
-    - ls
-    - pwd
-    - cd
+    - cp -R /root/* .
+    - ./install_lima_submodule
+    - tar zxvf limaneeds/pylon-5.0.1.6388-x86_64.tar.gz
+    - cd pylon-5.0.1.6388-x86_64
+    - sudo tar -C /opt -xzf pylonSDK*.tar.gz
+    - cd ../lima/camera/basler
+    - cp -R ../../../lima-camera-basler/* .
+    - cd ../..
+    - ./install.sh camera/basler python tests
     - ls -l
-    - pwd
   only:
     - cmake
 
