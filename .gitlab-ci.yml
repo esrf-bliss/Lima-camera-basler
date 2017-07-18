@@ -1,5 +1,6 @@
 stages:
   - build
+  - test
 
 build :
   stage: build
@@ -15,16 +16,19 @@ build :
     - cd ../..
     - ./install.sh camera/basler python tests
     - ls -l
+  artifacts:
+    paths:
+    - cmake-build/
   only:
     - cmake
 
 
-#test :
-#  stage: test
-#  dependencies:
-#    - build
-#  script:
-#    - cd cmake-build/
-#    - ctest --timeout 10
-#  only:
-#    - cmake
+test :
+  stage: test
+  dependencies:
+    - build
+ script:
+    - cd cmake-build/
+    - ctest --timeout 10
+  only:
+    - cmake
