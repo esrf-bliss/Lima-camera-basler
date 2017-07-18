@@ -27,7 +27,7 @@ test :
   stage: test
   dependencies:
     - build
- script:
+  script:
     - cd cmake-build/
     - ctest --timeout 10
   only:
