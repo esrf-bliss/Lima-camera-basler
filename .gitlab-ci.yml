@@ -15,7 +15,7 @@ build :
     - cd ../lima/camera/basler
     - cp -R ../../../lima-camera-basler/* .
     - cd ../..
-    - ./install.sh camera/basler python tests cbf fits edflz4 tiff hdf5 config
+    - ./install.sh camera/basler python tests cbf fits tiff hdf5 config
     - cd ../lima-camera-basler
     - cp -R ../lima .
   artifacts:
