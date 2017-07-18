@@ -1,6 +1,5 @@
 stages:
   - build
-  - test
 
 build :
   stage: build
@@ -15,20 +14,22 @@ build :
     - cp -R ../../../lima-camera-basler/* .
     - cd ../..
     - ./install.sh camera/basler python tests
-  artifacts:
-    paths:
-    - ../lima/
-  only:
-    - cmake
-
-
-test :
-  stage: test
-  dependencies:
-    - build
-  script:
-    - pwd
     - cd cmake-build/
     - ctest --timeout 10
+#  artifacts:
+#    paths:
+#    - ../lima/
   only:
     - cmake
+
+
+#test :
+#  stage: test
+#  dependencies:
+#    - build
+#  script:
+#    - pwd
+#    - cd cmake-build/
+#    - ctest --timeout 10
+#  only:
+#    - cmake
