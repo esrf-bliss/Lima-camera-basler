@@ -7,7 +7,7 @@ build :
     - cd ..
     - cp -R /root/* .
     - ./install_lima_submodule
-    - tar zxvf limaneeds/pylon-5.0.1.6388-x86_64.tar.gz
+    - tar zxvf lib_for_lima/pylon-5.0.1.6388-x86_64.tar.gz
     - cd pylon-5.0.1.6388-x86_64
     - sudo tar -C /opt -xzf pylonSDK*.tar.gz
     - cd ../lima/camera/basler
