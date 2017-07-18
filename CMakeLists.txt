@@ -26,7 +26,7 @@ set(NAME "basler")
 if(WIN32)
 	set(PYLON_ROOT "C:/Program Files/Basler/pylon 5/Development" CACHE PATH "location of pylon sdk")
 else()
-	set(PYLON_ROOT "/opt/pylon" CACHE PATH "location of pylon sdk")
+	set(PYLON_ROOT "/opt/pylon5" CACHE PATH "location of pylon sdk")
 endif()
 
 set(PYLON_VERSION "5" CACHE STRING "Pylon version 3 or 5")
