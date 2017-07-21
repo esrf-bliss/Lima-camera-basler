@@ -20,7 +20,7 @@ script:
   - docker exec lima-ci-docker /bin/sh -c 'unset https_proxy && unset http_proxy && cd /root && ./install_lima_submodule camera/basler'
   
   - echo "Compiling Lima and camera basler with options"
-  - docker exec lima-ci-docker /bin/sh -c 'cd /root/Lima/ && ./install.sh camera/basler python tests'
+  - docker exec lima-ci-docker /bin/sh -c 'cd /root/Lima/ && ./install.sh camera/basler python tests cbf fits tiff hdf5 config'
   
   - echo "Executing tests in cmake-build repository"
   - docker exec lima-ci-docker /bin/sh -c 'cd /root/Lima/cmake-build/ && ctest --timeout 10'
