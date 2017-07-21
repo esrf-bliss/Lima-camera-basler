@@ -22,7 +22,7 @@ script:
   - echo "Compiling Lima and camera basler with options"
   - docker exec lima-ci-docker /bin/sh -c 'cd /root/Lima/ && ./install.sh camera/basler python tests'
   
-  - "Executing tests in cmake-build repository"
+  - echo "Executing tests in cmake-build repository"
   - docker exec lima-ci-docker /bin/sh -c 'cd /root/Lima/cmake-build/ && ctest --timeout 10'
 
 after-script:
