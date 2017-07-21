@@ -1,0 +1,34 @@
+sudo: required
+
+language: cpp
+
+git:
+  submodules: false
+
+services:
+  - docker
+  
+before_install:
+  - docker pull esrfbliss/lima-ci-debian8
+  - docker run --name lima-ci-docker -dit esrfbliss/lima-ci-debian8
+  
+script:
+  - echo "Installing pylon5 on docker image"
+  - docker exec lima-ci-docker /bin/sh -c 'cd /root && tar zxvf lib_for_lima/pylon-5.0.1.6388-x86_64.tar.gz && cd pylon-5.0.1.6388-x86_64 && tar -C /opt -xzf pylonSDK*.tar.gz'
+  
+  - echo "Unset esrf proxy from docker and cloning GitHub repositories"
+  - docker exec lima-ci-docker /bin/sh -c 'unset https_proxy && unset http_proxy && cd /root && ./install_lima_submodule camera/basler'
+  
+  - echo "Compiling Lima and camera basler with options"
+  - docker exec lima-ci-docker /bin/sh -c 'cd /root/Lima/ && ./install.sh camera/basler python tests'
+  
+  - "Executing tests in cmake-build repository"
+  - docker exec lima-ci-docker /bin/sh -c 'cd /root/Lima/cmake-build/ && ctest --timeout 10'
+
+after-script:
+  - docker stop lima-ci-docker
+  - docker rm lima-ci-docker
+  
+branches:
+  only:
+  - cmake  
