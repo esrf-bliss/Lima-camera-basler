@@ -21,6 +21,23 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, see <http://www.gnu.org/licenses/>.
 ############################################################################
+
+#--------------------------------------------------------------------------------
+# Enable/Disable python binding but depending if project is included as a
+# sub-project, see above for further instructions
+#--------------------------------------------------------------------------------
+if (NOT LIMACAMERA_EXTERNALLY_CONFIGURED)
+  option(LIMACAMERA_ENABLE_PYTHON "compile python binding code?" OFF)
+endif()
+if (LIMACAMERA_EXTERNALLY_CONFIGURED)
+  if (LIMACAMERA_EXTERNALLY_ENABLE_PYTHON)
+    set(LIMACAMERA_ENABLE_PYTHON ON)
+  else()
+    set(LIMACAMERA_ENABLE_PYTHON OFF)
+  endif()
+endif()
+
+
 set(NAME "basler")
 
 if(WIN32)
@@ -139,7 +156,7 @@ else()
             LIBRARY DESTINATION lib)
 endif()
 
-if(LIMA_ENABLE_PYTHON)
+if(LIMACAMERA_ENABLE_PYTHON)
     limatools_run_sip_for_camera(${NAME})
     install(FILES python/__init__.py DESTINATION "${PYTHON_SITE_PACKAGES_DIR}/Lima/Basler")
 endif()
