@@ -185,6 +185,14 @@ class LIBBASLER_API Camera
     void setAcquisitionFrameCount(int AFC);
     void getAcquisitionFrameCount(int& AFC) const;
 
+    // -- change AcquisitionFrameRateEnable
+    void setAcquisitionFrameRateEnable(bool AFC);
+    void getAcquisitionFrameRateEnable(bool& AFC) const;
+
+    // -- change acq frame count
+    void setAcquisitionFrameRateAbs(int AFC);
+    void getAcquisitionFrameRateAbs(int& AFC) const;
+
     // -- Pylon buffers statistics
     void getStatisticsTotalBufferCount(long& count);    
     void getStatisticsFailedBufferCount(long& count);

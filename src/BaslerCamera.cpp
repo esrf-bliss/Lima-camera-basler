@@ -1800,6 +1800,96 @@ void Camera::setFrameTransmissionDelay(int ftd)
     }
 }
 
+//--------------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setAcquisitionFrameRateEnable(bool& val)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(val);
+    try
+    {
+        Camera_->AcquisitionFrameRateEnable.SetValue(val);
+    }
+    catch (GenICam::GenericException &e)
+    {
+        // Error handling
+        THROW_HW_ERROR(Error) << e.GetDescription();
+    }
+}
+
+//--------------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getAcquisitionFrameRateEnable(bool& val) const
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(val);
+    try
+    {
+        if (GenApi::IsAvailable(Camera_->AcquisitionFrameRateEnable))
+        {
+        val  = Camera_->AcquisitionFrameRateEnable.GetValue();
+        }
+        else
+        {
+            val = false;
+//			THROW_HW_ERROR(Error)<<"AcquisitionFrameRateEnable Parameter is not Available !";
+        }
+    }
+    catch (GenICam::GenericException &e)
+    {
+        // Error handling
+        THROW_HW_ERROR(Error) << e.GetDescription();
+    }
+        DEB_RETURN() << DEB_VAR1(val);
+
+}
+//--------------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setAcquisitionFrameRateAbs(int& val)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(val);
+    try
+    {
+        Camera_->AcquisitionFrameRateAbs.SetValue(val);
+    }
+    catch (GenICam::GenericException &e)
+    {
+        // Error handling
+        THROW_HW_ERROR(Error) << e.GetDescription();
+    }
+}
+
+//--------------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getAcquisitionFrameRateAbs(int& val)
+{
+    DEB_MEMBER_FUNCT();
+    DEB_PARAM() << DEB_VAR1(val);
+    try
+    {
+        if (GenApi::IsAvailable(Camera_->AcquisitionFrameRateAbs))
+        {
+        val  = Camera_->AcquisitionFrameRateAbs.GetValue();
+        }
+        else
+        {
+            val = false;
+//			THROW_HW_ERROR(Error)<<"AcquisitionFrameRateAbs Parameter is not Available !";
+        }
+    }
+    catch (GenICam::GenericException &e)
+    {
+        // Error handling
+        THROW_HW_ERROR(Error) << e.GetDescription();
+    }
+        DEB_RETURN() << DEB_VAR1(val);
+
+}
 //---------------------------
 //- Camera::reset()
 //---------------------------
