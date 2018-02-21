@@ -1803,13 +1803,13 @@ void Camera::setFrameTransmissionDelay(int ftd)
 //--------------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::setAcquisitionFrameRateEnable(bool& val)
+void Camera::setAcquisitionFrameRateEnable(bool AFRE)
 {
     DEB_MEMBER_FUNCT();
-    DEB_PARAM() << DEB_VAR1(val);
+    DEB_PARAM() << DEB_VAR1(AFRE);
     try
     {
-        Camera_->AcquisitionFrameRateEnable.SetValue(val);
+        Camera_->AcquisitionFrameRateEnable.SetValue(AFRE);
     }
     catch (GenICam::GenericException &e)
     {
@@ -1821,19 +1821,19 @@ void Camera::setAcquisitionFrameRateEnable(bool& val)
 //--------------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getAcquisitionFrameRateEnable(bool& val) const
+void Camera::getAcquisitionFrameRateEnable(bool& AFRE) const
 {
     DEB_MEMBER_FUNCT();
-    DEB_PARAM() << DEB_VAR1(val);
+    DEB_PARAM() << DEB_VAR1(AFRE);
     try
     {
         if (GenApi::IsAvailable(Camera_->AcquisitionFrameRateEnable))
         {
-        val  = Camera_->AcquisitionFrameRateEnable.GetValue();
+            AFRE  = Camera_->AcquisitionFrameRateEnable.GetValue();
         }
         else
         {
-            val = false;
+            AFRE = false;
 //			THROW_HW_ERROR(Error)<<"AcquisitionFrameRateEnable Parameter is not Available !";
         }
     }
@@ -1842,19 +1842,19 @@ void Camera::getAcquisitionFrameRateEnable(bool& val) const
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
-        DEB_RETURN() << DEB_VAR1(val);
+        DEB_RETURN() << DEB_VAR1(AFRE);
 
 }
 //--------------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::setAcquisitionFrameRateAbs(int& val)
+void Camera::setAcquisitionFrameRateAbs(int AFRA)
 {
     DEB_MEMBER_FUNCT();
-    DEB_PARAM() << DEB_VAR1(val);
+    DEB_PARAM() << DEB_VAR1(AFRA);
     try
     {
-        Camera_->AcquisitionFrameRateAbs.SetValue(val);
+        Camera_->AcquisitionFrameRateAbs.SetValue(AFRA);
     }
     catch (GenICam::GenericException &e)
     {
@@ -1866,19 +1866,19 @@ void Camera::setAcquisitionFrameRateAbs(int& val)
 //--------------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getAcquisitionFrameRateAbs(int& val)
+void Camera::getAcquisitionFrameRateAbs(int& AFRA) const
 {
     DEB_MEMBER_FUNCT();
-    DEB_PARAM() << DEB_VAR1(val);
+    DEB_PARAM() << DEB_VAR1(AFRA);
     try
     {
         if (GenApi::IsAvailable(Camera_->AcquisitionFrameRateAbs))
         {
-        val  = Camera_->AcquisitionFrameRateAbs.GetValue();
+        AFRA  = Camera_->AcquisitionFrameRateAbs.GetValue();
         }
         else
         {
-            val = false;
+            AFRA = false;
 //			THROW_HW_ERROR(Error)<<"AcquisitionFrameRateAbs Parameter is not Available !";
         }
     }
@@ -1887,7 +1887,7 @@ void Camera::getAcquisitionFrameRateAbs(int& val)
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
-        DEB_RETURN() << DEB_VAR1(val);
+        DEB_RETURN() << DEB_VAR1(AFRA);
 
 }
 //---------------------------
