@@ -5,11 +5,13 @@ Basler camera
 
 .. image:: basler.png
 
-Intoduction
-```````````
+Introduction
+````````````
+
 Basler's area scan cameras are designed for industrial users who demand superior image quality and an excellent price/performance ratio. You can choose from an area scan portfolio that includes monochrome or color models with various resolutions, frame rates, and sensor technologies.
 
 The Lima module has been tested only with this GigE cameras models:
+
   - Scout
   - Pilot
   - Ace
@@ -18,50 +20,35 @@ The Lima module has been tested with Pylon SDK versions **3.2.2** and **5.0.1**.
 
 Monochrome and color cameras are supported with these SDK versions.
 
-
 Installation & Module configuration
-````````````````````````````````````
-Previously to this you have to install the Basler SDK *Pylon* to the default path (/opt/pylon). 
+```````````````````````````````````
 
--  follow the steps for the linux installation :ref:`linux_installation`
--  follow the steps for the windows installation :ref:`windows_installation`
+First, you have to install the Basler SDK *Pylon* to the default path ``/opt/pylon``.
 
-The minimum configuration file is *config.inc* :
+Then, follow the generic instructions in :ref:`build_installation`. If using CMake directly, add the following flag:
 
 .. code-block:: sh
 
-  COMPILE_CORE=1
-  COMPILE_SIMULATOR=0
-  COMPILE_SPS_IMAGE=1
-  COMPILE_ESPIA=0
-  COMPILE_FRELON=0
-  COMPILE_MAXIPIX=0
-  COMPILE_PILATUS=0
-  COMPILE_BASLER=1
-  COMPILE_CBF_SAVING=0
-  export COMPILE_CORE COMPILE_SPS_IMAGE COMPILE_SIMULATOR \
-         COMPILE_ESPIA COMPILE_FRELON COMPILE_MAXIPIX COMPILE_PILATUS \
-         COMPILE_BASLER COMPILE_CBF_SAVING
+ -DLIMACAMERA_BASLER=true
 
-
--  start the compilation :ref:`linux_compilation`
-
--  finally for the Tango server installation :ref:`tango_installation`
+For the Tango server installation, refers to :ref:`tango_installation`.
 
 Initialisation and Capabilities
-````````````````````````````````
+```````````````````````````````
+
+Implementing a new plugin for new detector is driven by the LIMA framework but the developer has some freedoms to choose which standard and specific features will be made available. This section is supposed to give you the correct information regarding how the camera is exported within the LIMA framework.
 
 Camera initialisation
-......................
+.....................
 
 The camera will be initialized by creating Basler ::Camera object. The Basler camera can be idenfified
 either by:
 
-* IP/hostname (examples: `ip://192.168.5.2`, `ip://white_beam_viewer1.esrf.fr`) or
-* Basler serial number (example: `sn://12345678`) or
-* Basler user name (example: `uname://white_beam_viewer1`)
+* IP/hostname (examples: ``ip://192.168.5.2``, ``ip://white_beam_viewer1.esrf.fr``) or
+* Basler serial number (example: ``sn://12345678``) or
+* Basler user name (example: ``uname://white_beam_viewer1``)
 
-In case an IP is given, the `ip://` scheme prefix is optional.
+In case an IP is given, the ``ip://`` scheme prefix is optional.
 
 Only the camera ID is mandatory.
 
@@ -83,13 +70,13 @@ Small example showing possible ways to initialize:
 
 
 Std capabilites
-................
+...............
 
-This plugin has been implement in respect of the mandatory capabilites but with some limitations which
+This plugin has been implemented in respect of the mandatory capabilites but with some limitations which
 are due to the camera and SDK features. Only restriction on capabilites are documented here.
 
 * HwDetInfo
-  
+
   getCurrImageType/getDefImageType(): it can change if the video mode change (see HwVideo capability).
 
   setCurrImageType(): It only supports Bpp8 and Bpp16.
@@ -97,9 +84,10 @@ are due to the camera and SDK features. Only restriction on capabilites are docu
 * HwSync
 
   get/setTrigMode(): the supported mode are IntTrig, IntTrigMult, ExtTrigMult and ExtGate.
-  
+
 Optional capabilites
-........................
+....................
+
 In addition to the standard capabilities, we make the choice to implement some optional capabilities which
 are supported by the SDK. **Video**,  Roi and Binning are available.
 
@@ -107,7 +95,7 @@ are supported by the SDK. **Video**,  Roi and Binning are available.
 
   The basler cameras are pure video device, so video format for image are supported:
 
-  **Color cameras ONLY** 
+  **Color cameras ONLY**
    - BAYER_RG8
    - BAYER_BG8
    - BAYER_RG16
@@ -119,28 +107,28 @@ are supported by the SDK. **Video**,  Roi and Binning are available.
    - YUV411
    - YUV422
    - YUV444
-   
+
   **Color and Monochrome cameras**
-   - Y8   
-   - Y16   
+   - Y8
+   - Y16
 
   Use get/setMode() methods of the *video* object (i.e. CtControl::video()) to read or set the format.
 
-* HwBin 
+* HwBin
 
   There is no restriction for the binning up to the maximum size.
 
-* HwRoi 
+* HwRoi
 
   There is no restriction for the Roi up to the maximum size.
 
 
 Configuration
-``````````````
+`````````````
 
-- First you need to decide how to want to reference your camera (by IP/hostname, serial number or user name)
+- First you need to decide how you want to reference your camera (by IP/hostname, serial number or user name)
 
-- Second, you have to setup IP address of the Basler Camera by using *IpConfigurator* (/opt/pylon/bin/IpConfigurator) 
+- Second, you have to setup the IP address of the Basler Camera by using *IpConfigurator* (``/opt/pylon/bin/IpConfigurator``)
   or by matching the MAC address with a choosen IP into the DHCP. If you plan to reference the camera by
   user name you should also set it in *IpConfigurator*. If you plan to reference the camera by serial number
   you should note down the serial number that appears in the label of your camera.
@@ -156,7 +144,8 @@ Configuration
 
 
 How to use
-````````````
+``````````
+
 This is a python code example for a simple test:
 
 .. code-block:: python
@@ -175,7 +164,7 @@ This is a python code example for a simple test:
   #                                  |  |  |
   #--------------------+             |  |  |
   # cam ip or hostname |             |  |  |
-  #                    v             v  v  v 
+  #                    v             v  v  v
   cam = Basler.Camera('192.168.1.1', 0, 0, 8000)
 
   hwint = Basler.Interface(cam)
@@ -209,8 +198,8 @@ This is a python code example for a simple test:
 
   # now ask for 2 sec. exposure and 10 frames
   acq.setAcqExpoTime(2)
-  acq.setNbImages(10) 
-  
+  acq.setNbImages(10)
+
   ct.prepareAcq()
   ct.startAcq()
 
@@ -219,8 +208,6 @@ This is a python code example for a simple test:
   while lastimg !=9:
     time.sleep(1)
     lastimg = ct.getStatus().ImageCounters.LastImageReady
- 
+
   # read the first image
   im0 = ct.ReadImage(0)
-
-
