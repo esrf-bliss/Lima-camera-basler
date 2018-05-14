@@ -30,9 +30,6 @@ else()
 endif()
 
 set(PYLON_VERSION "5" CACHE STRING "Pylon version 3 or 5")
-if(UNIX)
-  set(CMAKE_SHARED_LINKER_FLAGS "-Wl,--add-needed")
-endif()
 
 # Pylon SDK installer installs both 32 and 64 libs, so give find_library() single path 
 if(WIN32)
@@ -127,7 +124,6 @@ if(WIN32)
     target_link_libraries(lima${NAME} ${BASLER_PYLONGUI_LIB} ${BASLER_PYLONUTILITY_LIB} ${BASLER_PYLONGCBASE_LIB} ${BASLER_PYLONGENAPI_LIB})     
   endif()
 endif()
-  
   
 limatools_set_library_soversion(lima${NAME} "VERSION")
 if(WIN32)
