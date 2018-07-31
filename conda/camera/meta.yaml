@@ -15,11 +15,12 @@ requirements:
     - git
     - cmake
     - {{ compiler('cxx') }}
-    - sip 4.18*           #For the SIP generator
     - lima-core
-    - pylon5-sdk
   host:
     - python {{ python }}
+    - numpy
+    - sip 4.18*           #For the SIP generator
+    - pylon5-sdk
   run:
     - python {{ python }}
     - sip 4.18*           #For the SIP module
@@ -27,7 +28,9 @@ requirements:
     - pylon5-sdk
 
 test:
-  import:
+  requires:
+    - cmake
+  imports:
     - Lima.Basler
   commands:
     - cmake --version

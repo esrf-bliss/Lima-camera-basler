@@ -21,16 +21,19 @@
 //###########################################################################
 #ifndef BASLERVIDEOCTRL_H
 #define BASLERVIDEOCTRL_H
+
+#include <basler_export.h>
+
 #include "lima/HwVideoCtrlObj.h"
+
 #include "BaslerCamera.h"
-#include "BaslerCompatibility.h"
 
 namespace lima
 {
   namespace Basler
   {
     class SyncCtrlObj;
-    class LIBBASLER_API VideoCtrlObj : public HwVideoCtrlObj
+    class BASLER_EXPORT VideoCtrlObj : public HwVideoCtrlObj
     {
       DEB_CLASS_NAMESPC(DebModCamera,"VideoCtrlObj","Basler");
     public:

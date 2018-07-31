@@ -22,7 +22,8 @@
 #ifndef BASLERROICTRLOBJ_H
 #define BASLERROICTRLOBJ_H
 
-#include "BaslerCompatibility.h"
+#include <basler_export.h>
+
 #include "lima/HwRoiCtrlObj.h"
 #include "lima/HwInterface.h"
 

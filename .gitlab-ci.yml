@@ -2,39 +2,34 @@ stages:
   - build
   - deploy
 
-build-linux:
+.build-conda: &build-conda
   stage: build
-  script:
-    - conda build ./conda/camera --prefix-length=80 --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
   artifacts:
     paths:
       - dist/
   tags:
     - conda
+
+build-linux:
+  <<: *build-conda
+  script:
+    - conda build ./conda/camera --prefix-length=80 --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
+  tags:
     - linux
 
 build-win:
-  stage: build
+  <<: *build-conda
   script:
     - conda build ./conda/camera --prefix-length=80 --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
-  artifacts:
-    paths:
-      - dist/
   tags:
-    - conda
     - win
 
 build-noarch:
-  stage: build
+  <<: *build-conda
   script:
     - conda build ./conda/tango --prefix-length=80 --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
-  artifacts:
-    paths:
-      - dist/
-  tags:
-    - conda
 
-deploy_devel:
+deploy-devel:
   stage: deploy
   environment:
     name: devel/$CI_COMMIT_REF_NAME
@@ -55,7 +50,7 @@ deploy_devel:
     - stable
   when: manual
 
-deploy_stable:
+deploy-stable:
   stage: deploy
   environment:
     name: production

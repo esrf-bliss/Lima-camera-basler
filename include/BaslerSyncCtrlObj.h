@@ -22,7 +22,8 @@
 #ifndef BASLERSYNCCTRLOBJ_H
 #define BASLERSYNCCTRLOBJ_H
 
-#include "BaslerCompatibility.h"
+#include <basler_export.h>
+
 #include "lima/HwSyncCtrlObj.h"
 #include "lima/HwInterface.h"
 
