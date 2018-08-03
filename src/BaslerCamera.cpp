@@ -333,11 +333,9 @@ void Camera::prepareAcq()
     DEB_MEMBER_FUNCT();
     m_image_number=0;
 
-    if(m_video_flag_mode)
-      return;			// Nothing to do if color camera
-
     try
     {
+      if(!m_video_flag_mode) {
 	_freeStreamGrabber();
         // Get the first stream grabber object of the selected camera
         DEB_TRACE() << "Get the first stream grabber object of the selected camera";
@@ -388,8 +386,10 @@ void Camera::prepareAcq()
             StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(ptr,(const size_t)ImageSize_);
             StreamGrabber_->QueueBuffer(bufferId, NULL);
         }
-	if(m_trigger_mode == IntTrigMult)
-	  _startAcq();
+      }
+      
+      if(m_trigger_mode == IntTrigMult)
+	_startAcq();
     }
     catch (GenICam::GenericException &e)
     {
