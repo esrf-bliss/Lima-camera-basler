@@ -1208,7 +1208,7 @@ void Camera::getStatus(Camera::Status& status)
     AutoMutex aLock(m_cond.mutex());
     status = m_status;
     //Check if camera is not waiting for trigger
-    if(status == Camera::Exposure &&
+    if((status == Camera::Exposure || status == Camera::Readout) && 
        m_trigger_mode == IntTrigMult)
       {
 	// Check the frame start trigger acquisition status
