@@ -3,139 +3,194 @@
 #
 #  Copyright (C) : 2009-2017
 #  European Synchrotron Radiation Facility
-#  CS40220 38043 Grenoble Cedex 9 
+#  CS40220 38043 Grenoble Cedex 9
 #  FRANCE
-# 
+#
 #  Contact: lima@esrf.fr
-# 
+#
 #  This is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 3 of the License, or
 #  (at your option) any later version.
-# 
+#
 #  This software is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-# 
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, see <http://www.gnu.org/licenses/>.
 ############################################################################
-set(NAME "basler")
 
-if(WIN32)
-	set(PYLON_ROOT "C:/Program Files/Basler/pylon 5/Development" CACHE PATH "location of pylon sdk")
-else()
-	set(PYLON_ROOT "/opt/pylon5" CACHE PATH "location of pylon sdk")
+cmake_minimum_required(VERSION 3.1)
+
+project(basler)
+
+set(NAME "basler") # This is used by LimaTools
+
+# Include additional modules that are used inconditionnaly
+include(GNUInstallDirs)
+include(GenerateExportHeader)
+
+# If conda build, always set lib dir to 'lib'
+if($ENV{CONDA_BUILD})
+  set(CMAKE_INSTALL_LIBDIR "lib")
+endif()
+
+# Set lower / upper case project names
+string(TOUPPER "${PROJECT_NAME}" PROJECT_NAME_UPPER)
+string(TOLOWER "${PROJECT_NAME}" PROJECT_NAME_LOWER)
+
+# Set targets export name (used by lima and dependencies)
+set(TARGETS_EXPORT_NAME "${PROJECT_NAME_LOWER}-targets")
+#set(namespace "${PROJECT_NAME}::")
+
+# Check if project is being used directly or via add_subdirectory
+set(CAMERA_MASTER_PROJECT OFF)
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  set(CAMERA_MASTER_PROJECT ON)
+endif()
+
+if (CAMERA_MASTER_PROJECT)
+  find_package(Lima REQUIRED)
+endif()
+
+# CMake additional macros
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${LIMA_CMAKE_INCLUDE_DIRS} ${CMAKE_MODULE_PATH})
+
+# Set version
+include(project_version)
+
+# Enable python binding code compilation using sip generator
+option(CAMERA_ENABLE_PYTHON "compile python binding code?" LIMA_ENABLE_PYTHON)
+
+if (CAMERA_ENABLE_PYTHON)
+  # Find python interpreter and libs
+  find_package(PythonInterp)
+  find_package(PythonLibs)
+  if(${PYTHONINTERP_FOUND})
+    # python site-packages folder
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; print (get_python_lib())"
+      OUTPUT_VARIABLE _PYTHON_SITE_PACKAGES_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+  endif()
+
+  set(PYTHON_SITE_PACKAGES_DIR ${_PYTHON_SITE_PACKAGES_DIR} CACHE PATH "where should python modules be installed?")
+
+  find_package(SIP REQUIRED)
+  include(SIPMacros)
+  if(WIN32)
+    set(SIP_TAGS WIN32_PLATFORM)
+  elseif(UNIX)
+    set(SIP_TAGS POSIX_PLATFORM)
+  endif(WIN32)
+  set(SIP_EXTRA_OPTIONS -e -g)
+
+  find_package(NumPy REQUIRED)
 endif()
 
 set(PYLON_VERSION "5" CACHE STRING "Pylon version 3 or 5")
 
-# Pylon SDK installer installs both 32 and 64 libs, so give find_library() single path 
-if(WIN32)
-  message ("Win arch is  " ${CMAKE_SYSTEM_PROCESSOR})
-  if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "AMD64")
-    set(PYLON_LIB_DIR ${PYLON_ROOT}/lib/x64)
-  else()
-    set (PYLON_LIB_DIR ${PYLON_ROOT}/lib/win32)
-  endif()
+if ("${PYLON_VERSION}" STREQUAL "3")
+  find_package(Pylon3 REQUIRED)
+elseif ("${PYLON_VERSION}" STREQUAL "5")
+  find_package(Pylon5 REQUIRED)
 endif()
 
-link_directories(${PYLON_ROOT}/genicam/bin/Linux64_x64)
+file(GLOB_RECURSE BASLER_INCS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
 
-set(${NAME}_srcs src/BaslerCamera.cpp src/BaslerInterface.cpp src/BaslerDetInfoCtrlObj.cpp
-                src/BaslerSyncCtrlObj.cpp src/BaslerRoiCtrlObj.cpp
-                src/BaslerBinCtrlObj.cpp src/BaslerVideoCtrlObj.cpp)
-
-add_library(lima${NAME} SHARED
-    ${${NAME}_srcs}
+# Library definition
+add_library(basler SHARED
+  src/BaslerCamera.cpp
+  src/BaslerInterface.cpp
+  src/BaslerDetInfoCtrlObj.cpp
+  src/BaslerSyncCtrlObj.cpp
+  src/BaslerRoiCtrlObj.cpp
+  src/BaslerBinCtrlObj.cpp
+  src/BaslerVideoCtrlObj.cpp
+  ${BASLER_INCS}
 )
-target_include_directories(lima${NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_include_directories(lima${NAME} PUBLIC "${PYLON_ROOT}/include")
-if ("${PYLON_VERSION}" STREQUAL "3")
-  if(WIN32)
-    target_include_directories(lima${NAME} PUBLIC "${PYLON_ROOT}/../genicam/library/cpp/include")
-  else()
-    target_include_directories(lima${NAME} PUBLIC "${PYLON_ROOT}/genicam/library/CPP/include")
-  endif()
-endif()
 
-target_compile_definitions(lima${NAME} PUBLIC USE_GIGE)
-if(WIN32)
-    target_compile_definitions(lima${NAME} PRIVATE LIBBASLER_EXPORTS)
-endif()
+# Generate export macros
+generate_export_header(basler)
 
-if ("${PYLON_VERSION}" STREQUAL "3")
-  if (WIN32)
-    set(PYLON_SUFFIX "_MD_VC100" CACHE STRING "Suffix used in Windows for naming Pylon files")
-    find_library(BASLER_PYLONBASE_LIB PylonBase${PYLON_SUFFIX} ${PYLON_LIB_DIR})
-    find_library(BASLER_PYLONGIGESUPP_LIB PylonGigE${PYLON_SUFFIX}_TL ${PYLON_LIB_DIR})
-  else()
-    find_library(BASLER_PYLONBASE_LIB pylonbase ${PYLON_ROOT}/lib ${PYLON_ROOT}/lib64)
-    find_library(BASLER_PYLONGIGESUPP_LIB pylongigesupp ${PYLON_ROOT}/lib ${PYLON_ROOT}/lib64)
-  endif()
-  
-  if (("${BASLER_PYLONBASE_LIB}" STREQUAL "BASLER_PYLONBASE_LIB-NOTFOUND") OR ("${BASLER_PYLONGIGESUPP_LIB}" STREQUAL "BASLER_PYLONGIGESUPP_LIB-NOTFOUND"))
-    message(FATAL_ERROR "${NAME} : pylonbase or pylongige not found")
-  endif()
-#if("${PYLON_VERSION}" STREQUAL "5")
-else()
-  if (WIN32)
-    set(PYLON_SUFFIX "_MD_VC120" CACHE STRING "Suffix used in Windows for naming Pylon files")
-    find_library(BASLER_PYLONBASE_LIB PylonBase${PYLON_SUFFIX}_v5_0 ${PYLON_LIB_DIR})
-  else()
-    find_library(BASLER_PYLONBASE_LIB pylonbase ${PYLON_ROOT}/lib ${PYLON_ROOT}/lib64)
-  endif()
+# Set version and output name
+set_target_properties(basler PROPERTIES
+  OUTPUT_NAME "lima${PROJECT_NAME_LOWER}"
+  VERSION "${VERSION}"
+  SOVERSION "${PACKAGE_VERSION_MAJOR}.${PACKAGE_VERSION_MINOR}")
 
-  if (("${BASLER_PYLONBASE_LIB}" STREQUAL "BASLER_PYLONBASE_LIB-NOTFOUND"))
-    message(FATAL_ERROR "${NAME} : pylonbase not found")
-  endif()  
-endif()
+# Add dependencies
+target_include_directories(basler
+    PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"           # For export header
+    PUBLIC "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+)
 
-if (WIN32)
-  target_link_libraries(lima${NAME} ws2_32)
-endif()
-target_link_libraries(lima${NAME} limacore)
-target_link_libraries(lima${NAME} ${BASLER_PYLONBASE_LIB})
-if ("${PYLON_VERSION}" STREQUAL "3")
-  target_link_libraries(lima${NAME} ${BASLER_PYLONGIGESUPP_LIB})
-endif()
+target_link_libraries(basler PUBLIC limacore)
+
+target_compile_definitions(basler PUBLIC ${PYLON_DEFINITIONS})
+
+target_include_directories(basler PUBLIC ${PYLON_INCLUDE_DIRS})
+
+target_link_libraries(basler PUBLIC ${PYLON_LIBRARIES})
 
 if(WIN32)
-  if ("${PYLON_VERSION}" STREQUAL "3")
-    find_library(BASLER_PYLONGUI_LIB PylonGUI${PYLON_SUFFIX} ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
-    find_library(BASLER_PYLONUTILITY_LIB PylonUtility${PYLON_SUFFIX} ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
-    find_library(BASLER_PYLONBOOTSTRAPPER_LIB PylonBootstrapper ${PYLON_ROOT}/lib/Win32 ${PYLON_ROOT}/lib/x64)
-    find_library(BASLER_PYLONGCBASE_LIB GCBase${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    find_library(BASLER_PYLONGENAPI_LIB GenApi${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    find_library(BASLER_PYLONMATHPARSER_LIB MathParser${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    find_library(BASLER_PYLONLOG_LIB Log${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    find_library(BASLER_PYLONLOG4CPP_LIB log4cpp${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    find_library(BASLER_PYLONLOG4CPPSTATIC_LIB log4cpp-static${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    find_library(BASLER_PYLONCLALLSERIAL_LIB CLAllSerial${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    find_library(BASLER_PYLONCLPROTOCOL_LIB CLProtocol${PYLON_SUFFIX}_v2_3 ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    find_library(BASLER_PYLONCLSERCOM_LIB CLSerCOM ${PYLON_ROOT}/../genicam/library/cpp/lib/win32_i86 ${PYLON_ROOT}/../genicam/library/cpp/lib/win64_x64)
-    target_link_libraries(lima${NAME} ${BASLER_PYLONGUI_LIB} ${BASLER_PYLONUTILITY_LIB}	${BASLER_PYLONBOOTSTRAPPER_LIB} ${BASLER_PYLONGCBASE_LIB} ${BASLER_PYLONGENAPI_LIB} ${BASLER_PYLONMATHPARSER_LIB} ${BASLER_PYLONLOG_LIB} ${BASLER_PYLONLOG4CPP_LIB}	${BASLER_PYLONLOG4CPPSTATIC_LIB} ${BASLER_PYLONCLALLSERIAL_LIB}	${BASLER_PYLONCLPROTOCOL_LIB} ${BASLER_PYLONCLSERCOM_LIB})
-  else()
-    find_library(BASLER_PYLONGUI_LIB PylonGUI${PYLON_SUFFIX}_v5_0  ${PYLON_LIB_DIR})
-    find_library(BASLER_PYLONUTILITY_LIB PylonUtility${PYLON_SUFFIX}_v5_0  ${PYLON_LIB_DIR})
-    find_library(BASLER_PYLONGCBASE_LIB GCBase${PYLON_SUFFIX}_v3_0_Basler_pylon_v5_0 ${PYLON_LIB_DIR})   
-    find_library(BASLER_PYLONGENAPI_LIB GenApi${PYLON_SUFFIX}_v3_0_Basler_pylon_v5_0 ${PYLON_LIB_DIR})
-    target_link_libraries(lima${NAME} ${BASLER_PYLONGUI_LIB} ${BASLER_PYLONUTILITY_LIB} ${BASLER_PYLONGCBASE_LIB} ${BASLER_PYLONGENAPI_LIB})     
-  endif()
-endif()
-  
-limatools_set_library_soversion(lima${NAME} "VERSION")
-if(WIN32)
-    set_target_properties(lima${NAME} PROPERTIES PREFIX "lib")
-    install(TARGETS lima${NAME}
-            DESTINATION lib)
-else()
-    install(TARGETS lima${NAME}
-            LIBRARY DESTINATION lib)
+  target_compile_definitions(basler
+    PRIVATE basler_EXPORTS
+    PUBLIC NOMINMAX)
+  set_target_properties(basler PROPERTIES PREFIX "lib" IMPORT_PREFIX "lib")
 endif()
 
-if(LIMA_ENABLE_PYTHON)
-    limatools_run_sip_for_camera(${NAME})
-    install(FILES python/__init__.py DESTINATION "${PYTHON_SITE_PACKAGES_DIR}/Lima/Basler")
+# Binding code for python
+if(CAMERA_ENABLE_PYTHON)
+  include(LimaTools)
+  limatools_run_sip_for_camera(basler)
+endif()
+
+# Generate and install package config file and version
+if(CAMERA_MASTER_PROJECT)
+    set (PROJECT_LIBRARIES basler)
+    set(SIP_INSTALL_DIR ${CMAKE_INSTALL_DATADIR}/sip/lima)
+    set(CMAKE_INSTALL_DIR ${CMAKE_INSTALL_DATADIR}/cmake/lima)
+    include(package_config)
+endif()
+
+## Installation
+
+install(
+  TARGETS basler
+  EXPORT "${TARGETS_EXPORT_NAME}"
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}   # import library
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}   # .so files are libraries
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}   # .dll files are binaries
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}  # this does not actually install anything (but used by downstream projects)
+)
+
+install(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
+  COMPONENT devel
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILES_MATCHING PATTERN "*.h"
+)
+
+install(
+  FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/project_version.h
+    ${PROJECT_BINARY_DIR}/basler_export.h
+  COMPONENT devel
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+if(CAMERA_ENABLE_PYTHON)
+  install(
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python/
+    DESTINATION "${PYTHON_SITE_PACKAGES_DIR}/Lima/Basler"
+  )
+endif()
+
+## Tests
+if(CAMERA_ENABLE_TESTS)
+    enable_testing()
+    #add_subdirectory(test)
 endif()

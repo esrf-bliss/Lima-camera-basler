@@ -22,6 +22,9 @@
 #ifndef BASLERCAMERA_H
 #define BASLERCAMERA_H
 
+#include <stdlib.h>
+#include <limits>
+
 #if defined (__GNUC__) && (__GNUC__ == 3) && defined (__ELF__)
 #   define GENAPI_DECL __attribute__((visibility("default")))
 #   define GENAPI_DECL_ABSTRACT __attribute__((visibility("default")))
@@ -29,14 +32,14 @@
 
 #include <pylon/PylonIncludes.h>
 #include <pylon/gige/BaslerGigEDeviceInfo.h>
-#include <stdlib.h>
-#include <limits>
+
+#include <basler_export.h>
+
 #include "lima/HwMaxImageSizeCallback.h"
 #include "lima/HwBufferMgr.h"
-#include "BaslerCompatibility.h"
+
 
 using namespace Pylon;
-using namespace std;
 
 #if defined( USE_1394 )
 // Settings to use  Basler 1394 cameras
@@ -56,8 +59,6 @@ using namespace Basler_GigEStreamParams;
 #endif
 
 
-
-
 namespace lima
 {
 namespace Basler
@@ -67,7 +68,7 @@ namespace Basler
  * \brief object controlling the basler camera via Pylon driver
  *******************************************************************/
 class VideoCtrlObj;
-class LIBBASLER_API Camera
+class BASLER_EXPORT Camera
 {
     DEB_CLASS_NAMESPC(DebModCamera, "Camera", "Basler");
     friend class Interface;
@@ -215,9 +216,9 @@ class LIBBASLER_API Camera
     int                         m_socketBufferSize;
     
     //- basler stuff 
-    string                      m_camera_id;
-    string                      m_detector_model;
-    string                      m_detector_type;
+    std::string                 m_camera_id;
+    std::string                 m_detector_model;
+    std::string                 m_detector_type;
     Size                        m_detector_size;
     
     //- Pylon stuff

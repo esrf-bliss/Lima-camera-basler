@@ -1,37 +1,70 @@
-
 stages:
   - build
-  - test
+  - deploy
 
-build :
+.build-conda: &build-conda
   stage: build
-  script:
-    - cd ..
-    - cp -R /root/* .
-    - ./install_lima_submodule
-    - tar zxvf lib_for_lima/pylon-5.0.1.6388-x86_64.tar.gz
-    - cd pylon-5.0.1.6388-x86_64
-    - tar -C /opt -xzf pylonSDK*.tar.gz
-    - cd ../lima/camera/basler
-    - cp -R ../../../lima-camera-basler/* .
-    - cd ../..
-    - ./install.sh camera/basler python tests cbf fits tiff hdf5 config
-    - cd ../lima-camera-basler
-    - cp -R ../lima .
   artifacts:
     paths:
-    - lima/
-  only:
-    - cmake
-    
-test :
-  stage: test
-  dependencies:
-    - build
+      - dist/
+  tags:
+    - conda
+
+build-linux:
+  <<: *build-conda
   script:
-    - cd ..
-    - cp -R lima-camera-basler/lima .
-    - cd lima/cmake-build/
-    - ctest --timeout 10
+    - conda build ./conda/camera --prefix-length=80 --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
+  tags:
+    - linux
+
+build-win:
+  <<: *build-conda
+  script:
+    - conda build ./conda/camera --prefix-length=80 --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
+  tags:
+    - win
+
+build-noarch:
+  <<: *build-conda
+  script:
+    - conda build ./conda/tango --prefix-length=80 --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
+
+deploy-devel:
+  stage: deploy
+  environment:
+    name: devel/$CI_COMMIT_REF_NAME
+    url: http://bcu-ci.esrf.fr/devel
+  dependencies:
+    - build-linux
+    - build-win
+    - build-noarch
+  script:
+    - cp -Rf dist/* /conda-devel/
+    - conda index /conda-devel/
+  tags:
+    - conda
+    - linux
   only:
-    - cmake
+    - branches
+  except:
+    - stable
+  when: manual
+
+deploy-stable:
+  stage: deploy
+  environment:
+    name: production
+    url: http://bcu-ci.esrf.fr/stable
+  dependencies:
+    - build-linux
+    - build-win
+    - build-noarch
+  script:
+    - cp -Rf dist/* /conda/
+    - conda index /conda/
+  tags:
+    - conda
+    - linux
+  only:
+    - tags
+    - stable

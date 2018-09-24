@@ -22,7 +22,8 @@
 #ifndef BASLERINTERFACE_H
 #define BASLERINTERFACE_H
 
-#include "BaslerCompatibility.h"
+#include <basler_export.h>
+
 #include "lima/HwInterface.h"
 
 namespace lima
@@ -36,7 +37,7 @@ namespace lima
     class BinCtrlObj;
     class VideoCtrlObj;
     class Camera;
-    class LIBBASLER_API Interface : public HwInterface
+    class BASLER_EXPORT Interface : public HwInterface
     {
       DEB_CLASS_NAMESPC(DebModCamera, "BaslerInterface", "Basler");
 

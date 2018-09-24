@@ -22,7 +22,8 @@
 #ifndef BASLERBINCTRLOBJ_H
 #define BASLERBINCTRLOBJ_H
 
-#include "BaslerCompatibility.h"
+#include <basler_export.h>
+
 #include "lima/HwBinCtrlObj.h"
 #include "lima/HwInterface.h"
 

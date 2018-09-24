@@ -22,7 +22,8 @@
 #ifndef BASLERDETINFOCTRLOBJ_H
 #define BASLERDETINFOCTRLOBJ_H
 
-#include "BaslerCompatibility.h"
+#include <basler_export.h>
+
 #include "lima/HwDetInfoCtrlObj.h"
 #include "lima/Debug.h"
 
