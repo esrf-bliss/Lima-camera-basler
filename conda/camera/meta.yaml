@@ -11,20 +11,20 @@ build:
   number: {{ environ.get('GIT_DESCRIBE_NUMBER', 0) }}
 
 requirements:
+  host:
+    - python {{ python }}
+    - numpy
+    - sip 4.19.8              # For compatibility with pyqt 5.9.2
+    - lima-core
+    - pylon5-sdk
   build:
     - git
     - cmake
     - {{ compiler('cxx') }}
-    - lima-core
-  host:
-    - python {{ python }}
-    - numpy
-    - sip 4.18*           #For the SIP generator
-    - pylon5-sdk
   run:
     - python {{ python }}
-    - sip 4.18*           #For the SIP module
-    - lima-core
+    - sip >=4.19.4, <=4.19.8  # For compatibility with pyqt 5.9.2
+    - {{ pin_compatible('lima-core', max_pin='x.x') }}
     - pylon5-sdk
 
 test:
