@@ -186,6 +186,14 @@ class BASLER_EXPORT Camera
     void setAcquisitionFrameCount(int AFC);
     void getAcquisitionFrameCount(int& AFC) const;
 
+    // -- change AcquisitionFrameRateEnable
+    void setAcquisitionFrameRateEnable(bool AFRE);
+    void getAcquisitionFrameRateEnable(bool& AFRE) const;
+
+    // -- change acq frame count
+    void setAcquisitionFrameRateAbs(int AFRA);
+    void getAcquisitionFrameRateAbs(int& AFRA) const;
+
     // -- Pylon buffers statistics
     void getStatisticsTotalBufferCount(long& count);    
     void getStatisticsFailedBufferCount(long& count);
