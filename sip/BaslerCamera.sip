@@ -117,6 +117,9 @@ namespace Basler
     // -- Pylon buffers statistics
     void getStatisticsTotalBufferCount(long& count);    
     void getStatisticsFailedBufferCount(long& count);
+    
+    private:
+      Camera(const Basler::Camera&);
   };
 
 };
