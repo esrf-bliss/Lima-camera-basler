@@ -6,7 +6,7 @@
 
 # LImA Basler Camera Plugin
 
-This is the LImA plugin for Basler cameras.
+This is the LImA plugin for the Basler cameras.
 
 ## Install
 
