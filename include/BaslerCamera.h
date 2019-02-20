@@ -199,17 +199,20 @@ class BASLER_EXPORT Camera
     void getStatisticsFailedBufferCount(long& count);
     
  private:
+    enum BufferMode {TmpBuffer, SoftBuffer};
     class _AcqThread;
     friend class _AcqThread;
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
     void _freeStreamGrabber();
-    void _allocColorBuffer();
-    void _initColorStreamGrabber();
+    void _allocTmpBuffer();
+    void _initStreamGrabber(BufferMode mode);
     void _startAcq();
     void _readTrigMode();
+    void _forceVideoMode(bool force);
 
-    static const int NB_COLOR_BUFFER = 2;
+    static const int NB_TMP_BUFFER = 2;
+    
     //- lima stuff
     SoftBufferCtrlObj		m_buffer_ctrl_obj;
     int                         m_nb_frames;    
@@ -241,7 +244,7 @@ class BASLER_EXPORT Camera
     int                           m_receive_priority;
     bool			  m_color_flag;
     bool			  m_video_flag_mode;
-    void*			  m_color_buffer[NB_COLOR_BUFFER];
+    void*			  m_tmp_buffer[NB_TMP_BUFFER];
     VideoCtrlObj*		  m_video;
     TrigMode			  m_trigger_mode;
 };

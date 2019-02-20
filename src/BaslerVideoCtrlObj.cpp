@@ -38,6 +38,7 @@ VideoCtrlObj::~VideoCtrlObj()
 
 void VideoCtrlObj::getSupportedVideoMode(std::list<VideoMode>& aList) const
 {
+  DEB_MEMBER_FUNCT();
   struct _VideoMode
   {
     const char* stringMode;
@@ -181,6 +182,7 @@ void VideoCtrlObj::setLive(bool flag)
   if(flag)
     {
       m_cam.setNbFrames(0);
+      m_cam.prepareAcq();
       m_cam.startAcq();
     }
   else

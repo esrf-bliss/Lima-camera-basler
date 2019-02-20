@@ -47,8 +47,8 @@ Interface::Interface(Camera& cam,bool force_video_mode) :
 	// for greyscale camera but for having true video interface
 	// with gain/autogain and other true video features available
 	// one can force here for video interface.
-	m_cam._allocColorBuffer();
-	m_cam._initColorStreamGrabber();
+	DEB_ALWAYS() << "Ok force video cap. for a B/W camera";
+	m_cam._forceVideoMode(true);
       }
       m_video = new VideoCtrlObj(cam);
     }
