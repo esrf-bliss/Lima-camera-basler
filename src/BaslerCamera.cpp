@@ -471,8 +471,12 @@ void Camera::_allocTmpBuffer()
     {
 #ifdef __unix
       int ret=posix_memalign(&m_tmp_buffer[i],16,ImageSize_);
+      if (ret)
+	THROW_HW_ERROR(Error) << "posix_memalign(): request for aligned memory allocation failed";
 #else
       m_tmp_buffer[i] = _aligned_malloc(ImageSize_,16);
+      if (m_tmp_buffer[i] == NULL)
+	THROW_HW_ERROR(Error) << "_aligned_malloc(): request for aligned memory allocation failed";	
 #endif
     }
 }
