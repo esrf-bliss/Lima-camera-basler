@@ -97,6 +97,17 @@ class BASLER_EXPORT Camera
         LevelLow=Basler_GigECamera::TriggerActivation_LevelLow
     };
 
+    enum TestImageSelector {
+      TestImage_Off=Basler_GigECamera::TestImageSelector_Off,
+      TestImage_1=Basler_GigECamera::TestImageSelector_Testimage1,
+      TestImage_2=Basler_GigECamera::TestImageSelector_Testimage2,
+      TestImage_3=Basler_GigECamera::TestImageSelector_Testimage3,
+      TestImage_4=Basler_GigECamera::TestImageSelector_Testimage4,
+      TestImage_5=Basler_GigECamera::TestImageSelector_Testimage5,
+      TestImage_6=Basler_GigECamera::TestImageSelector_Testimage6,
+      TestImage_7=Basler_GigECamera::TestImageSelector_Testimage7,
+    };
+    
     Camera(const std::string& camera_id,int packet_size = -1,int received_priority = 0);
     ~Camera();
 
@@ -197,6 +208,10 @@ class BASLER_EXPORT Camera
     // -- Pylon buffers statistics
     void getStatisticsTotalBufferCount(long& count);    
     void getStatisticsFailedBufferCount(long& count);
+
+    // -- Pylon test image selectors
+    void setTestImageSelector(TestImageSelector set);
+    void getTestImageSelector(TestImageSelector& set) const;
     
  private:
     class _AcqThread;

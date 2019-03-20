@@ -265,6 +265,12 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
             DEB_TRACE() << "Set ExposureAuto to Off";           
             Camera_->ExposureAuto.SetValue(ExposureAuto_Off);
         }
+
+	if (GenApi::IsAvailable(Camera_->TestImageSelector ))
+	{
+            DEB_TRACE() << "Set TestImage to Off";           
+            Camera_->TestImageSelector.SetValue(TestImageSelector_Off);	  
+	}
 	// Start with internal trigger
 	// Force cache variable to get trigger really initialized at first call
 	m_trigger_mode = ExtTrigSingle;
@@ -2058,3 +2064,48 @@ void Camera::getStatisticsFailedBufferCount(long& count)
 		count = -1;//Because Not valid when acquisition is stopped
 }
 //---------------------------    
+
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setTestImageSelector(TestImageSelector set)
+{
+    DEB_MEMBER_FUNCT();
+    try
+    {
+        Basler_GigECamera::TestImageSelectorEnums test =
+            static_cast<Basler_GigECamera::TestImageSelectorEnums>(set);
+
+        // If the parameter TestImage is available for this camera
+        if (GenApi::IsAvailable(Camera_->TestImageSelector))
+            Camera_->TestImageSelector.SetValue(test);
+    }
+    catch (GenICam::GenericException &e)
+    {
+        DEB_WARNING() << e.GetDescription();
+    }
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getTestImageSelector(TestImageSelector& set) const
+{
+    DEB_MEMBER_FUNCT();
+    try
+    {
+        Basler_GigECamera::TestImageSelectorEnums test;
+
+        // If the parameter TestImage is available for this camera
+        if (GenApi::IsAvailable(Camera_->TestImageSelector))
+            test = Camera_->TestImageSelector.GetValue();
+
+        set = static_cast<TestImageSelector>(test);
+
+    }
+    catch (GenICam::GenericException &e)
+    {
+        DEB_WARNING() << e.GetDescription();
+    }
+}

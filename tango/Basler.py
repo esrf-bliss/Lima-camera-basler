@@ -56,10 +56,20 @@ class Basler(PyTango.Device_4Impl):
     def __init__(self,*args) :
         PyTango.Device_4Impl.__init__(self,*args)
 
-        self.init_device()
-
+        self.__TestImageSelector = {'TESTIMAGE_OFF': BaslerAcq.Camera.TestImage_Off,
+                                    'TESTIMAGE_1': BaslerAcq.Camera.TestImage_1,
+                                    'TESTIMAGE_2': BaslerAcq.Camera.TestImage_2,
+                                    'TESTIMAGE_3': BaslerAcq.Camera.TestImage_3,
+                                    'TESTIMAGE_4': BaslerAcq.Camera.TestImage_4,
+                                    'TESTIMAGE_5': BaslerAcq.Camera.TestImage_5,
+                                    'TESTIMAGE_6': BaslerAcq.Camera.TestImage_6,
+                                    'TESTIMAGE_7': BaslerAcq.Camera.TestImage_7,
+        }
+        
         self.__Attribute2FunctionBase = {
-                                         }
+        }
+        
+        self.init_device()
 
 #------------------------------------------------------------------
 #    Device destructor
@@ -136,7 +146,34 @@ class BaslerClass(PyTango.DeviceClass):
         }
 
     attr_list = {
-        }
+        'statistics_total_buffer_count':
+        [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ],
+         {
+             'unit': 'N/A',
+             'format': '',
+             'description': 'total number of frame requested',
+         }],        
+        'statistics_failed_buffer_count':
+        [[PyTango.DevLong,
+          PyTango.SCALAR,
+          PyTango.READ],
+         {
+             'unit': 'N/A',
+             'format': '',
+             'description': 'total number of failed frame',
+         }],        
+        'test_image_selector':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'unit': 'N/A',
+             'format': '',
+             'description': 'select a test image image_off/image_1/.../image_7',
+         }],        
+    }
 
     def __init__(self,name) :
         PyTango.DeviceClass.__init__(self,name)
