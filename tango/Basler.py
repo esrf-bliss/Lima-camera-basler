@@ -137,6 +137,9 @@ class BaslerClass(PyTango.DeviceClass):
         'packet_size':
         [PyTango.DevLong,
          "Network packet size (MTU)",8000],
+        'force_video_mode':
+        [PyTango.DevBoolean,
+         "For B/W camera force to color-video mode",False],
         }
 
     cmd_list = {
@@ -191,7 +194,7 @@ _BaslerInterface = None
 # directory for for details about network optimization.
 
 def get_control(frame_transmission_delay = 0, inter_packet_delay = 0,
-                packet_size = 8000,**keys) :
+                packet_size = 8000,force_video_mode= 'false', **keys) :
     global _BaslerCam
     global _BaslerInterface
 
@@ -210,12 +213,18 @@ def get_control(frame_transmission_delay = 0, inter_packet_delay = 0,
         camera_id = 'uname://' + util.get_ds_inst_name()
 
     print ("basler camera_id:", camera_id)
+    
+    # all properties are passed as string from LimaCCDs device get_control helper
+    # so need to be converted to correct type
+    if force_video_mode == 'true':
+        force = True
+    else: force = False
 
     if _BaslerCam is None:
         _BaslerCam = BaslerAcq.Camera(camera_id, int(packet_size))
         _BaslerCam.setInterPacketDelay(int(inter_packet_delay))
         _BaslerCam.setFrameTransmissionDelay(int(frame_transmission_delay))
-        _BaslerInterface = BaslerAcq.Interface(_BaslerCam)
+        _BaslerInterface = BaslerAcq.Interface(_BaslerCam, force)
     return Core.CtControl(_BaslerInterface)
 
 def get_tango_specific_class_n_device():

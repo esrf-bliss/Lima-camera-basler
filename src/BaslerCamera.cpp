@@ -289,14 +289,12 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
-    if(m_color_flag) {
-      _allocColorBuffer();
-    }
-    else
-      {
-	for(int i = 0;i < NB_COLOR_BUFFER;++i)
-	  m_color_buffer[i] = NULL;
-      }
+
+    // if color camera video capability will be available
+    m_video_flag_mode = m_color_flag;
+    
+    // alloc a temporary buffer used for live mode and color camera
+    _allocTmpBuffer();
 }
 
 //---------------------------
@@ -319,12 +317,11 @@ Camera::~Camera()
         DEB_TRACE() << "Close camera";
         delete Camera_;
         Camera_ = NULL;
-	if (m_video_flag_mode)
-	  for(int i = 0;i < NB_COLOR_BUFFER;++i)
+	for(int i = 0;i < NB_TMP_BUFFER;++i)
 #ifdef __unix
-	    free(m_color_buffer[i]);
+	  free(m_tmp_buffer[i]);
 #else
-	_aligned_free(m_color_buffer[i]);
+	  _aligned_free(m_tmp_buffer[i]);
 #endif
     }
     catch (GenICam::GenericException &e)
@@ -341,59 +338,17 @@ void Camera::prepareAcq()
 
     try
     {
-      if(!m_video_flag_mode) {
-	_freeStreamGrabber();
-        // Get the first stream grabber object of the selected camera
-        DEB_TRACE() << "Get the first stream grabber object of the selected camera";
-        StreamGrabber_ = new Camera_t::StreamGrabber_t(Camera_->GetStreamGrabber(0));
-	//Change priority to m_receive_priority
-	if(m_receive_priority > 0)
-	  {
-	    StreamGrabber_->ReceiveThreadPriorityOverride.SetValue(true);
-	    StreamGrabber_->ReceiveThreadPriority.SetValue(m_receive_priority);
-	  }
-        // Set Socket Buffer Size
-        DEB_TRACE() << "Set Socket Buffer Size";
-        if (m_socketBufferSize >0 )
-        {
-            StreamGrabber_->SocketBufferSize.SetValue(m_socketBufferSize);
-          }
-        // Open the stream grabber
-        DEB_TRACE() << "Open the stream grabber";
-        StreamGrabber_->Open();
-        if(!StreamGrabber_->IsOpen())
-        {
-            delete StreamGrabber_;
-            StreamGrabber_ = NULL;
-            THROW_HW_ERROR(Error) << "Unable to open the steam grabber!";
-        }
-        // We won't use image buffers greater than ImageSize
-        DEB_TRACE() << "We won't use image buffers greater than ImageSize";
-        StreamGrabber_->MaxBufferSize.SetValue((const size_t)ImageSize_);
-
-        StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
-        // We won't queue more than c_nBuffers image buffers at a time
-        int nb_buffers;
-        buffer_mgr.getNbBuffers(nb_buffers);
-        DEB_TRACE() << "We'll queue " << nb_buffers << " image buffers";
-        StreamGrabber_->MaxNumBuffer.SetValue(nb_buffers);
-
-        // Allocate all resources for grabbing. Critical parameters like image
-        // size now must not be changed until FinishGrab() is called.
-        DEB_TRACE() << "Allocate all resources for grabbing, PrepareGrab";
-        StreamGrabber_->PrepareGrab();
-
-        // Put buffer into the grab queue for grabbing
-        DEB_TRACE() << "Put buffer into the grab queue for grabbing";
-        for(int i = 0;i < nb_buffers;++i)
-        {
-            void *ptr = buffer_mgr.getFrameBufferPtr(i);
-            // The registration returns a handle to be used for queuing the buffer.
-            StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(ptr,(const size_t)ImageSize_);
-            StreamGrabber_->QueueBuffer(bufferId, NULL);
-        }
-      }
+      _freeStreamGrabber();
+      // For video (color camera or B/W forced to video) use a small 2-frames Tmp buffer
+      // to not stop acq if some frames are missing but just return the last acquired
+      // for other modes the SoftBuffer is filled by Pylon Grabber, and an frame error will
+      // stop the acquisition
+      if(m_video_flag_mode || m_nb_frames == 0)
+	_initStreamGrabber(TmpBuffer);
+      else
+	_initStreamGrabber(SoftBuffer);
       
+
       if(m_trigger_mode == IntTrigMult)
 	_startAcq();
     }
@@ -436,9 +391,6 @@ void Camera::_startAcq()
 {
   DEB_MEMBER_FUNCT();
 
-  if(m_video_flag_mode)
-    _initColorStreamGrabber();
-  
   Camera_->AcquisitionStart.Execute();
 
   //Start acqusition thread
@@ -512,26 +464,52 @@ void Camera::_freeStreamGrabber()
       StreamGrabber_ = NULL;         
     }
 }
-
-void Camera::_allocColorBuffer()
+void Camera::_forceVideoMode(bool force)
 {
   DEB_MEMBER_FUNCT();
-  for(int i = 0;i < NB_COLOR_BUFFER;++i)
+  m_video_flag_mode = force;
+  
+}
+void Camera::_allocTmpBuffer()
+{
+  DEB_MEMBER_FUNCT();
+  for(int i = 0;i < NB_TMP_BUFFER;++i)
     {
 #ifdef __unix
-      posix_memalign(&m_color_buffer[i],16,ImageSize_);
+      int ret=posix_memalign(&m_tmp_buffer[i],16,ImageSize_);
+      if (ret)
+	THROW_HW_ERROR(Error) << "posix_memalign(): request for aligned memory allocation failed";
 #else
-      m_color_buffer[i] = _aligned_malloc(ImageSize_,16);
+      m_tmp_buffer[i] = _aligned_malloc(ImageSize_,16);
+      if (m_tmp_buffer[i] == NULL)
+	THROW_HW_ERROR(Error) << "_aligned_malloc(): request for aligned memory allocation failed";	
 #endif
-      m_video_flag_mode = true;
     }
 }
 
-void Camera::_initColorStreamGrabber()
+void Camera::_initStreamGrabber(BufferMode mode)
 {
   DEB_MEMBER_FUNCT();
 
+  // Get the first stream grabber object of the selected camera
   StreamGrabber_ = new Camera_t::StreamGrabber_t(Camera_->GetStreamGrabber(0));
+  DEB_TRACE() << "Get the first stream grabber object of the selected camera";
+
+  //Change priority to m_receive_priority
+  if(m_receive_priority > 0)
+    {
+      StreamGrabber_->ReceiveThreadPriorityOverride.SetValue(true);
+      StreamGrabber_->ReceiveThreadPriority.SetValue(m_receive_priority);
+    }
+  // Set Socket Buffer Size
+  DEB_TRACE() << "Set Socket Buffer Size";
+  if (m_socketBufferSize >0 )
+    {
+      StreamGrabber_->SocketBufferSize.SetValue(m_socketBufferSize);
+    }
+  
+  // Open the stream grabber
+  DEB_TRACE() << "Open the stream grabber";
   StreamGrabber_->Open();
   if(!StreamGrabber_->IsOpen())
     {
@@ -539,15 +517,43 @@ void Camera::_initColorStreamGrabber()
       StreamGrabber_ = NULL;
       THROW_HW_ERROR(Error) << "Unable to open the steam grabber!";
     }
+  // We won't use image buffers greater than ImageSize
+  DEB_TRACE() << "We won't use image buffers greater than ImageSize";
   StreamGrabber_->MaxBufferSize.SetValue((const size_t)ImageSize_);
-  StreamGrabber_->MaxNumBuffer.SetValue(NB_COLOR_BUFFER);
-  StreamGrabber_->PrepareGrab();
 
-  for(int i = 0;i < NB_COLOR_BUFFER;++i)
+  // Allocate all resources for grabbing. Critical parameters like image
+  // size now must not be changed until FinishGrab() is called.
+  if (mode == TmpBuffer)
     {
-      StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_color_buffer[i],
-								   (const size_t)ImageSize_);
-      StreamGrabber_->QueueBuffer(bufferId,NULL);
+      DEB_TRACE() << "We'll queue " << NB_TMP_BUFFER << " image buffers";
+      StreamGrabber_->MaxNumBuffer.SetValue(NB_TMP_BUFFER);
+      DEB_TRACE() << "Allocate all resources for grabbing, PrepareGrab";
+      StreamGrabber_->PrepareGrab();
+      
+      for(int i = 0;i < NB_TMP_BUFFER;++i)
+	{
+	  StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_tmp_buffer[i],
+								       (const size_t)ImageSize_);
+	  StreamGrabber_->QueueBuffer(bufferId,NULL);
+	}
+    }
+  else // SoftBuffer
+    {
+      StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
+      int nb_buffers;
+      buffer_mgr.getNbBuffers(nb_buffers);
+      DEB_TRACE() << "We'll queue " << nb_buffers << " image buffers";
+      StreamGrabber_->MaxNumBuffer.SetValue(nb_buffers);
+      DEB_TRACE() << "Allocate all resources for grabbing, PrepareGrab";
+      StreamGrabber_->PrepareGrab();
+      
+      for(int i = 0;i < nb_buffers;++i)
+	{
+	  void *ptr = buffer_mgr.getFrameBufferPtr(i);	  
+	  StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(ptr,
+								       (const size_t)ImageSize_);
+	StreamGrabber_->QueueBuffer(bufferId,NULL);
+      }
     }
 }
 
@@ -612,12 +618,18 @@ void Camera::_AcqThread::threadFunction()
 				  {
 				    int nb_buffers;
 				    buffer_mgr.getNbBuffers(nb_buffers);
-				    if (!m_cam.m_nb_frames || 
+				    if (m_cam.m_nb_frames == 0 || 
 					m_cam.m_image_number < int(m_cam.m_nb_frames - nb_buffers))
 				      m_cam.StreamGrabber_->QueueBuffer(Result.Handle(),NULL);
                                 
 				    HwFrameInfoType frame_info;
 				    frame_info.acq_frame_nb = m_cam.m_image_number;
+				    // copy TmpBuffer frame to SoftBuffer frame room
+				    if (m_cam.m_nb_frames == 0)
+				      {
+					void *ptr = buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
+					memcpy(ptr, (void *)Result.Buffer(), m_cam.ImageSize_);
+				      }
 				    continueAcq = buffer_mgr.newFrameReady(frame_info);
 				    DEB_TRACE() << DEB_VAR1(continueAcq);
 				  }
