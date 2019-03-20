@@ -29,7 +29,18 @@ namespace Basler
         LevelHigh=Basler_GigECamera::TriggerActivation_LevelHigh,
         LevelLow=Basler_GigECamera::TriggerActivation_LevelLow
     };
-
+    
+    enum TestImageSelector {
+      TestImage_Off=Basler_GigECamera::TestImageSelector_Off,
+      TestImage_1=Basler_GigECamera::TestImageSelector_TestImage1,
+      TestImage_2=Basler_GigECamera::TestImageSelector_TestImage2,
+      TestImage_3=Basler_GigECamera::TestImageSelector_TestImage3,
+      TestImage_4=Basler_GigECamera::TestImageSelector_TestImage4,
+      TestImage_5=Basler_GigECamera::TestImageSelector_TestImage5,
+      TestImage_6=Basler_GigECamera::TestImageSelector_TestImage6,
+      TestImage_7=Basler_GigECamera::TestImageSelector_TestImage7,
+    };
+    
     Camera(const std::string& camera_ip,int mtu_size = -1,int received_priority = 0);
     ~Camera();
 
@@ -118,6 +129,10 @@ namespace Basler
     void getStatisticsTotalBufferCount(long& count);    
     void getStatisticsFailedBufferCount(long& count);
     
+    // -- Pylon test image selectors
+    void setTestImageSelector(TestImageSelector set);
+    void getTestImageSelector(TestImageSelector& set /Out/) const;
+
     private:
       Camera(const Basler::Camera&);
   };
