@@ -29,7 +29,7 @@ build-noarch:
   <<: *build-conda
   stage: build-noarch
   script:
-    - conda build ./conda/tango --prefix-length=80 --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
+    - conda build ./conda/tango --prefix-length=80 --output-folder=dist/ -c tango-controls --channel=http://bcu-ci.esrf.fr/stable
   dependencies:
     - build-linux
     - build-win
