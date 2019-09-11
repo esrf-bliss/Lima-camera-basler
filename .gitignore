@@ -23,6 +23,5 @@ install
 /.cproject
 /.pydevproject
 /.settings
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
+build/
+tango/build/
