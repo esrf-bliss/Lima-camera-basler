@@ -2013,6 +2013,33 @@ void Camera::getOutput1LineSource(Camera::LineSource& source) const
   DEB_RETURN() << DEB_VAR1(source);
 }
 
+
+//-----------------------------------------------------
+// Set the output line1 to a user value: True on False
+// the output line1 source can be overwritten by calling
+// setOutput1LineSource()
+//-----------------------------------------------------
+void Camera::setUserOutputLine1(bool value)
+{
+  DEB_MEMBER_FUNCT();
+  // set the I/O output1 to be set by the UserOutput value
+  Camera_->LineSelector.SetValue(LineSelector_Out1);
+  Camera_->LineSource.SetValue(LineSource_UserOutput);
+  
+  Camera_->UserOutputSelector.SetValue(UserOutputSelector_UserOutput1);
+  Camera_->UserOutputValue.SetValue(value);
+}
+
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::getUserOutputLine1(bool &value) const
+{
+  DEB_MEMBER_FUNCT();
+  Camera_->UserOutputSelector.SetValue(UserOutputSelector_UserOutput1);
+  value = Camera_->UserOutputValue.GetValue();
+}
+
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
