@@ -34,11 +34,19 @@ and might disappear in the future.
 Both inter_packet_delay and frame_tranmission_delay properties can be used to tune the GiGE performance, for
 more information on how to configure a GiGE Basler camera please refer to the Basler documentation.
 
-
 Attributes
 ----------
+============================== ======= ======================= ============================================================
+Attribute name		       RW      Type                    Description
+============================== ======= ======================= ============================================================
+statistics_total_buffer_count  rw      DevLong                 Total number of requested frames
+statistics_failed_buffer_count rw      DevLong                 Total number of failed frames
+test_image_selector            rw      DevString               Select a test image: image_off/image_1/.../image_7 **(\*)**
+output1_line_source            rw      DevString               Select a source for I/O output1 line **(\*)**
+user_output_lin1               rw      DevBoolean              Switch on/off UserOuput on output1 line **(\*)**
+============================== ======= ======================= ============================================================
 
-This camera device has not attribute.
+**(\*)** Use the command getAttrStringValueList to get the list of the supported value for these attributes. 
 
 
 Commands

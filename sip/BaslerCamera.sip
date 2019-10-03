@@ -112,6 +112,8 @@ namespace Basler
     // -- change output line source
     void setOutput1LineSource(Basler::Camera::LineSource);
     void getOutput1LineSource(Basler::Camera::LineSource&) const;
+    void setUserOutputLine1(bool value);
+    void getUserOutputLine1(bool& value) const; 
 
     // -- change acq frame count
     void setAcquisitionFrameCount(int AFC);

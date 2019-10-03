@@ -65,7 +65,15 @@ class Basler(PyTango.Device_4Impl):
                                     'TESTIMAGE_6': BaslerAcq.Camera.TestImage_6,
                                     'TESTIMAGE_7': BaslerAcq.Camera.TestImage_7,
         }
-        
+        self.__Output1LineSource = {
+            'LINESOURCE_OFF': BaslerAcq.Camera.Off,
+            'LINESOURCE_EXPOSURE_ACTIVE': BaslerAcq.Camera.ExposureActive,
+            'LINESOURCE_FRAME_TRIGGER_WAIT': BaslerAcq.Camera.FrameTriggerWait,
+            'LINESOURCE_LINE_TRIGGER_WAIT': BaslerAcq.Camera.LineTriggerWait,
+            'LINESOURCE_TIMER_ACTIVE': BaslerAcq.Camera.TimerActive,
+            'LINESOURCE_USER_OUTPUT': BaslerAcq.Camera.UserOutput,
+            'LINESOURCE_ACQUISITION_TRIGGER_WAIT': BaslerAcq.Camera.AcquisitionTriggerWait,
+        }
         self.__Attribute2FunctionBase = {
         }
         
@@ -175,7 +183,25 @@ class BaslerClass(PyTango.DeviceClass):
              'unit': 'N/A',
              'format': '',
              'description': 'select a test image image_off/image_1/.../image_7',
-         }],        
+         }],
+        'output1_line_source':
+        [[PyTango.DevString,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'unit': 'N/A',
+             'format': '',
+             'description': 'select a source for I/O output1 line',
+         }],
+        'user_output_line1':
+        [[PyTango.DevBoolean,
+          PyTango.SCALAR,
+          PyTango.READ_WRITE],
+         {
+             'unit': 'N/A',
+             'format': '',
+             'description': 'switch on/off UserOuput on output1 line',
+         }],
     }
 
     def __init__(self,name) :
