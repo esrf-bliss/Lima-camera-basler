@@ -910,8 +910,7 @@ void Camera::setTrigMode(TrigMode mode)
         {
 	    this->Camera_->TriggerMode.SetValue(TriggerMode_On);
 	    this->Camera_->TriggerSource.SetValue(TriggerSource_Software);
-	    if (GenApi::IsAvailable(Camera_->AcquisitionFrameCount))
-	      this->Camera_->AcquisitionFrameCount.SetValue(1);
+	    this->setAcquisitionFrameCount(1);
 	    this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
         }
         else if ( mode == ExtGate )
