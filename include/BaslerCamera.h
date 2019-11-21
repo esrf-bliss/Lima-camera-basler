@@ -248,6 +248,7 @@ class BASLER_EXPORT Camera
     std::string                 m_detector_model;
     std::string                 m_detector_type;
     Size                        m_detector_size;
+    size_t                      m_buffer_size;
     
     //- Pylon stuff
     PylonAutoInitTerm             auto_init_term_;

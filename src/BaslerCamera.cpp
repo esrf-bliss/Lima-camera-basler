@@ -110,7 +110,8 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
           StreamGrabber_(NULL),
           m_receive_priority(receive_priority),
 	  m_video_flag_mode(false),
-	  m_video(NULL)
+	  m_video(NULL),
+	  m_buffer_size(0)
 {
     DEB_CONSTRUCTOR();
     m_camera_id = camera_id;
@@ -292,9 +293,9 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 
     // if color camera video capability will be available
     m_video_flag_mode = m_color_flag;
-    
-    // alloc a temporary buffer used for live mode and color camera
-    _allocTmpBuffer();
+
+    // initialize temp. buffers to null pointer
+    for(int i = 0;i < NB_TMP_BUFFER;++i) m_tmp_buffer[i] = NULL;
 }
 
 //---------------------------
@@ -317,12 +318,6 @@ Camera::~Camera()
         DEB_TRACE() << "Close camera";
         delete Camera_;
         Camera_ = NULL;
-	for(int i = 0;i < NB_TMP_BUFFER;++i)
-#ifdef __unix
-	  free(m_tmp_buffer[i]);
-#else
-	  _aligned_free(m_tmp_buffer[i]);
-#endif
     }
     catch (GenICam::GenericException &e)
     {
@@ -462,8 +457,20 @@ void Camera::_freeStreamGrabber()
       StreamGrabber_->Close();
       delete StreamGrabber_;
       StreamGrabber_ = NULL;         
+
+      // Free temporary buffer used when live mode or camera is color
+      for(int i = 0;i < NB_TMP_BUFFER && m_tmp_buffer[i] != NULL; ++i)
+	{
+#ifdef __unix
+	  free(m_tmp_buffer[i]);
+#else
+	  _aligned_free(m_tmp_buffer[i]);
+#endif
+	  m_tmp_buffer[i]=NULL;
+	}
     }
 }
+
 void Camera::_forceVideoMode(bool force)
 {
   DEB_MEMBER_FUNCT();
@@ -476,11 +483,11 @@ void Camera::_allocTmpBuffer()
   for(int i = 0;i < NB_TMP_BUFFER;++i)
     {
 #ifdef __unix
-      int ret=posix_memalign(&m_tmp_buffer[i],16,ImageSize_);
+      int ret=posix_memalign(&m_tmp_buffer[i],16,m_buffer_size);
       if (ret)
 	THROW_HW_ERROR(Error) << "posix_memalign(): request for aligned memory allocation failed";
 #else
-      m_tmp_buffer[i] = _aligned_malloc(ImageSize_,16);
+      m_tmp_buffer[i] = _aligned_malloc(m_buffer_size,16);
       if (m_tmp_buffer[i] == NULL)
 	THROW_HW_ERROR(Error) << "_aligned_malloc(): request for aligned memory allocation failed";	
 #endif
@@ -521,10 +528,16 @@ void Camera::_initStreamGrabber(BufferMode mode)
   DEB_TRACE() << "We won't use image buffers greater than ImageSize";
   StreamGrabber_->MaxBufferSize.SetValue((const size_t)ImageSize_);
 
+  // Store the SoftBuffer buffer size
+  StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
+  m_buffer_size = buffer_mgr.getFrameDim().getMemSize();
+  
   // Allocate all resources for grabbing. Critical parameters like image
   // size now must not be changed until FinishGrab() is called.
   if (mode == TmpBuffer)
     {
+      // Alloc first the temporary buffer
+      _allocTmpBuffer();
       DEB_TRACE() << "We'll queue " << NB_TMP_BUFFER << " image buffers";
       StreamGrabber_->MaxNumBuffer.SetValue(NB_TMP_BUFFER);
       DEB_TRACE() << "Allocate all resources for grabbing, PrepareGrab";
@@ -533,13 +546,12 @@ void Camera::_initStreamGrabber(BufferMode mode)
       for(int i = 0;i < NB_TMP_BUFFER;++i)
 	{
 	  StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(m_tmp_buffer[i],
-								       (const size_t)ImageSize_);
+								       (const size_t)m_buffer_size);
 	  StreamGrabber_->QueueBuffer(bufferId,NULL);
 	}
     }
   else // SoftBuffer
     {
-      StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
       int nb_buffers;
       buffer_mgr.getNbBuffers(nb_buffers);
       DEB_TRACE() << "We'll queue " << nb_buffers << " image buffers";
@@ -551,7 +563,7 @@ void Camera::_initStreamGrabber(BufferMode mode)
 	{
 	  void *ptr = buffer_mgr.getFrameBufferPtr(i);	  
 	  StreamBufferHandle bufferId = StreamGrabber_->RegisterBuffer(ptr,
-								       (const size_t)ImageSize_);
+								       (const size_t)m_buffer_size);
 	StreamGrabber_->QueueBuffer(bufferId,NULL);
       }
     }
@@ -628,7 +640,7 @@ void Camera::_AcqThread::threadFunction()
 				    if (m_cam.m_nb_frames == 0)
 				      {
 					void *ptr = buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
-					memcpy(ptr, (void *)Result.Buffer(), m_cam.ImageSize_);
+					memcpy(ptr, (void *)Result.Buffer(), m_cam.m_buffer_size);
 				      }
 				    continueAcq = buffer_mgr.newFrameReady(frame_info);
 				    DEB_TRACE() << DEB_VAR1(continueAcq);
