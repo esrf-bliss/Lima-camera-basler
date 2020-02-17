@@ -276,10 +276,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 	// Force cache variable to get trigger really initialized at first call
 	m_trigger_mode = ExtTrigSingle;
 	setTrigMode(IntTrig);
-        // Get the image buffer size
-        DEB_TRACE() << "Get the image buffer size";
-        ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
-           
+
         WaitObject_ = WaitObjectEx::Create();
     
         m_acq_thread = new _AcqThread(*this);
@@ -524,16 +521,24 @@ void Camera::_initStreamGrabber(BufferMode mode)
       StreamGrabber_ = NULL;
       THROW_HW_ERROR(Error) << "Unable to open the steam grabber!";
     }
-  // We won't use image buffers greater than ImageSize
-  DEB_TRACE() << "We won't use image buffers greater than ImageSize";
-  StreamGrabber_->MaxBufferSize.SetValue((const size_t)ImageSize_);
+  // We won't use image buffers greater than PayLoadSize, the real frame size
+  size_t payload_size = (size_t)Camera_->PayloadSize.GetValue();  
+  StreamGrabber_->MaxBufferSize.SetValue((const size_t)payload_size);
 
-  // Store the SoftBuffer buffer size
-  StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
-  m_buffer_size = buffer_mgr.getFrameDim().getMemSize();
+  if (m_video_flag_mode)
+    {
+      m_buffer_size = payload_size;
+    }
+  else
+    {
+      // Store the SoftBuffer buffer size
+      m_buffer_size =m_buffer_ctrl_obj.getBuffer().getFrameDim().getMemSize();
+      if (payload_size < m_buffer_size)
+	THROW_HW_ERROR(Error) << " buffer frame size bigger than payload size";
+    }
   
-  // Allocate all resources for grabbing. Critical parameters like image
-  // size now must not be changed until FinishGrab() is called.
+  // For color camera or live acquisition, use temporary buffer
+  // for b/w camera or classic acquisition use directly the soft buffer manager
   if (mode == TmpBuffer)
     {
       // Alloc first the temporary buffer
@@ -552,8 +557,9 @@ void Camera::_initStreamGrabber(BufferMode mode)
     }
   else // SoftBuffer
     {
+      StdBufferCbMgr& buffer_mgr = m_buffer_ctrl_obj.getBuffer();
       int nb_buffers;
-      buffer_mgr.getNbBuffers(nb_buffers);
+      buffer_mgr.getNbBuffers(nb_buffers);      
       DEB_TRACE() << "We'll queue " << nb_buffers << " image buffers";
       StreamGrabber_->MaxNumBuffer.SetValue(nb_buffers);
       DEB_TRACE() << "Allocate all resources for grabbing, PrepareGrab";

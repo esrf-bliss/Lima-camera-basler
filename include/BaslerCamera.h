@@ -256,7 +256,6 @@ class BASLER_EXPORT Camera
     Camera_t*                     Camera_;
     Camera_t::StreamGrabber_t*    StreamGrabber_;
     WaitObjectEx                  WaitObject_;
-    size_t                        ImageSize_;
     _AcqThread*                   m_acq_thread;
     Cond                          m_cond;
     int                           m_receive_priority;
