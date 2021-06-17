@@ -341,8 +341,6 @@ void Camera::prepareAcq()
 	_initStreamGrabber(SoftBuffer);
       
 
-      if(m_trigger_mode == IntTrigMult)
-	_startAcq();
     }
     catch (GenICam::GenericException &e)
     {
@@ -365,12 +363,19 @@ void Camera::startAcq()
 	    else
 	      m_buffer_ctrl_obj.getBuffer().setStartTimestamp(Timestamp::now());
 	  }
+	// start acquisition at first image
+	// code moved from prepareAcq(), otherwise with color camera
+	// CtVideo::_prepareAcq() which calls stopAcq() will kill the acquisition 
 	if(m_trigger_mode == IntTrigMult)
 	  {
+	    if (m_image_number == 0)
+	      _startAcq();
+
 	    this->Camera_->TriggerSoftware.Execute();
 	  }
-	else
-	_startAcq();
+	else {	  
+	  _startAcq();
+	}
     }
     catch (GenICam::GenericException &e)
     {
