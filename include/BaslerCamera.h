@@ -89,6 +89,7 @@ class BASLER_EXPORT Camera
       PatternGenerator1, PatternGenerator2, PatternGenerator3, PatternGenerator4,
       AcquisitionTriggerReady,
     };
+
 #elif defined (USE_USB)
     enum LineSource {
       Off, ExposureActive, FrameTriggerWait,FrameBurstTriggerWait,
@@ -98,23 +99,25 @@ class BASLER_EXPORT Camera
 #endif    
 
     enum TrigActivation {
-        RisingEdge=Basler_GigECamera::TriggerActivation_RisingEdge,
-        FallingEdge=Basler_GigECamera::TriggerActivation_FallingEdge,
-        AnyEdge=Basler_GigECamera::TriggerActivation_AnyEdge,
-        LevelHigh=Basler_GigECamera::TriggerActivation_LevelHigh,
-        LevelLow=Basler_GigECamera::TriggerActivation_LevelLow
+        RisingEdge=TriggerActivation_RisingEdge,
+        FallingEdge=TriggerActivation_FallingEdge,
+        AnyEdge=TriggerActivation_AnyEdge,
+        LevelHigh=TriggerActivation_LevelHigh,
+        LevelLow=TriggerActivation_LevelLow
     };
 
     enum TestImageSelector {
-      TestImage_Off=Basler_GigECamera::TestImageSelector_Off,
-      TestImage_1=Basler_GigECamera::TestImageSelector_Testimage1,
-      TestImage_2=Basler_GigECamera::TestImageSelector_Testimage2,
-      TestImage_3=Basler_GigECamera::TestImageSelector_Testimage3,
-      TestImage_4=Basler_GigECamera::TestImageSelector_Testimage4,
-      TestImage_5=Basler_GigECamera::TestImageSelector_Testimage5,
-      TestImage_6=Basler_GigECamera::TestImageSelector_Testimage6,
-      TestImage_7=Basler_GigECamera::TestImageSelector_Testimage7,
-    };
+      TestImage_Off=TestImageSelector_Off,
+      TestImage_1=TestImageSelector_Testimage1,
+      TestImage_2=TestImageSelector_Testimage2,
+      TestImage_3=TestImageSelector_Testimage3,
+      TestImage_4=TestImageSelector_Testimage4,
+      TestImage_5=TestImageSelector_Testimage5,
+      TestImage_6=TestImageSelector_Testimage6,
+#if defined (USE_GIGE)      
+      TestImage_7=TestImageSelector_Testimage7,
+#endif
+    };   
     
     Camera(const std::string& camera_id,int packet_size = -1,int received_priority = 0);
     ~Camera();

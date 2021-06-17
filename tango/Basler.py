@@ -63,17 +63,24 @@ class Basler(PyTango.Device_4Impl):
                                     'TESTIMAGE_4': BaslerAcq.Camera.TestImage_4,
                                     'TESTIMAGE_5': BaslerAcq.Camera.TestImage_5,
                                     'TESTIMAGE_6': BaslerAcq.Camera.TestImage_6,
-                                    'TESTIMAGE_7': BaslerAcq.Camera.TestImage_7,
         }
+        try:
+            self.__TestImageSelector['TESTIMAGE_7'] = BaslerAcq.Camera.TestImage_7
+        except:
+            pass
+        
         self.__Output1LineSource = {
             'LINESOURCE_OFF': BaslerAcq.Camera.Off,
             'LINESOURCE_EXPOSURE_ACTIVE': BaslerAcq.Camera.ExposureActive,
             'LINESOURCE_FRAME_TRIGGER_WAIT': BaslerAcq.Camera.FrameTriggerWait,
-            'LINESOURCE_LINE_TRIGGER_WAIT': BaslerAcq.Camera.LineTriggerWait,
-            'LINESOURCE_TIMER_ACTIVE': BaslerAcq.Camera.TimerActive,
-            'LINESOURCE_USER_OUTPUT': BaslerAcq.Camera.UserOutput,
-            'LINESOURCE_ACQUISITION_TRIGGER_WAIT': BaslerAcq.Camera.AcquisitionTriggerWait,
         }
+        try:
+             self.__Output1LineSource['LINESOURCE_LINE_TRIGGER_WAIT'] = BaslerAcq.Camera.LineTriggerWait
+             self.__Output1LineSource['LINESOURCE_TIMER_ACTIVE'] = BaslerAcq.Camera.TimerActive
+             self.__Output1LineSource['LINESOURCE_USER_OUTPUT'] = BaslerAcq.Camera.UserOutput
+             self.__Output1LineSource['LINESOURCE_ACQUISITION_TRIGGER_WAIT'] = BaslerAcq.Camera.AcquisitionTriggerWait
+        except:
+            pass
         self.__Attribute2FunctionBase = {
         }
         
@@ -248,8 +255,12 @@ def get_control(frame_transmission_delay = 0, inter_packet_delay = 0,
 
     if _BaslerCam is None:
         _BaslerCam = BaslerAcq.Camera(camera_id, int(packet_size))
-        _BaslerCam.setInterPacketDelay(int(inter_packet_delay))
-        _BaslerCam.setFrameTransmissionDelay(int(frame_transmission_delay))
+        try:
+            _BaslerCam.setInterPacketDelay(int(inter_packet_delay))
+            _BaslerCam.setFrameTransmissionDelay(int(frame_transmission_delay))
+        except:
+            #certainly an usb camera
+            pass
         _BaslerInterface = BaslerAcq.Interface(_BaslerCam, force)
     return Core.CtControl(_BaslerInterface)
 

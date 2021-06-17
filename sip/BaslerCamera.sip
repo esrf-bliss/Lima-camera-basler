@@ -1,3 +1,5 @@
+%Feature USE_GIGE
+%Feature USE_USB
 
 namespace Basler
 {
@@ -12,7 +14,7 @@ namespace Basler
     enum Status {
       Ready, Exposure, Readout, Latency,
     };
-
+%If (USE_GIGE)
     enum LineSource {
       Off, ExposureActive, FrameTriggerWait, LineTriggerWait,
       Timer1Active, Timer2Active, Timer3Active, Timer4Active, TimerActive,
@@ -21,24 +23,34 @@ namespace Basler
       PatternGenerator1, PatternGenerator2, PatternGenerator3, PatternGenerator4,
       AcquisitionTriggerReady,
     };
+%End
+%If (USE_USB)
+    enum LineSource {
+      Off, ExposureActive, FrameTriggerWait,FrameBurstTriggerWait,
+      UserOutput0, UserOutput1, UserOutput2, UserOutput3,
+      FlashWindow,
+    };
+%End    
 
     enum TrigActivation {
-        RisingEdge=Basler_GigECamera::TriggerActivation_RisingEdge,
-        FallingEdge=Basler_GigECamera::TriggerActivation_FallingEdge,
-        AnyEdge=Basler_GigECamera::TriggerActivation_AnyEdge,
-        LevelHigh=Basler_GigECamera::TriggerActivation_LevelHigh,
-        LevelLow=Basler_GigECamera::TriggerActivation_LevelLow
+        RisingEdge=TriggerActivation_RisingEdge,
+        FallingEdge=TriggerActivation_FallingEdge,
+        AnyEdge=TriggerActivation_AnyEdge,
+        LevelHigh=TriggerActivation_LevelHigh,
+        LevelLow=TriggerActivation_LevelLow
     };
     
     enum TestImageSelector {
-      TestImage_Off=Basler_GigECamera::TestImageSelector_Off,
-      TestImage_1=Basler_GigECamera::TestImageSelector_TestImage1,
-      TestImage_2=Basler_GigECamera::TestImageSelector_TestImage2,
-      TestImage_3=Basler_GigECamera::TestImageSelector_TestImage3,
-      TestImage_4=Basler_GigECamera::TestImageSelector_TestImage4,
-      TestImage_5=Basler_GigECamera::TestImageSelector_TestImage5,
-      TestImage_6=Basler_GigECamera::TestImageSelector_TestImage6,
-      TestImage_7=Basler_GigECamera::TestImageSelector_TestImage7,
+      TestImage_Off=TestImageSelector_Off,
+      TestImage_1=TestImageSelector_TestImage1,
+      TestImage_2=TestImageSelector_TestImage2,
+      TestImage_3=TestImageSelector_TestImage3,
+      TestImage_4=TestImageSelector_TestImage4,
+      TestImage_5=TestImageSelector_TestImage5,
+      TestImage_6=TestImageSelector_TestImage6,
+%If (USE_GIGE)
+      TestImage_7=TestImageSelector_TestImage7,
+%End
     };
     
     Camera(const std::string& camera_ip,int mtu_size = -1,int received_priority = 0);

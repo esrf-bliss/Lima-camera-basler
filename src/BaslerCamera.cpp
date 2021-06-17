@@ -211,7 +211,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 	// basler model string last character codes for color (c) or monochrome (m)
 	std::list<string> formatList;
 
-	if (m_detector_model.find("gc") != std::string::npos)
+	if (m_detector_model.find("gc") != std::string::npos || m_detector_model.find("uc") != std::string::npos)
 	  {
 	    // The list Order here has sense, if supported, the first format in the list will be applied
 	    // as default one, and in case of color camera the default will defined the max buffer
@@ -415,6 +415,7 @@ void Camera::_startAcq()
 //---------------------------
 void Camera::stopAcq()
 {
+  DEB_MEMBER_FUNCT();
   _stopAcq(false);
 }
 
@@ -424,6 +425,7 @@ void Camera::stopAcq()
 void Camera::_stopAcq(bool internalFlag)
 {
   DEB_MEMBER_FUNCT();
+  DEB_PARAM() << DEB_VAR1(internalFlag);
     try
     {
         AutoMutex aLock(m_cond.mutex());
@@ -519,6 +521,8 @@ void Camera::_initStreamGrabber(BufferMode mode)
   StreamGrabber_ = new Camera_t::StreamGrabber_t(Camera_->GetStreamGrabber(0));
   DEB_TRACE() << "Get the first stream grabber object of the selected camera";
 
+#if defined (USE_GIGE)
+  
   //Change priority to m_receive_priority
   if(m_receive_priority > 0)
     {
@@ -531,7 +535,9 @@ void Camera::_initStreamGrabber(BufferMode mode)
     {
       StreamGrabber_->SocketBufferSize.SetValue(m_socketBufferSize);
     }
-  
+#endif
+
+
   // Open the stream grabber
   DEB_TRACE() << "Open the stream grabber";
   StreamGrabber_->Open();
@@ -799,29 +805,7 @@ void Camera::getImageType(ImageType& type)
     PixelFormatEnums ps;
     try
     {
-<<<<<<< HEAD
         ps = Camera_->PixelFormat.GetValue();
-=======
-        PixelFormatEnums ps = Camera_->PixelFormat.GetValue();
-        switch( ps )
-        {
-            case PixelFormat_Mono8:
-                type= Bpp8;
-            break;
-              
-            case PixelFormat_Mono12:
-                type= Bpp12;
-            break;
-#if defined (USE_GIGE)              
-            case PixelFormat_Mono16: //- this is in fact 12 bpp inside a 16bpp image
-                type= Bpp16;
-            break;
-#endif              
-            default:
-                type= Bpp10;
-            break;
-        }
->>>>>>> USB3 try
     }
     catch (GenICam::GenericException &e)
     {
@@ -833,6 +817,7 @@ void Camera::getImageType(ImageType& type)
       case PixelFormat_Mono8:
       case PixelFormat_BayerRG8:
       case PixelFormat_BayerBG8:
+#if defined (USE_GIGE)	
       case PixelFormat_RGB8Packed:
       case PixelFormat_BGR8Packed:
       case PixelFormat_RGBA8Packed:
@@ -840,6 +825,7 @@ void Camera::getImageType(ImageType& type)
       case PixelFormat_YUV411Packed:
       case PixelFormat_YUV422Packed:
       case PixelFormat_YUV444Packed:
+#endif	
 	type= Bpp8;
 	break;
 
@@ -854,13 +840,13 @@ void Camera::getImageType(ImageType& type)
       case PixelFormat_BayerBG12:
 	type= Bpp12;
 	break;
-        
+#if defined (USE_GIGE)        
       case PixelFormat_Mono16: //- this is in fact 12 bpp inside a 16bpp image
       case PixelFormat_BayerRG16:
       case PixelFormat_BayerBG16:
 	type= Bpp16;
 	break;
-	    
+#endif	    
       default:
 	THROW_HW_ERROR(Error) << "Unsupported Pixel Format : " << ps;
 	break;
@@ -878,34 +864,19 @@ void Camera::setImageType(ImageType type)
         switch( type )
         {
             case Bpp8:
-<<<<<<< HEAD
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
                 break;
             case Bpp12:
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
                 break;
+#if defined (USE_GIGE)		
             case Bpp16:
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
                 break;
-
+#endif
             default:
                 THROW_HW_ERROR(NotSupported) << "Cannot change the pixel format of the camera !";
                 break;
-=======
-	      this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
-            break;
-            case Bpp12:
-	      this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
-	      break;
-#if defined (USE_GIGE)
-            case Bpp16:
-	      this->Camera_->PixelFormat.SetValue(PixelFormat_Mono16);
-            break;
-#endif              
-            default:
-	      THROW_HW_ERROR(Error) << "Cannot change the format of the camera !";
-            break;
->>>>>>> USB3 try
         }
     }
     catch (GenICam::GenericException &e)
@@ -975,13 +946,8 @@ void Camera::setTrigMode(TrigMode mode)
         {
 	    this->Camera_->TriggerMode.SetValue(TriggerMode_On);
 	    this->Camera_->TriggerSource.SetValue(TriggerSource_Software);
-<<<<<<< HEAD
+	    this->Camera_->AcquisitionFrameRateEnable.SetValue(false);
 	    this->setAcquisitionFrameCount(1);
-=======
-#if defined (USE_GIGE)
-	    this->Camera_->AcquisitionFrameCount.SetValue(1);
-#endif       
->>>>>>> USB3 try
 	    this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
         }
         else if ( mode == ExtGate )
@@ -1068,8 +1034,8 @@ void Camera::setTrigActivation(TrigActivation activation)
     DEB_MEMBER_FUNCT();
     try
     {
-        Basler_GigECamera::TriggerActivationEnums act =
-            static_cast<Basler_GigECamera::TriggerActivationEnums>(activation);
+        TriggerActivationEnums act =
+            static_cast<TriggerActivationEnums>(activation);
 
         // If the parameter TriggerActivation is available for this camera
         if (GenApi::IsAvailable(Camera_->TriggerActivation))
@@ -1089,7 +1055,7 @@ void Camera::getTrigActivation(TrigActivation& activation) const
     DEB_MEMBER_FUNCT();
     try
     {
-        Basler_GigECamera::TriggerActivationEnums act;
+        TriggerActivationEnums act;
 
         // If the parameter AcquisitionFrameCount is available for this camera
         if (GenApi::IsAvailable(Camera_->TriggerActivation))
@@ -1761,19 +1727,20 @@ void Camera::getCurrentThroughput(int& ipd)
         DEB_WARNING() << e.GetDescription();
     }
 }    
-<<<<<<< HEAD
+#endif
 
 //-----------------------------------------------------
 // isTemperatureAvailable
 //-----------------------------------------------------
 bool Camera::isTemperatureAvailable() const
 {
+#if defined (USE_GIGE)  
     return GenApi::IsAvailable(Camera_->TemperatureAbs);
+#elif defined (USE_USB)
+    return GenApi::IsAvailable(Camera_->DeviceTemperature);
+#endif
 }
 
-=======
-#endif    
->>>>>>> USB3 try
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -1793,7 +1760,6 @@ void Camera::getTemperature(double& temperature)
 	    Camera_->DeviceTemperatureSelector.SetValue(DeviceTemperatureSelector_Sensorboard);
 	    temperature = Camera_->DeviceTemperature.GetValue();
 	  }
-#elif defined (USE_USB)
 #endif	
     }
     catch (GenICam::GenericException &e)
@@ -2047,7 +2013,11 @@ void Camera::setAcquisitionFrameRateAbs(int AFRA)
     DEB_PARAM() << DEB_VAR1(AFRA);
     try
     {
+#if defined (USE_GIGE)      
         Camera_->AcquisitionFrameRateAbs.SetValue(AFRA);
+#else
+        Camera_->AcquisitionFrameRate.SetValue(AFRA);	
+#endif	
     }
     catch (GenICam::GenericException &e)
     {
@@ -2065,6 +2035,7 @@ void Camera::getAcquisitionFrameRateAbs(int& AFRA) const
     DEB_PARAM() << DEB_VAR1(AFRA);
     try
     {
+#if defined (USE_GIGE)      
         if (GenApi::IsAvailable(Camera_->AcquisitionFrameRateAbs))
         {
         AFRA  = Camera_->AcquisitionFrameRateAbs.GetValue();
@@ -2074,6 +2045,16 @@ void Camera::getAcquisitionFrameRateAbs(int& AFRA) const
             AFRA = false;
 //			THROW_HW_ERROR(Error)<<"AcquisitionFrameRateAbs Parameter is not Available !";
         }
+#else
+        if (GenApi::IsAvailable(Camera_->AcquisitionFrameRate))
+        {
+        AFRA  = Camera_->AcquisitionFrameRate.GetValue();
+        }
+        else
+        {
+            AFRA = false;
+        }
+#endif	
     }
     catch (GenICam::GenericException &e)
     {
@@ -2229,8 +2210,13 @@ void Camera::setUserOutputLine1(bool value)
 {
   DEB_MEMBER_FUNCT();
   // set the I/O output1 to be set by the UserOutput value
+#if defined (USE_GIGE)  
   Camera_->LineSelector.SetValue(LineSelector_Out1);
   Camera_->LineSource.SetValue(LineSource_UserOutput);
+#else
+  Camera_->LineSelector.SetValue(LineSelector_Line1);  
+  Camera_->LineSource.SetValue(LineSource_UserOutput1);
+#endif 
   
   Camera_->UserOutputSelector.SetValue(UserOutputSelector_UserOutput1);
   Camera_->UserOutputValue.SetValue(value);
@@ -2252,6 +2238,7 @@ void Camera::getUserOutputLine1(bool &value) const
 void Camera::setAcquisitionFrameCount(int AFC)
 {
     DEB_MEMBER_FUNCT();
+#if defined (USE_GIGE)    
     try
     {
         // If the parameter AcquisitionFrameCount is available for this camera
@@ -2262,6 +2249,7 @@ void Camera::setAcquisitionFrameCount(int AFC)
     {
         DEB_WARNING() << e.GetDescription();
     }
+#endif
 }
 
 //-----------------------------------------------------
@@ -2270,6 +2258,7 @@ void Camera::setAcquisitionFrameCount(int AFC)
 void Camera::getAcquisitionFrameCount(int& AFC) const
 {
     DEB_MEMBER_FUNCT();
+#if defined (USE_GIGE)    
     try
     {
         // If the parameter AcquisitionFrameCount is available for this camera
@@ -2280,6 +2269,7 @@ void Camera::getAcquisitionFrameCount(int& AFC) const
     {
         DEB_WARNING() << e.GetDescription();
     }
+#endif   
 }
 
 //---------------------------
@@ -2319,8 +2309,8 @@ void Camera::setTestImageSelector(TestImageSelector set)
     DEB_MEMBER_FUNCT();
     try
     {
-        Basler_GigECamera::TestImageSelectorEnums test =
-            static_cast<Basler_GigECamera::TestImageSelectorEnums>(set);
+        TestImageSelectorEnums test =
+            static_cast<TestImageSelectorEnums>(set);
 
         // If the parameter TestImage is available for this camera
         if (GenApi::IsAvailable(Camera_->TestImageSelector))
@@ -2340,7 +2330,7 @@ void Camera::getTestImageSelector(TestImageSelector& set) const
     DEB_MEMBER_FUNCT();
     try
     {
-        Basler_GigECamera::TestImageSelectorEnums test;
+        TestImageSelectorEnums test;
 
         // If the parameter TestImage is available for this camera
         if (GenApi::IsAvailable(Camera_->TestImageSelector))
