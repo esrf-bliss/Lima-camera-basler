@@ -53,6 +53,9 @@ if (CAMERA_MASTER_PROJECT)
   find_package(Lima REQUIRED COMPONENTS devel tools)
 endif()
 
+# option to switch on specific compilation for USB camera models
+set(BASLER_ENABLE_USB)
+
 # CMake additional macros
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${LIMA_CMAKE_INCLUDE_DIRS} ${CMAKE_MODULE_PATH})
 
@@ -126,6 +129,11 @@ endif()
 
 # Binding code for python
 if(LIMA_ENABLE_PYTHON)
+  if (BASLER_ENABLE_USB)
+    set(LIMA_SIP_DISABLE_FEATURES "USE_GIGE")
+  else()
+    set(LIMA_SIP_DISABLE_FEATURES "USE_USB")
+  endif()
   limatools_run_sip_for_camera(basler)
 endif()
 
