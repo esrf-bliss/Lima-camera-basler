@@ -167,7 +167,7 @@ void VideoCtrlObj::setVideoMode(VideoMode mode)
 	  m_cam.Camera_->PixelFormat.SetValue(*i);
 	  succeed = true;
 	}
-      catch (GenICam::GenericException &e)
+      catch (Pylon::GenericException &e)
 	{
 	  errorMsg += e.GetDescription() + '\n';
 	}

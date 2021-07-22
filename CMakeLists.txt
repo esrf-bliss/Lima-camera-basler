@@ -71,12 +71,10 @@ if (CAMERA_MASTER_PROJECT)
   endif()
 endif()
 
-set(PYLON_VERSION "5" CACHE STRING "Pylon version 3 or 5")
+set(PYLON_VERSION "6" CACHE STRING "Pylon version 6")
 
-if ("${PYLON_VERSION}" STREQUAL "3")
-  find_package(Pylon3 REQUIRED)
-elseif ("${PYLON_VERSION}" STREQUAL "5")
-  find_package(Pylon5 REQUIRED)
+if ("${PYLON_VERSION}" STREQUAL "6")
+  find_package(Pylon6 REQUIRED)
 endif()
 
 file(GLOB_RECURSE BASLER_INCS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")

@@ -134,7 +134,7 @@ void SyncCtrlObj::setHwAutoExposureMode(AutoExposureMode mode)
 					   ExposureAuto_Continuous : ExposureAuto_Off);
        }
     }
-  catch(GenICam::GenericException& e)
+  catch(Pylon::GenericException& e)
     {
       THROW_HW_ERROR(Error) << e.GetDescription();
     }

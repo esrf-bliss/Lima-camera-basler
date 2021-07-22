@@ -17,19 +17,22 @@ build:
 
 requirements:
   host:
-    - python {{ python }}
+    - python
+    - numpy {{ numpy }}
     - sip 4.19.8              # For compatibility with pyqt 5.9.2
     - lima-core
-    - pylon5-sdk
+    - pylon6-sdk
   build:
+    - numpy {{ numpy }}
     - git
     - cmake
     - {{ compiler('cxx') }}
   run:
-    - python {{ python }}
+    - python
     - sip >=4.19.4, <=4.19.8  # For compatibility with pyqt 5.9.2
     - {{ pin_compatible('lima-core', max_pin='x.x') }}
-    - pylon5-sdk
+    - {{ pin_compatible('numpy',max_pin='x') }} 
+    - pylon6-sdk
 
 test:
   requires:

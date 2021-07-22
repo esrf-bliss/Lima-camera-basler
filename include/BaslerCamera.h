@@ -31,7 +31,6 @@
 #endif
 
 #include <pylon/PylonIncludes.h>
-#include <pylon/gige/BaslerGigEDeviceInfo.h>
 
 #include <basler_export.h>
 
@@ -41,22 +40,10 @@
 
 using namespace Pylon;
 
-#if defined( USE_1394 )
-// Settings to use  Basler 1394 cameras
-#include <pylon/1394/Basler1394Camera.h>
-typedef Pylon::CBasler1394Camera Camera_t;
-using namespace Basler_IIDC1394CameraParams;
-using namespace Basler_IIDC1394StreamParams;
-
-#elif defined ( USE_GIGE )
-// settings to use Basler GigE cameras
-#include <pylon/gige/BaslerGigECamera.h>
-typedef Pylon::CBaslerGigECamera Camera_t;
-using namespace Basler_GigECameraParams;
-using namespace Basler_GigEStreamParams;
-#else
-#error Camera type is not specified. For example, define USE_GIGE for using GigE cameras
-#endif
+#include <pylon/BaslerUniversalInstantCamera.h>
+typedef CBaslerUniversalInstantCamera Camera_t;
+using namespace Basler_UniversalCameraParams;
+using namespace Basler_UniversalStreamParams;
 
 
 namespace lima
@@ -90,22 +77,22 @@ class BASLER_EXPORT Camera
     };
 
     enum TrigActivation {
-        RisingEdge=Basler_GigECamera::TriggerActivation_RisingEdge,
-        FallingEdge=Basler_GigECamera::TriggerActivation_FallingEdge,
-        AnyEdge=Basler_GigECamera::TriggerActivation_AnyEdge,
-        LevelHigh=Basler_GigECamera::TriggerActivation_LevelHigh,
-        LevelLow=Basler_GigECamera::TriggerActivation_LevelLow
+        RisingEdge=TriggerActivation_RisingEdge,
+        FallingEdge=TriggerActivation_FallingEdge,
+        AnyEdge=TriggerActivation_AnyEdge,
+        LevelHigh=TriggerActivation_LevelHigh,
+        LevelLow=TriggerActivation_LevelLow
     };
 
     enum TestImageSelector {
-      TestImage_Off=Basler_GigECamera::TestImageSelector_Off,
-      TestImage_1=Basler_GigECamera::TestImageSelector_Testimage1,
-      TestImage_2=Basler_GigECamera::TestImageSelector_Testimage2,
-      TestImage_3=Basler_GigECamera::TestImageSelector_Testimage3,
-      TestImage_4=Basler_GigECamera::TestImageSelector_Testimage4,
-      TestImage_5=Basler_GigECamera::TestImageSelector_Testimage5,
-      TestImage_6=Basler_GigECamera::TestImageSelector_Testimage6,
-      TestImage_7=Basler_GigECamera::TestImageSelector_Testimage7,
+      TestImage_Off=TestImageSelector_Off,
+      TestImage_1=TestImageSelector_Testimage1,
+      TestImage_2=TestImageSelector_Testimage2,
+      TestImage_3=TestImageSelector_Testimage3,
+      TestImage_4=TestImageSelector_Testimage4,
+      TestImage_5=TestImageSelector_Testimage5,
+      TestImage_6=TestImageSelector_Testimage6,
+      TestImage_7=TestImageSelector_Testimage7,
     };
     
     Camera(const std::string& camera_id,int packet_size = -1,int received_priority = 0);
@@ -192,9 +179,7 @@ class BASLER_EXPORT Camera
     // -- change output line source
     void setOutput1LineSource(LineSource);
     void getOutput1LineSource(LineSource&) const;
-    void setUserOutputLine1(bool value);
-    void getUserOutputLine1(bool& value) const; 
-    
+
     // -- change acq frame count
     void setAcquisitionFrameCount(int AFC);
     void getAcquisitionFrameCount(int& AFC) const;
@@ -221,9 +206,7 @@ class BASLER_EXPORT Camera
     friend class _AcqThread;
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
-    void _freeStreamGrabber();
     void _allocTmpBuffer();
-    void _initStreamGrabber(BufferMode mode);
     void _startAcq();
     void _readTrigMode();
     void _forceVideoMode(bool force);
@@ -242,20 +225,19 @@ class BASLER_EXPORT Camera
     int                         m_timeout;
     double                      m_latency_time;
     int                         m_socketBufferSize;
+    bool                        m_is_usb;
     
     //- basler stuff 
     std::string                 m_camera_id;
     std::string                 m_detector_model;
     std::string                 m_detector_type;
     Size                        m_detector_size;
-    size_t                      m_buffer_size;
     
     //- Pylon stuff
     PylonAutoInitTerm             auto_init_term_;
     DeviceInfoList_t              devices_;
     Camera_t*                     Camera_;
-    Camera_t::StreamGrabber_t*    StreamGrabber_;
-    WaitObjectEx                  WaitObject_;
+    size_t                        ImageSize_;
     _AcqThread*                   m_acq_thread;
     Cond                          m_cond;
     int                           m_receive_priority;

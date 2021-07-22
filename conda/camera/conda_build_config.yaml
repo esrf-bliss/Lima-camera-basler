@@ -10,6 +10,8 @@ python:
 #    will target, not what subdir the compiler package will be itself.
 #    For example, we need a win-64 vs2008_win-32 package, so that we compile win-32
 #    code on win-64 miniconda.
+numpy:
+  - 1.18.5
 cross_compiler_target_platform:
   - win-64                     # [win]
 target_platform:
