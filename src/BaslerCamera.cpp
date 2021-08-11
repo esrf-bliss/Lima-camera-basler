@@ -383,7 +383,11 @@ void Camera::startAcq()
 void Camera::_startAcq()
 {
   DEB_MEMBER_FUNCT();
-  Camera_->StartGrabbing(m_nb_frames);
+  if (m_nb_frames)
+    Camera_->StartGrabbing(m_nb_frames);
+  else
+    Camera_->StartGrabbing();
+    
   AutoMutex aLock(m_cond.mutex());
   m_wait_flag = false;
   m_cond.broadcast();
@@ -408,6 +412,7 @@ void Camera::_stopAcq(bool internalFlag)
         AutoMutex aLock(m_cond.mutex());
         if(m_status != Camera::Ready)
         {
+            
             while(!internalFlag && m_thread_running)
             {
                 m_wait_flag = true;
@@ -470,109 +475,107 @@ void Camera::_AcqThread::threadFunction()
     {
         while(m_cam.m_wait_flag && !m_cam.m_quit)
         {
-          DEB_TRACE() << "Wait";
-          m_cam.m_thread_running = false;
-          m_cam.m_cond.broadcast();
-          m_cam.m_cond.wait();
-        }
-        DEB_TRACE() << "Run";
-        m_cam.m_thread_running = true;
-        if(m_cam.m_quit) return;
-    
-        m_cam.m_status = Camera::Exposure;
-        m_cam.m_cond.broadcast();
-        aLock.unlock();
+            DEB_TRACE() << "Wait";
+            m_cam.m_thread_running = false;
+            m_cam.m_cond.broadcast();
+            m_cam.m_cond.wait();
+            }
+            DEB_TRACE() << "Run";
+            m_cam.m_thread_running = true;
+            if(m_cam.m_quit) return;
+        
+            m_cam.m_status = Camera::Exposure;
+            m_cam.m_cond.broadcast();
+            aLock.unlock();
 
-        try
-        {
-            CGrabResultPtr ptrGrabResult;
-            bool continueAcq = true;
-            while(continueAcq && (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
+            try
             {
-	            m_cam._setStatus(Camera::Exposure,false);
-				if(!m_cam.m_video_flag_mode) {
-
-            // Camera.StopGrabbing() is called automatically by the RetrieveResult() method
-            // when c_countOfImagesToGrab images have been retrieved.
-
-            while (m_cam.Camera_->IsGrabbing())
-            {
-                // Wait for an image and then retrieve it. A timeout of 3000 ms is used.
-                m_cam.Camera_->RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);
-
-                if (m_cam.m_status == Camera::Fault) {
-                    m_cam._setStatus(Camera::Fault, false);
-                    continueAcq = false;
-                }
-                // Image grabbed successfully?
-                if (ptrGrabResult->GrabSucceeded())
+                CGrabResultPtr ptrGrabResult;
+                bool continueAcq = true;
+                while(continueAcq && (!m_cam.m_nb_frames || m_cam.m_image_number < m_cam.m_nb_frames))
                 {
-                    m_cam._setStatus(Camera::Readout, false);
-                    // Access the image data.
-                    const uint8_t* pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
+                    m_cam._setStatus(Camera::Exposure,false);
 
-                    HwFrameInfoType frame_info;
-                    frame_info.acq_frame_nb = m_cam.m_image_number;
-                    void *framePt = buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
-                    const FrameDim& fDim = buffer_mgr.getFrameDim();
-                    void* srcPt = ((char*)pImageBuffer);
-                    cout << fDim.getMemSize() << endl;
-                    cout << fDim << endl;
-                    DEB_TRACE() << "memcpy:" << DEB_VAR2(srcPt,framePt);
-                    memcpy(framePt,srcPt,fDim.getMemSize());
+                while (m_cam.Camera_->IsGrabbing())
+                {
+                    if(!m_cam.m_video_flag_mode) {
+                        // Wait for an image and then retrieve it. A timeout of 3000 ms is used.
+                    m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException);
 
-                    continueAcq = buffer_mgr.newFrameReady(frame_info);
-                                                
-                    DEB_TRACE() << DEB_VAR1(continueAcq);
-                    ++m_cam.m_image_number;
-
-                } else {
-                    if(m_cam.m_nb_frames) //in "snap" mode , acquisition must be stopped 
-                    {
-                        m_cam._setStatus(Camera::Fault,false);
+                    if (m_cam.m_status == Camera::Fault) {
+                        m_cam._setStatus(Camera::Fault, false);
                         continueAcq = false;
                     }
-                }
-            }   
-        } else
-            {
-            VideoMode mode;
-            while (m_cam.Camera_->IsGrabbing()) {
-                m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException);
-                if (ptrGrabResult->GrabSucceeded()) {
-                    switch(ptrGrabResult->GetPixelType())
+                    // Image grabbed successfully?
+                    if (ptrGrabResult->GrabSucceeded())
                     {
-                        case PixelType_Mono8:		mode = Y8;		break;
-                        case PixelType_Mono10: 		mode = Y16;		break;
-                        case PixelType_Mono12:  		mode = Y16;		break;
-                        case PixelType_Mono16:  		mode = Y16;		break;
-                        case PixelType_BayerRG8:  	mode = BAYER_RG8;	break;
-                        case PixelType_BayerBG8: 		mode = BAYER_BG8;	break;  
-                        case PixelType_BayerRG10:  	mode = BAYER_RG16;	break;
-                        case PixelType_BayerBG10:    	mode = BAYER_BG16;	break;
-                        case PixelType_BayerRG12:    	mode = BAYER_RG16;	break;
-                        case PixelType_BayerBG12:      	mode = BAYER_BG16;	break;
-                        case PixelType_RGB8packed:  	mode = RGB24;		break;
-                        case PixelType_BGR8packed:  	mode = BGR24;		break;
-                        case PixelType_RGBA8packed:  	mode = RGB32;		break;
-                        case PixelType_BGRA8packed:  	mode = BGR32;		break;
-                        case PixelType_YUV411packed:  	mode = YUV411PACKED;	break;
-                        case PixelType_YUV422packed:  	mode = YUV422PACKED;	break;
-                        case PixelType_YUV444packed:  	mode = YUV444PACKED;	break;
-                        case PixelType_BayerRG16:    	mode = BAYER_RG16;	break;
-                        case PixelType_BayerBG16:    	mode = BAYER_BG16;	break;
-                        default:
-                        DEB_ERROR() << "Image type not managed";
-                        return;
+                        m_cam._setStatus(Camera::Readout, false);
+                        // Access the image data.
+                        const uint8_t* pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
+
+                        HwFrameInfoType frame_info;
+                        frame_info.acq_frame_nb = m_cam.m_image_number;
+                        void *framePt = buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
+                        const FrameDim& fDim = buffer_mgr.getFrameDim();
+                        void* srcPt = ((char*)pImageBuffer);
+                        DEB_TRACE() << "memcpy:" << DEB_VAR2(srcPt,framePt);
+                        memcpy(framePt,srcPt,fDim.getMemSize());
+
+                        continueAcq = buffer_mgr.newFrameReady(frame_info);
+                                                    
+                        DEB_TRACE() << DEB_VAR1(continueAcq);
+                        ++m_cam.m_image_number;
+
+                    } else {
+                        if(m_cam.m_nb_frames) //in "snap" mode , acquisition must be stopped 
+                        {
+                            m_cam._setStatus(Camera::Fault,false);
+                            continueAcq = false;
+                        }
                     }
-                    m_cam.m_video->callNewImage((char*)ptrGrabResult->GetBuffer(),
-                                ptrGrabResult->GetWidth(),
-                                ptrGrabResult->GetHeight(),
-                                mode);
+
+                // Camera.StopGrabbing() is called automatically by the RetrieveResult() method
+                // when c_countOfImagesToGrab images have been retrieved.
+                    }  else
+                {
+                VideoMode mode;
+                while (m_cam.Camera_->IsGrabbing()) {
+                    m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException);
+                    if (ptrGrabResult->GrabSucceeded()) {
+                        switch(ptrGrabResult->GetPixelType())
+                        {
+                            case PixelType_Mono8:		mode = Y8;		break;
+                            case PixelType_Mono10: 		mode = Y16;		break;
+                            case PixelType_Mono12:  		mode = Y16;		break;
+                            case PixelType_Mono16:  		mode = Y16;		break;
+                            case PixelType_BayerRG8:  	mode = BAYER_RG8;	break;
+                            case PixelType_BayerBG8: 		mode = BAYER_BG8;	break;  
+                            case PixelType_BayerRG10:  	mode = BAYER_RG16;	break;
+                            case PixelType_BayerBG10:    	mode = BAYER_BG16;	break;
+                            case PixelType_BayerRG12:    	mode = BAYER_RG16;	break;
+                            case PixelType_BayerBG12:      	mode = BAYER_BG16;	break;
+                            case PixelType_RGB8packed:  	mode = RGB24;		break;
+                            case PixelType_BGR8packed:  	mode = BGR24;		break;
+                            case PixelType_RGBA8packed:  	mode = RGB32;		break;
+                            case PixelType_BGRA8packed:  	mode = BGR32;		break;
+                            case PixelType_YUV411packed:  	mode = YUV411PACKED;	break;
+                            case PixelType_YUV422packed:  	mode = YUV422PACKED;	break;
+                            case PixelType_YUV444packed:  	mode = YUV444PACKED;	break;
+                            case PixelType_BayerRG16:    	mode = BAYER_RG16;	break;
+                            case PixelType_BayerBG16:    	mode = BAYER_BG16;	break;
+                            default:
+                            DEB_ERROR() << "Image type not managed";
+                            return;
+                        }
+                        m_cam.m_video->callNewImage((char*)ptrGrabResult->GetBuffer(),
+                                    ptrGrabResult->GetWidth(),
+                                    ptrGrabResult->GetHeight(),
+                                    mode);
+                    }
                 }
-            }
-            ++m_cam.m_image_number;
-            }
+                ++m_cam.m_image_number;
+                }
+                }
             m_cam._stopAcq(true);
         }}
         catch (Pylon::GenericException &e)
