@@ -202,7 +202,9 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 	// basler model string last character codes for color (c) or monochrome (m)
 	std::list<string> formatList;
 
-	if (m_detector_model.find("gc") != std::string::npos)
+	if (m_detector_model.find("gc") != std::string::npos ||
+	    m_detector_model.find("uc") != std::string::npos
+	    )
 	  {
 	    // The list Order here has sense, if supported, the first format in the list will be applied
 	    // as default one, and in case of color camera the default will defined the max buffer
