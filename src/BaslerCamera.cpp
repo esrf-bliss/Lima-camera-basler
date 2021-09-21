@@ -1618,15 +1618,16 @@ void Camera::setGain(double gain)
         if (GenApi::IsAvailable(Camera_->GainAuto))
         {		
 			setAutoGain(false);
-		}
+	}
 		
-        if (GenApi::IsWritable(Camera_->GainRaw) && GenApi::IsAvailable(Camera_->GainRaw))
+        if (GenApi::IsWritable(Camera_->Gain) && GenApi::IsAvailable(Camera_->Gain))
         {
-
-            int low_limit = Camera_->GainRaw.GetMin();
+	    Camera_->GainSelector.SetValue(GainSelector_All);
+	    
+            int low_limit = Camera_->Gain.GetMin();
             DEB_TRACE() << "low_limit = " << low_limit;
 
-            int hight_limit = Camera_->GainRaw.GetMax();
+            int hight_limit = Camera_->Gain.GetMax();
             DEB_TRACE() << "hight_limit = " << hight_limit;
 
             int gain_raw = int((hight_limit - low_limit) * gain + low_limit);
@@ -1639,13 +1640,13 @@ void Camera::setGain(double gain)
             {
                 gain_raw = hight_limit;
             }
-            Camera_->GainRaw.SetValue(gain_raw);
+            Camera_->Gain.SetValue(gain_raw);
             DEB_TRACE() << "gain_raw = " << gain_raw;
         }
-		else
-		{
-			THROW_HW_ERROR(Error)<<"GainRaw Parameter is not Available !";
-		}
+	else
+	  {
+	    THROW_HW_ERROR(Error)<<"Gain Parameter is not Available !";
+	  }
     }
     catch (Pylon::GenericException &e)
     {
