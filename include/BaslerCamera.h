@@ -220,6 +220,7 @@ class BASLER_EXPORT Camera
     volatile bool               m_wait_flag;
     volatile bool               m_quit;
     volatile bool               m_thread_running;
+    bool                        m_acq_started;
     int                         m_image_number;
     double                      m_exp_time;
     int                         m_timeout;

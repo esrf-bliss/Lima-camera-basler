@@ -331,6 +331,10 @@ void Camera::prepareAcq()
 {
     DEB_MEMBER_FUNCT();
     m_image_number=0;
+    // new flag to better manage multiple acqStart() with trigger mode IntTrigMult
+    // startAcq can be recalled before the threadFunction has processed the new image and
+    // incremented the counter m_image_number
+    m_acq_started = false;
 
     try
     {     
@@ -352,7 +356,7 @@ void Camera::startAcq()
     DEB_MEMBER_FUNCT();
     try
     {
-	if(!m_image_number)
+	if(!m_acq_started)
 	  {
 	    if(m_video)
 	      m_video->getBuffer().setStartTimestamp(Timestamp::now());
@@ -364,7 +368,7 @@ void Camera::startAcq()
 	// CtVideo::_prepareAcq() which calls stopAcq() will kill the acquisition 
 	if(m_trigger_mode == IntTrigMult)
 	  {
-	    if (m_image_number == 0)
+	    if (!m_acq_started)
 	      _startAcq();
 
 	    this->Camera_->TriggerSoftware.Execute();
@@ -391,7 +395,8 @@ void Camera::_startAcq()
   AutoMutex aLock(m_cond.mutex());
   m_wait_flag = false;
   m_cond.broadcast();
-    
+
+  m_acq_started = true;
 }
 //---------------------------
 //- Camera::stopAcq()
