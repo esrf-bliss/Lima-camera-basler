@@ -337,17 +337,6 @@ void Camera::prepareAcq()
     // startAcq can be recalled before the threadFunction has processed the new image and
     // incremented the counter m_image_number
     m_acq_started = false;
-
-    try
-    {     
-      if(m_trigger_mode == IntTrigMult)
-	    _startAcq();
-    }
-    catch (Pylon::GenericException &e)
-    {
-        // Error handling
-        THROW_HW_ERROR(Error) << e.GetDescription();
-    }
 }
 
 //---------------------------
