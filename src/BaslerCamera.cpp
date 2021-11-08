@@ -72,6 +72,23 @@ static inline const char* _get_ip_addresse(const char *name_ip)
     }
 }
 
+namespace utils {
+    int getGain(double high_limit, double low_limit, double gain) {
+        int gain_raw = int((high_limit - low_limit) * gain + low_limit);
+
+        if (gain_raw < low_limit)
+        {
+            gain_raw = low_limit;
+        }
+        else if (gain_raw > high_limit)
+        {
+            gain_raw = high_limit;
+        }
+
+        return gain_raw;        
+    }
+
+}
 
 //---------------------------
 //- utility thread
@@ -1600,7 +1617,6 @@ void Camera::getAutoGain(bool& auto_gain) const
     DEB_RETURN() << DEB_VAR1(auto_gain);
 }
 
-
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -1614,11 +1630,10 @@ void Camera::setGain(double gain)
         if (GenApi::IsAvailable(Camera_->GainAuto))
         {		
 			setAutoGain(false);
-	}
-		
-        if (GenApi::IsWritable(Camera_->Gain) && GenApi::IsAvailable(Camera_->Gain))
-        {
-	    Camera_->GainSelector.SetValue(GainSelector_All);
+	    }
+
+		if (Camera_->GetSfncVersion() >= Sfnc_2_0_0) {
+            Camera_->GainSelector.SetValue(GainSelector_All);
 	    
             int low_limit = Camera_->Gain.GetMin();
             DEB_TRACE() << "low_limit = " << low_limit;
@@ -1626,23 +1641,24 @@ void Camera::setGain(double gain)
             int hight_limit = Camera_->Gain.GetMax();
             DEB_TRACE() << "hight_limit = " << hight_limit;
 
-            int gain_raw = int((hight_limit - low_limit) * gain + low_limit);
-
-            if (gain_raw < low_limit)
-            {
-                gain_raw = low_limit;
-            }
-            else if (gain_raw > hight_limit)
-            {
-                gain_raw = hight_limit;
-            }
+            int gain_raw = utils::getGain(hight_limit, low_limit, gain);
             Camera_->Gain.SetValue(gain_raw);
             DEB_TRACE() << "gain_raw = " << gain_raw;
         }
-	else
-	  {
-	    THROW_HW_ERROR(Error)<<"Gain Parameter is not Available !";
-	  }
+        else
+        {
+            Camera_->GainSelector.SetValue(GainSelector_All);
+	    
+            int low_limit = Camera_->GainRaw.GetMin();
+            DEB_TRACE() << "low_limit = " << low_limit;
+
+            int hight_limit = Camera_->GainRaw.GetMax();
+            DEB_TRACE() << "hight_limit = " << hight_limit;
+
+            int gain_raw = utils::getGain(hight_limit, low_limit, gain);
+            Camera_->GainRaw.SetValue(gain_raw);
+            DEB_TRACE() << "gain_raw = " << gain_raw;
+        }
     }
     catch (Pylon::GenericException &e)
     {
@@ -1659,20 +1675,10 @@ void Camera::getGain(double& gain) const
     DEB_MEMBER_FUNCT();
     try
     {
-        if (GenApi::IsAvailable(Camera_->GainRaw))
-        {
-            int gain_raw = Camera_->GainRaw.GetValue();
-            int low_limit = Camera_->GainRaw.GetMin();
-            int hight_limit = Camera_->GainRaw.GetMax();
-
-            gain = double(gain_raw - low_limit) / (hight_limit - low_limit);
-        }
-        if (GenApi::IsAvailable(Camera_->Gain)) {
+        if (Camera_->GetSfncVersion() >= Sfnc_2_0_0) {
             gain = double(Camera_->Gain.GetValue());
-        }
-        else
-        {
-            gain = 0.;
+        } else {
+            gain = Camera_->GainRaw.GetValue();
         }
     }
     catch (Pylon::GenericException &e)
