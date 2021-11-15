@@ -275,9 +275,11 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
             Camera_->TestImageSelector.SetValue(TestImageSelector_Off);	  
 	}
 	// Start with internal trigger
-	// Force cache variable to get trigger really initialized at first call
+	// Force cache variable (camera register) to get trigger really initialized at first call
 	m_trigger_mode = ExtTrigSingle;
 	setTrigMode(IntTrig);
+	// Same thing for exposure time, camera stays with previous setting
+	setExpTime(1.);
         // Get the image buffer size
         DEB_TRACE() << "Get the image buffer size";
         ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
@@ -747,7 +749,14 @@ void Camera::setTrigMode(TrigMode mode)
             //- INTERNAL
             this->Camera_->TriggerMode.SetValue( TriggerMode_Off );
             this->Camera_->ExposureMode.SetValue(ExposureMode_Timed);
-	    this->Camera_->AcquisitionFrameRateEnable.SetValue(true);
+	    // setExposure() can disable FrameRate if latency_time is ~0,
+	    // do not reenable FrameRate here if not required
+	    // and when cold start the camera can have the FrameRate enabled
+	    // from previous acquisition, so disable it if latency is 0
+	    if (m_latency_time >= 1e-6)
+	      this->Camera_->AcquisitionFrameRateEnable.SetValue(true);
+	    else
+	      this->Camera_->AcquisitionFrameRateEnable.SetValue(false);	    
 	}
         else if ( mode == IntTrigMult )
         {
