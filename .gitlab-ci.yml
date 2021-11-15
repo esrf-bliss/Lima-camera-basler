@@ -33,6 +33,8 @@ build-noarch:
   dependencies:
     - build-linux
     - build-win
+  tags:
+    - cos7
 
 deploy-devel:
   stage: deploy
