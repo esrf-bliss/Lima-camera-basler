@@ -142,6 +142,9 @@ class BASLER_EXPORT Camera
     void getBin(Bin&);
 
     void getStatus(Camera::Status& status);
+
+    // -- helper function
+    int getGainHelper(double high_limit, double low_limit, double gain);
     
     // -- Transport Layer
     void setPacketSize(int isize);
