@@ -279,7 +279,11 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 	m_trigger_mode = ExtTrigSingle;
 	setTrigMode(IntTrig);
 	// Same thing for exposure time, camera stays with previous setting
-	setExpTime(1.);
+	double min_exp, max_exp;
+	getExposureTimeRange(min_exp, max_exp);
+	//fast basler models do not support 1.0 second exposure but lower value
+	double exp_time = min(1.0, max_exp);
+	setExpTime(exp_time);
         // Get the image buffer size
         DEB_TRACE() << "Get the image buffer size";
         ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
