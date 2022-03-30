@@ -18,7 +18,7 @@ build:
 requirements:
   host:
     - python {{ python }}
-    - sip 4.19.8              # For compatibility with pyqt 5.9.2
+    - sip 4.19* # API v12.7
     - lima-core
     - pylon6-sdk
   build:
@@ -27,10 +27,9 @@ requirements:
     - ninja
     - {{ compiler('cxx') }}
   run:
-    - python {{ python }}
-    - sip >=4.19.4, <=4.19.8  # For compatibility with pyqt 5.9.2
+    - python
+    - {{ pin_compatible('sip', min_pin='x.x.x', max_pin='x') }}
     - {{ pin_compatible('lima-core', max_pin='x.x') }}
-    - {{ pin_compatible('numpy',max_pin='x') }} 
     - pylon6-sdk
 
 test:
