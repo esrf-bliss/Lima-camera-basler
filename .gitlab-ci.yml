@@ -14,14 +14,14 @@ stages:
 build-linux:
   <<: *build-conda
   script:
-    - conda build ./conda/camera --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
+    - conda mambabuild ./conda/camera --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
   tags:
-    - cos7
+    - linux
 
 build-win:
   <<: *build-conda
   script:
-    - conda build ./conda/camera --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
+    - conda mambabuild ./conda/camera --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
   tags:
     - win
 
@@ -29,12 +29,12 @@ build-noarch:
   <<: *build-conda
   stage: build-noarch
   script:
-    - conda build ./conda/tango --output-folder=dist/ -c tango-controls --channel=http://bcu-ci.esrf.fr/stable
+    - conda mambabuild ./conda/tango --output-folder=dist/ --channel=http://bcu-ci.esrf.fr/stable
   dependencies:
     - build-linux
     - build-win
   tags:
-    - cos7
+    - linux
 
 deploy-devel:
   stage: deploy
