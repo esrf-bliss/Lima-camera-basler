@@ -44,5 +44,7 @@ namespace Basler
 %MethodCode
 	sipCpp->getCamera().getAutoGain(a0);
 %End
+  private:
+    Interface(const Interface&);
   };
 };
