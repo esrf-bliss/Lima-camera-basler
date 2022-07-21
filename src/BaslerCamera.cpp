@@ -260,8 +260,6 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 
         // Set the camera to continuous frame mode
         DEB_TRACE() << "Set the camera to continuous frame mode";
-        if(!m_is_usb)
-            Camera_->TriggerSelector.SetValue(TriggerSelector_AcquisitionStart);
         Camera_->AcquisitionMode.SetValue(AcquisitionMode_Continuous);
         if ( IsAvailable(Camera_->ExposureAuto ))
         {
@@ -920,7 +918,7 @@ void Camera::setExpTime(double exp_time)
             }
             else
             {
-                if (m_is_usb)
+	      if (IsAvailable(Camera_->ExposureTime) || m_is_usb)
                     Camera_->ExposureTime.SetValue(1E6 * exp_time);
                 else
                     Camera_->ExposureTimeAbs.SetValue(1E6 * exp_time);
@@ -1028,7 +1026,7 @@ void Camera::getExposureTimeRange(double& min_expo, double& max_expo) const
         }
         else
         {
-            if (m_is_usb) {
+	  if (IsAvailable(Camera_->ExposureTime) || m_is_usb) {
                 min_expo = Camera_->ExposureTime.GetMin()*1e-6;
                 max_expo = Camera_->ExposureTime.GetMax()*1e-6;
             } else {
@@ -1059,7 +1057,7 @@ void Camera::getLatTimeRange(double& min_lat, double& max_lat) const
         min_lat = 0;
         double minAcqFrameRate = 0;
 
-        if (m_is_usb)
+        if (IsAvailable(Camera_->AcquisitionFrameRate) || m_is_usb)
             minAcqFrameRate = Camera_->AcquisitionFrameRate.GetMin();
         else
             minAcqFrameRate = Camera_->AcquisitionFrameRateAbs.GetMin();
@@ -1830,7 +1828,11 @@ void Camera::setOutput1LineSource(Camera::LineSource source)
 {
   DEB_MEMBER_FUNCT();
   DEB_PARAM() << DEB_VAR1(source);
-
+  if (!IsAvailable(Camera_->LineSelector) or !IsAvailable(Camera_->LineSource))
+    {
+       THROW_HW_ERROR(NotSupported) << "This camera model does not support LineSource and/or LineSelector";
+    }
+  
   Camera_->LineSelector.SetValue(LineSelector_Out1);
 
   LineSourceEnums line_src;
@@ -1861,7 +1863,7 @@ void Camera::setOutput1LineSource(Camera::LineSource source)
     case Camera::PatternGenerator4:		line_src = LineSource_PatternGenerator4;	break;
     case Camera::AcquisitionTriggerReady:	line_src = LineSource_AcquisitionTriggerReady;	break;
     default:
-      THROW_HW_ERROR(NotSupported) << "Not yet managed";
+      THROW_HW_ERROR(NotSupported) << "Not yet supported";
     }
   Camera_->LineSource.SetValue(line_src);
 }
@@ -1870,6 +1872,12 @@ void Camera::getOutput1LineSource(Camera::LineSource& source) const
 {
   DEB_MEMBER_FUNCT();
 
+  if (!IsAvailable(Camera_->LineSelector) or !IsAvailable(Camera_->LineSource))
+    {
+      source = Off;
+      return;
+    }
+      
   Camera_->LineSelector.SetValue(LineSelector_Out1);
   switch(Camera_->LineSource.GetValue())
     {
@@ -1948,7 +1956,7 @@ void Camera::getAcquisitionFrameCount(int& AFC) const
 void Camera::getStatisticsTotalBufferCount(long& count)
 {
 	DEB_MEMBER_FUNCT();
-    count = Camera_->GetStreamGrabberParams().Statistic_Total_Buffer_Count.GetValue();
+	count = Camera_->GetStreamGrabberParams().Statistic_Total_Buffer_Count.GetValue();
 }
 
 //---------------------------    
@@ -1958,7 +1966,7 @@ void Camera::getStatisticsTotalBufferCount(long& count)
 void Camera::getStatisticsFailedBufferCount(long& count)
 {
 	DEB_MEMBER_FUNCT();
-    count = Camera_->GetStreamGrabberParams().Statistic_Failed_Buffer_Count.GetValue();
+	count = Camera_->GetStreamGrabberParams().Statistic_Failed_Buffer_Count.GetValue();
 }
 //---------------------------    
 
@@ -1966,17 +1974,20 @@ void Camera::getStatisticsFailedBufferCount(long& count)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::setTestImageSelector(TestImageSelector set)
+void Camera::setTestImageSelector(TestImageSelector sel)
 {
     DEB_MEMBER_FUNCT();
+
+    if (GenApi::IsAvailable(Camera_->TestImageSelector))
+      {
+	THROW_HW_ERROR(NotSupported) << "This camera model does not support TestImageSelector";
+      }
+
     try
     {
         TestImageSelectorEnums test =
-            static_cast<TestImageSelectorEnums>(set);
-
-        // If the parameter TestImage is available for this camera
-        if (GenApi::IsAvailable(Camera_->TestImageSelector))
-            Camera_->TestImageSelector.SetValue(test);
+	  static_cast<TestImageSelectorEnums>(sel);
+	Camera_->TestImageSelector.SetValue(test);
     }
     catch (Pylon::GenericException &e)
     {
@@ -1987,7 +1998,7 @@ void Camera::setTestImageSelector(TestImageSelector set)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getTestImageSelector(TestImageSelector& set) const
+void Camera::getTestImageSelector(TestImageSelector& sel) const
 {
     DEB_MEMBER_FUNCT();
     try
@@ -1996,9 +2007,12 @@ void Camera::getTestImageSelector(TestImageSelector& set) const
 
         // If the parameter TestImage is available for this camera
         if (GenApi::IsAvailable(Camera_->TestImageSelector))
+	  {
             test = Camera_->TestImageSelector.GetValue();
-
-        set = static_cast<TestImageSelector>(test);
+	    sel = static_cast<TestImageSelector>(test);
+	  }
+	else
+	  sel = TestImage_Off;
 
     }
     catch (Pylon::GenericException &e)

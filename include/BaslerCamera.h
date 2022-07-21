@@ -177,8 +177,8 @@ class BASLER_EXPORT Camera
     void hasVideoCapability(bool& video_flag) const;
 
     // -- change output line source
-    void setOutput1LineSource(LineSource);
-    void getOutput1LineSource(LineSource&) const;
+    void setOutput1LineSource(LineSource src);
+    void getOutput1LineSource(LineSource& src) const;
 
     // -- change acq frame count
     void setAcquisitionFrameCount(int AFC);
@@ -197,8 +197,8 @@ class BASLER_EXPORT Camera
     void getStatisticsFailedBufferCount(long& count);
 
     // -- Pylon test image selectors
-    void setTestImageSelector(TestImageSelector set);
-    void getTestImageSelector(TestImageSelector& set) const;
+    void setTestImageSelector(TestImageSelector sel);
+    void getTestImageSelector(TestImageSelector& sel) const;
     
  private:
     enum BufferMode {TmpBuffer, SoftBuffer};
