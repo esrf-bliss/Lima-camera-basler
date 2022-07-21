@@ -487,14 +487,17 @@ void Camera::_AcqThread::threadFunction()
 	  {
 	    CGrabResultPtr ptrGrabResult;
 	    bool continueAcq = true;
+	    uint8_t* pImageBuffer;
 	    m_cam._setStatus(Camera::Exposure,false);
 		
 	    while (m_cam.Camera_->IsGrabbing())
 	      {
 		if(!m_cam.m_video_flag_mode) {
 		  // Wait for an image and then retrieve it. A timeout of 3000 ms is used.
-		  m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException);
-		  
+		  if (! m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException)) {
+		    // Grabbing has been stopped
+		    break;
+		  }
 		  if (m_cam.m_status == Camera::Fault) {
 		    m_cam._setStatus(Camera::Fault, false);
 		    continueAcq = false;
@@ -504,7 +507,7 @@ void Camera::_AcqThread::threadFunction()
 		    {
 		      m_cam._setStatus(Camera::Readout, false);
 		      // Access the image data.
-		      const uint8_t* pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
+		      pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
 		      
 		      HwFrameInfoType frame_info;
 		      frame_info.acq_frame_nb = m_cam.m_image_number;
@@ -531,7 +534,10 @@ void Camera::_AcqThread::threadFunction()
 		  // when c_countOfImagesToGrab images have been retrieved.
 		}  else {
 		  VideoMode mode;
-		  m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException);
+		  if (!m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException)) {
+		    // Grabbing has been stopped
+		    break;
+		  }
 		  if (ptrGrabResult->GrabSucceeded()) {
 		    switch(ptrGrabResult->GetPixelType())
 		      {
