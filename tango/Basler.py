@@ -195,6 +195,15 @@ class BaslerClass(PyTango.DeviceClass):
              'format': '',
              'description': 'select a source for I/O output1 line',
          }],
+        'temperature':
+        [[PyTango.DevFloat,
+          PyTango.SCALAR,
+          PyTango.READ],
+         {
+             'unit': 'Celsuis',
+             'format': '',
+             'description': 'camera core temperature',
+         }],        
     }
 
     def __init__(self,name) :

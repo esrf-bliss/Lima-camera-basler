@@ -1523,6 +1523,10 @@ void Camera::getTemperature(double& temperature)
         // If the parameter TemperatureAbs is available for this camera
         if (GenApi::IsAvailable(Camera_->TemperatureAbs))
             temperature = Camera_->TemperatureAbs.GetValue();
+	// new cameras like ACE2 have 2 temperatures one for coreboard and one for sensor
+	// to change measurement DeviceTemperatureSelector should be call
+	else if (IsAvailable(Camera_->DeviceTemperature))
+	  temperature = Camera_->DeviceTemperature.GetValue();
     }
     catch (Pylon::GenericException &e)
     {
