@@ -1846,7 +1846,7 @@ void Camera::getOutput1LineSource(Camera::LineSource& source) const
 {
   DEB_MEMBER_FUNCT();
 
-  if (!IsAvailable(Camera_->LineSelector) or !IsAvailable(Camera_->LineSource))
+  if (!IsAvailable(Camera_->LineSelector) || !IsAvailable(Camera_->LineSource))
     {
       source = Off;
       return;
