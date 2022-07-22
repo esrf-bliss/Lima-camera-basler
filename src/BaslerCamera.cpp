@@ -1,10 +1,12 @@
 //###########################################################################
 // This file is part of LImA, a Library for Image Acquisition
 //
-// Copyright (C) : 2009-2011
+// Copyright (C) : 2009-2022
 // European Synchrotron Radiation Facility
-// BP 220, Grenoble 38043
+// CS40220 38043 Grenoble Cedex 9 
 // FRANCE
+//
+// Contact: lima@esrf.fr
 //
 // This is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +21,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, see <http://www.gnu.org/licenses/>.
 //###########################################################################
+
 #ifdef WIN32
 #include <winsock2.h>
 #endif
@@ -260,8 +263,6 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 
         // Set the camera to continuous frame mode
         DEB_TRACE() << "Set the camera to continuous frame mode";
-        if(!m_is_usb)
-            Camera_->TriggerSelector.SetValue(TriggerSelector_AcquisitionStart);
         Camera_->AcquisitionMode.SetValue(AcquisitionMode_Continuous);
         if ( IsAvailable(Camera_->ExposureAuto ))
         {
@@ -485,96 +486,67 @@ void Camera::_AcqThread::threadFunction()
 	m_cam.m_cond.broadcast();
 	aLock.unlock();
 
-	try
-	  {
-	    CGrabResultPtr ptrGrabResult;
-	    bool continueAcq = true;
-	    m_cam._setStatus(Camera::Exposure,false);
+	try {
+	  CGrabResultPtr ptrGrabResult;
+	  bool continueAcq = true;
+	  uint8_t* pImageBuffer;
+	  m_cam._setStatus(Camera::Exposure,false);
+	  
+	  if (m_cam.m_video_flag_mode) {
+	    VideoMode mode;
+	    m_cam.m_video->getVideoMode(mode);
+	    
+	    while (m_cam.Camera_->IsGrabbing()) {
+	      if (!m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException)) {
+		// Grabbing has been stopped
+		break;
+	      }
+	      if (ptrGrabResult->GrabSucceeded()) {
+		m_cam.m_video->callNewImage((char*)ptrGrabResult->GetBuffer(),
+					    ptrGrabResult->GetWidth(),
+					    ptrGrabResult->GetHeight(),
+					    mode);
+		++m_cam.m_image_number;
+	      }
+	    }
+	  }
+	  else {
+	    
+	    while (m_cam.Camera_->IsGrabbing()) {
+	      // Wait for an image and then retrieve it. A timeout of 3000 ms is used.
+	      if (! m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException)) {
+		// Grabbing has been stopped
+		break;
+	      }
+	      if (ptrGrabResult->GrabSucceeded()) {
+		m_cam._setStatus(Camera::Readout, false);
+		// Access the image data.
+		pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
+		      
+		HwFrameInfoType frame_info;
+		frame_info.acq_frame_nb = m_cam.m_image_number;
+		void *framePt = buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
+		const FrameDim& fDim = buffer_mgr.getFrameDim();
+		void* srcPt = ((char*)pImageBuffer);
+		DEB_TRACE() << "memcpy:" << DEB_VAR2(srcPt,framePt);
+		memcpy(framePt,srcPt,fDim.getMemSize());
 		
-	    while (m_cam.Camera_->IsGrabbing())
-	      {
-		if(!m_cam.m_video_flag_mode) {
-		  // Wait for an image and then retrieve it. A timeout of 3000 ms is used.
-		  m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException);
-		  
-		  if (m_cam.m_status == Camera::Fault) {
-		    m_cam._setStatus(Camera::Fault, false);
-		    continueAcq = false;
-		  }
-		  // Image grabbed successfully?
-		  if (ptrGrabResult->GrabSucceeded())
-		    {
-		      m_cam._setStatus(Camera::Readout, false);
-		      // Access the image data.
-		      const uint8_t* pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
+		continueAcq = buffer_mgr.newFrameReady(frame_info);                      
+		++m_cam.m_image_number;
 		      
-		      HwFrameInfoType frame_info;
-		      frame_info.acq_frame_nb = m_cam.m_image_number;
-		      void *framePt = buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
-		      const FrameDim& fDim = buffer_mgr.getFrameDim();
-		      void* srcPt = ((char*)pImageBuffer);
-		      DEB_TRACE() << "memcpy:" << DEB_VAR2(srcPt,framePt);
-		      memcpy(framePt,srcPt,fDim.getMemSize());
-		      
-		      continueAcq = buffer_mgr.newFrameReady(frame_info);
-                      
-		      DEB_TRACE() << DEB_VAR1(continueAcq);
-		      ++m_cam.m_image_number;
-		      
-		    } else {
-		    if(m_cam.m_nb_frames) //in "snap" mode , acquisition must be stopped 
-		      {
-			m_cam._setStatus(Camera::Fault,false);
-			continueAcq = false;
-		      }
-		  }
-
-		  // Camera.StopGrabbing() is called automatically by the RetrieveResult() method
-		  // when c_countOfImagesToGrab images have been retrieved.
-		}  else {
-		  VideoMode mode;
-		  m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException);
-		  if (ptrGrabResult->GrabSucceeded()) {
-		    switch(ptrGrabResult->GetPixelType())
-		      {
-		      case PixelType_Mono8:		mode = Y8;		break;
-		      case PixelType_Mono10: 		mode = Y16;		break;
-		      case PixelType_Mono12:  		mode = Y16;		break;
-		      case PixelType_Mono16:  		mode = Y16;		break;
-		      case PixelType_BayerRG8:  	mode = BAYER_RG8;	break;
-		      case PixelType_BayerBG8: 		mode = BAYER_BG8;	break;  
-		      case PixelType_BayerRG10:  	mode = BAYER_RG16;	break;
-		      case PixelType_BayerBG10:    	mode = BAYER_BG16;	break;
-		      case PixelType_BayerRG12:    	mode = BAYER_RG16;	break;
-		      case PixelType_BayerBG12:      	mode = BAYER_BG16;	break;
-		      case PixelType_RGB8packed:  	mode = RGB24;		break;
-		      case PixelType_BGR8packed:  	mode = BGR24;		break;
-		      case PixelType_RGBA8packed:  	mode = RGB32;		break;
-		      case PixelType_BGRA8packed:  	mode = BGR32;		break;
-		      case PixelType_YUV411packed:  	mode = YUV411PACKED;	break;
-		      case PixelType_YUV422packed:  	mode = YUV422PACKED;	break;
-		      case PixelType_YUV444packed:  	mode = YUV444PACKED;	break;
-		      case PixelType_BayerRG16:    	mode = BAYER_RG16;	break;
-		      case PixelType_BayerBG16:    	mode = BAYER_BG16;	break;
-		      default:
-			DEB_ERROR() << "Image type not managed";
-			return;
-		      }
-		    m_cam.m_video->callNewImage((char*)ptrGrabResult->GetBuffer(),
-						ptrGrabResult->GetWidth(),
-						ptrGrabResult->GetHeight(),
-						mode);
-		    ++m_cam.m_image_number;
-		  }
-		}
-	      } // while (m_cam.Camera_->IsGrabbing())
-	    m_cam._stopAcq(true);		
+		// Camera.StopGrabbing() is called automatically by the RetrieveResult() method
+		// when c_countOfImagesToGrab images have been retrieved.
+	      }
+	    } // while (m_cam.Camera_->IsGrabbing())
 	  }
-        catch (Pylon::GenericException &e)
-	  {
-            // Error handling
-            DEB_ERROR() << "GeniCam Error! "<< e.GetDescription();
-	  }
+	    
+	  m_cam._stopAcq(true);		
+	}
+        catch (Pylon::GenericException &e) {
+	  // Error handling
+	  DEB_ERROR() << "GeniCam Error! "<< e.GetDescription();
+	  m_cam._setStatus(Camera::Fault, true);
+	}
         aLock.lock();
         m_cam.m_wait_flag = true;
     }
@@ -920,7 +892,7 @@ void Camera::setExpTime(double exp_time)
             }
             else
             {
-                if (m_is_usb)
+	      if (IsAvailable(Camera_->ExposureTime) || m_is_usb)
                     Camera_->ExposureTime.SetValue(1E6 * exp_time);
                 else
                     Camera_->ExposureTimeAbs.SetValue(1E6 * exp_time);
@@ -1028,7 +1000,7 @@ void Camera::getExposureTimeRange(double& min_expo, double& max_expo) const
         }
         else
         {
-            if (m_is_usb) {
+	  if (IsAvailable(Camera_->ExposureTime) || m_is_usb) {
                 min_expo = Camera_->ExposureTime.GetMin()*1e-6;
                 max_expo = Camera_->ExposureTime.GetMax()*1e-6;
             } else {
@@ -1059,7 +1031,7 @@ void Camera::getLatTimeRange(double& min_lat, double& max_lat) const
         min_lat = 0;
         double minAcqFrameRate = 0;
 
-        if (m_is_usb)
+        if (IsAvailable(Camera_->AcquisitionFrameRate) || m_is_usb)
             minAcqFrameRate = Camera_->AcquisitionFrameRate.GetMin();
         else
             minAcqFrameRate = Camera_->AcquisitionFrameRateAbs.GetMin();
@@ -1830,7 +1802,11 @@ void Camera::setOutput1LineSource(Camera::LineSource source)
 {
   DEB_MEMBER_FUNCT();
   DEB_PARAM() << DEB_VAR1(source);
-
+  if (!IsAvailable(Camera_->LineSelector) || !IsAvailable(Camera_->LineSource))
+    {
+       THROW_HW_ERROR(NotSupported) << "This camera model does not support LineSource and/or LineSelector";
+    }
+  
   Camera_->LineSelector.SetValue(LineSelector_Out1);
 
   LineSourceEnums line_src;
@@ -1861,7 +1837,7 @@ void Camera::setOutput1LineSource(Camera::LineSource source)
     case Camera::PatternGenerator4:		line_src = LineSource_PatternGenerator4;	break;
     case Camera::AcquisitionTriggerReady:	line_src = LineSource_AcquisitionTriggerReady;	break;
     default:
-      THROW_HW_ERROR(NotSupported) << "Not yet managed";
+      THROW_HW_ERROR(NotSupported) << "Not yet supported";
     }
   Camera_->LineSource.SetValue(line_src);
 }
@@ -1870,6 +1846,12 @@ void Camera::getOutput1LineSource(Camera::LineSource& source) const
 {
   DEB_MEMBER_FUNCT();
 
+  if (!IsAvailable(Camera_->LineSelector) || !IsAvailable(Camera_->LineSource))
+    {
+      source = Off;
+      return;
+    }
+      
   Camera_->LineSelector.SetValue(LineSelector_Out1);
   switch(Camera_->LineSource.GetValue())
     {
@@ -1948,7 +1930,7 @@ void Camera::getAcquisitionFrameCount(int& AFC) const
 void Camera::getStatisticsTotalBufferCount(long& count)
 {
 	DEB_MEMBER_FUNCT();
-    count = Camera_->GetStreamGrabberParams().Statistic_Total_Buffer_Count.GetValue();
+	count = Camera_->GetStreamGrabberParams().Statistic_Total_Buffer_Count.GetValue();
 }
 
 //---------------------------    
@@ -1958,7 +1940,7 @@ void Camera::getStatisticsTotalBufferCount(long& count)
 void Camera::getStatisticsFailedBufferCount(long& count)
 {
 	DEB_MEMBER_FUNCT();
-    count = Camera_->GetStreamGrabberParams().Statistic_Failed_Buffer_Count.GetValue();
+	count = Camera_->GetStreamGrabberParams().Statistic_Failed_Buffer_Count.GetValue();
 }
 //---------------------------    
 
@@ -1966,17 +1948,20 @@ void Camera::getStatisticsFailedBufferCount(long& count)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::setTestImageSelector(TestImageSelector set)
+void Camera::setTestImageSelector(TestImageSelector sel)
 {
     DEB_MEMBER_FUNCT();
+
+    if (GenApi::IsAvailable(Camera_->TestImageSelector))
+      {
+	THROW_HW_ERROR(NotSupported) << "This camera model does not support TestImageSelector";
+      }
+
     try
     {
         TestImageSelectorEnums test =
-            static_cast<TestImageSelectorEnums>(set);
-
-        // If the parameter TestImage is available for this camera
-        if (GenApi::IsAvailable(Camera_->TestImageSelector))
-            Camera_->TestImageSelector.SetValue(test);
+	  static_cast<TestImageSelectorEnums>(sel);
+	Camera_->TestImageSelector.SetValue(test);
     }
     catch (Pylon::GenericException &e)
     {
@@ -1987,7 +1972,7 @@ void Camera::setTestImageSelector(TestImageSelector set)
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
-void Camera::getTestImageSelector(TestImageSelector& set) const
+void Camera::getTestImageSelector(TestImageSelector& sel) const
 {
     DEB_MEMBER_FUNCT();
     try
@@ -1996,9 +1981,12 @@ void Camera::getTestImageSelector(TestImageSelector& set) const
 
         // If the parameter TestImage is available for this camera
         if (GenApi::IsAvailable(Camera_->TestImageSelector))
+	  {
             test = Camera_->TestImageSelector.GetValue();
-
-        set = static_cast<TestImageSelector>(test);
+	    sel = static_cast<TestImageSelector>(test);
+	  }
+	else
+	  sel = TestImage_Off;
 
     }
     catch (Pylon::GenericException &e)

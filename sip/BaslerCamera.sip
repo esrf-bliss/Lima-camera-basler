@@ -111,7 +111,7 @@ namespace Basler
 
     // -- change output line source
     void setOutput1LineSource(Basler::Camera::LineSource);
-    void getOutput1LineSource(Basler::Camera::LineSource&) const;
+    void getOutput1LineSource(Basler::Camera::LineSource& /Out/) const;
 
     // -- change acq frame count
     void setAcquisitionFrameCount(int AFC);
@@ -119,19 +119,19 @@ namespace Basler
 
     // -- change AcquisitionFrameRateEnable
     void setAcquisitionFrameRateEnable(bool AFC);
-    void getAcquisitionFrameRateEnable(bool& AFC) const;
+    void getAcquisitionFrameRateEnable(bool& AFC /Out/) const;
 
     // -- change acq frame count
     void setAcquisitionFrameRateAbs(int AFC);
-    void getAcquisitionFrameRateAbs(int& AFC) const;
+    void getAcquisitionFrameRateAbs(int& AFC /Out/) const;
 
     // -- Pylon buffers statistics
-    void getStatisticsTotalBufferCount(long& count);    
-    void getStatisticsFailedBufferCount(long& count);
+    void getStatisticsTotalBufferCount(long& count /Out/);    
+    void getStatisticsFailedBufferCount(long& count /Out/);
     
     // -- Pylon test image selectors
-    void setTestImageSelector(TestImageSelector set);
-    void getTestImageSelector(TestImageSelector& set /Out/) const;
+    void setTestImageSelector(Basler::Camera::TestImageSelector set);
+    void getTestImageSelector(Basler::Camera::TestImageSelector& set /Out/) const;
 
     private:
       Camera(const Basler::Camera&);

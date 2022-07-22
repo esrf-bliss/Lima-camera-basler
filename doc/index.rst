@@ -10,13 +10,14 @@ Introduction
 
 Basler's area scan cameras are designed for industrial users who demand superior image quality and an excellent price/performance ratio. You can choose from an area scan portfolio that includes monochrome or color models with various resolutions, frame rates, and sensor technologies.
 
-The Lima module has been tested only with this GigE cameras models:
+The Lima module has been tested only with this **GigE** and **Usb3** cameras models:
 
   - Scout
   - Pilot
   - Ace
+  - Ace 2
 
-The Lima module has been tested with Pylon SDK versions **3.2.2** and **5.0.1**.
+The Lima module has been tested with Pylon SDK versions **5.0.1** and now **6.X** since conda packages **1.10.X**.
 
 Monochrome and color cameras are supported with these SDK versions.
 

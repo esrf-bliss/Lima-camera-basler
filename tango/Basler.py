@@ -1,10 +1,12 @@
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2011
+# Copyright (C) : 2009-2022
 # European Synchrotron Radiation Facility
-# BP 220, Grenoble 38043
+# CS40220 38043 Grenoble Cedex 9 
 # FRANCE
+#
+# Contact: lima@esrf.fr
 #
 # This is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +47,7 @@ from Lima import Basler as BaslerAcq
 from Lima.Server import AttrHelper
 
 
-class Basler(PyTango.Device_4Impl):
+class Basler(PyTango.LatestDeviceImpl):
 
     Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
 
@@ -54,7 +56,7 @@ class Basler(PyTango.Device_4Impl):
 #    Device constructor
 #------------------------------------------------------------------
     def __init__(self,*args) :
-        PyTango.Device_4Impl.__init__(self,*args)
+        PyTango.LatestDeviceImpl.__init__(self,*args)
 
         self.__TestImageSelector = {'TESTIMAGE_OFF': BaslerAcq.Camera.TestImage_Off,
                                     'TESTIMAGE_1': BaslerAcq.Camera.TestImage_1,
@@ -192,15 +194,6 @@ class BaslerClass(PyTango.DeviceClass):
              'unit': 'N/A',
              'format': '',
              'description': 'select a source for I/O output1 line',
-         }],
-        'user_output_line1':
-        [[PyTango.DevBoolean,
-          PyTango.SCALAR,
-          PyTango.READ_WRITE],
-         {
-             'unit': 'N/A',
-             'format': '',
-             'description': 'switch on/off UserOuput on output1 line',
          }],
     }
 
