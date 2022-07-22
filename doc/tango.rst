@@ -17,6 +17,7 @@ camera_id                No              uname://*<server instance name>*  The c
 packet_size              No              8000                              the packet size
 inter_packet_delay       No              0                                 The inter packet delay
 frame_transmission_delay No              0                                 The frame transmission delay
+force_video_mode         No              False                             To force a B/W camera to generate video format
 ======================== =============== ================================= =====================================
 
 *camera_id* property identifies the camera in the network. Several types of ID might be given:
@@ -39,11 +40,12 @@ Attributes
 ============================== ======= ======================= ============================================================
 Attribute name		       RW      Type                    Description
 ============================== ======= ======================= ============================================================
-statistics_total_buffer_count  rw      DevLong                 Total number of requested frames
-statistics_failed_buffer_count rw      DevLong                 Total number of failed frames
+statistics_total_buffer_count  ro      DevLong                 Total number of requested frames
+statistics_failed_buffer_count ro      DevLong                 Total number of failed frames
 test_image_selector            rw      DevString               Select a test image: image_off/image_1/.../image_7 **(\*)**
 output1_line_source            rw      DevString               Select a source for I/O output1 line **(\*)**
 user_output_lin1               rw      DevBoolean              Switch on/off UserOuput on output1 line **(\*)**
+temperature                    ro      DevFloat                Temperature of the camera core
 ============================== ======= ======================= ============================================================
 
 **(\*)** Use the command getAttrStringValueList to get the list of the supported value for these attributes. 
