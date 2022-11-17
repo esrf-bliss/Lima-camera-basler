@@ -74,23 +74,24 @@ static inline const char* _get_ip_addresse(const char *name_ip)
       return inet_ntoa(*((struct in_addr*)host->h_addr));
     }
 }
-
 //---------------------------
-//- utility thread
+//- EventHandler
 //---------------------------
-
-class Camera::_AcqThread : public Thread
+class Camera::_EventHandler : public CBaslerUniversalCameraEventHandler,
+			      public CBaslerUniversalImageEventHandler
 {
-    DEB_CLASS_NAMESPC(DebModCamera, "Camera", "_AcqThread");
-    public:
-        _AcqThread(Camera &aCam);
-    virtual ~_AcqThread();
-    
-    protected:
-        virtual void threadFunction();
-    
-    private:
-        Camera&    m_cam;
+  DEB_CLASS_NAMESPC(DebModCamera, "Camera", "_EventHandler");
+public:
+  _EventHandler(Camera &aCam) :
+    m_cam(aCam), m_buffer_mgr(m_cam.m_buffer_ctrl_obj.getBuffer())
+  {
+  };
+
+  virtual void 	OnImageGrabbed(CBaslerUniversalInstantCamera &camera,
+			       const CBaslerUniversalGrabResultPtr &grabResult);
+private:
+  Camera& m_cam;
+  StdBufferCbMgr& m_buffer_mgr;
 };
 
 
@@ -100,10 +101,7 @@ class Camera::_AcqThread : public Thread
 Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority)
         : m_nb_frames(1),
           m_status(Ready),
-          m_wait_flag(true),
-          m_quit(false),
-          m_thread_running(true),
-          m_image_number(0),
+	  m_image_number(0),
           m_exp_time(1.),
           m_timeout(DEFAULT_TIME_OUT),
           m_latency_time(0.),
@@ -190,10 +188,20 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
         DEB_TRACE() << "FullName        = " << Camera_->GetDeviceInfo().GetFullName();
         DEB_TRACE() << "DeviceClass     = " << Camera_->GetDeviceInfo().GetDeviceClass();
 
+	// Register Event handler
+        m_event_handler = new _EventHandler(*this);
+	Camera_->RegisterImageEventHandler(m_event_handler,
+					   RegistrationMode_Append,
+					   Cleanup_None);
+	// Camera event processing must be enabled first. The default is off.
+	Camera_->GrabCameraEvents = true;
         // Open the camera
-        DEB_TRACE() << "Open camera";        
+        DEB_TRACE() << "Open camera";
         Camera_->Open();
-    
+
+	if(!Camera_->EventSelector.IsWritable())
+	  THROW_HW_ERROR(Error) << "The device doesn't support events.";
+	
         if(packet_size > 0 && !m_is_usb) {
           Camera_->GevSCPSPacketSize.SetValue(1000);
 
@@ -288,9 +296,6 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
         // Get the image buffer size
         DEB_TRACE() << "Get the image buffer size";
         ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
-               
-        m_acq_thread = new _AcqThread(*this);
-        m_acq_thread->start();
     }
     catch (Pylon::GenericException &e)
     {
@@ -332,8 +337,8 @@ Camera::~Camera()
     try
     {
         // Stop Acq thread
-        delete m_acq_thread;
-        m_acq_thread = NULL;
+        delete m_event_handler;
+        m_event_handler = NULL;
         
         // Close camera
         DEB_TRACE() << "Close camera";
@@ -371,26 +376,13 @@ void Camera::startAcq()
     DEB_MEMBER_FUNCT();
     try
     {
-	if(!m_acq_started)
-	  {
-	    if(m_video)
-	      m_video->getBuffer().setStartTimestamp(Timestamp::now());
-	    else
-	      m_buffer_ctrl_obj.getBuffer().setStartTimestamp(Timestamp::now());
-	  }
+	_startAcq();
+
 	// start acquisition at first image
 	// code moved from prepareAcq(), otherwise with color camera
 	// CtVideo::_prepareAcq() which calls stopAcq() will kill the acquisition 
 	if(m_trigger_mode == IntTrigMult)
-	  {
-	    if (!m_acq_started)
-	      _startAcq();
-
-	    this->Camera_->TriggerSoftware.Execute();
-	  }
-	else {	  
-	  _startAcq();
-	}
+	  this->Camera_->TriggerSoftware.Execute();
     }
     catch (GenICam::GenericException &e)
     {
@@ -402,16 +394,19 @@ void Camera::startAcq()
 void Camera::_startAcq()
 {
   DEB_MEMBER_FUNCT();
-  if (m_nb_frames)
-    Camera_->StartGrabbing(m_nb_frames);
-  else
-    Camera_->StartGrabbing();
-    
-  AutoMutex aLock(m_cond.mutex());
-  m_wait_flag = false;
-  m_cond.broadcast();
+  if(!m_acq_started)
+    {
+      if(m_video)
+	m_video->getBuffer().setStartTimestamp(Timestamp::now());
+      else
+	m_buffer_ctrl_obj.getBuffer().setStartTimestamp(Timestamp::now());
 
-  m_acq_started = true;
+      if (m_nb_frames)
+	Camera_->StartGrabbing(m_nb_frames);
+      else
+	Camera_->StartGrabbing();
+      m_acq_started = true;
+    }
 }
 //---------------------------
 //- Camera::stopAcq()
@@ -436,11 +431,6 @@ void Camera::_stopAcq(bool internalFlag)
             // Stop acquisition
             DEB_TRACE() << "Stop acquisition";
             Camera_->StopGrabbing();
-            while(!internalFlag && m_thread_running)
-            {
-                m_wait_flag = true;
-                m_cond.wait();
-            }
             aLock.unlock();
         
             _setStatus(Camera::Ready,false);
@@ -481,115 +471,58 @@ void Camera::_allocTmpBuffer()
 //---------------------------
 //- Camera::_AcqThread::threadFunction()
 //---------------------------
-void Camera::_AcqThread::threadFunction()
+void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera,
+					   const CBaslerUniversalGrabResultPtr &ptrGrabResult)
 {
+  std::cout << "OnImageGrabbed" << std::endl;
   DEB_MEMBER_FUNCT();
   AutoMutex aLock(m_cam.m_cond.mutex());
-  StdBufferCbMgr& buffer_mgr = m_cam.m_buffer_ctrl_obj.getBuffer();
 
-    while(!m_cam.m_quit)
+  try
     {
-        while(m_cam.m_wait_flag && !m_cam.m_quit)
-        {
-            DEB_TRACE() << "Wait";
-            m_cam.m_thread_running = false;
-            m_cam.m_cond.broadcast();
-            m_cam.m_cond.wait();
-	}
-	DEB_TRACE() << "Run";
-	m_cam.m_thread_running = true;
-	if(m_cam.m_quit) return;
-        
-	m_cam.m_status = Camera::Exposure;
-	m_cam.m_cond.broadcast();
-	aLock.unlock();
-
-	try {
-	  CGrabResultPtr ptrGrabResult;
-	  bool continueAcq = true;
-	  uint8_t* pImageBuffer;
-	  m_cam._setStatus(Camera::Exposure,false);
-	  
-	  if (m_cam.m_video_flag_mode) {
-	    VideoMode mode;
-	    m_cam.m_video->getVideoMode(mode);
-	    
-	    while (m_cam.Camera_->IsGrabbing()) {
-	      if (!m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException)) {
-		// Grabbing has been stopped
-		break;
-	      }
-	      if (ptrGrabResult->GrabSucceeded()) {
-		m_cam.m_video->callNewImage((char*)ptrGrabResult->GetBuffer(),
-					    ptrGrabResult->GetWidth(),
-					    ptrGrabResult->GetHeight(),
-					    mode);
-		++m_cam.m_image_number;
-	      }
+      if(m_cam.m_video_flag_mode)
+	{
+	  VideoMode mode;
+	  m_cam.m_video->getVideoMode(mode);
+	  if(ptrGrabResult->GrabSucceeded())
+	    {
+	      m_cam.m_video->callNewImage((char*)ptrGrabResult->GetBuffer(),
+					  ptrGrabResult->GetWidth(),
+					  ptrGrabResult->GetHeight(),
+					  mode);
+	      ++m_cam.m_image_number;
 	    }
-	  }
-	  else {
-	    
-	    while (m_cam.Camera_->IsGrabbing()) {
-	      // Wait for an image and then retrieve it. A timeout of 3000 ms is used.
-	      if (! m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException)) {
-		// Grabbing has been stopped
-		break;
-	      }
-	      if (ptrGrabResult->GrabSucceeded()) {
-		m_cam._setStatus(Camera::Readout, false);
-		// Access the image data.
-		pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
+      
+	}
+      else
+	{
+	  if (ptrGrabResult->GrabSucceeded())
+	    {
+	      // Access the image data.
+	      uint8_t* pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
 		      
-		HwFrameInfoType frame_info;
-		frame_info.acq_frame_nb = m_cam.m_image_number;
-		void *framePt = buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
-		const FrameDim& fDim = buffer_mgr.getFrameDim();
-		void* srcPt = ((char*)pImageBuffer);
-		DEB_TRACE() << "memcpy:" << DEB_VAR2(srcPt,framePt);
-		memcpy(framePt,srcPt,fDim.getMemSize());
+	      HwFrameInfoType frame_info;
+	      frame_info.acq_frame_nb = m_cam.m_image_number;
+	      void *framePt = m_buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
+	      const FrameDim& fDim = m_buffer_mgr.getFrameDim();
+	      void* srcPt = ((char*)pImageBuffer);
+	      DEB_TRACE() << "memcpy:" << DEB_VAR2(srcPt,framePt);
+	      memcpy(framePt,srcPt,fDim.getMemSize());
 		
-		continueAcq = buffer_mgr.newFrameReady(frame_info);                      
-		++m_cam.m_image_number;
+	      if(!m_buffer_mgr.newFrameReady(frame_info))
+		m_cam._stopAcq(true);
+
+	      ++m_cam.m_image_number;
 		      
-		// Camera.StopGrabbing() is called automatically by the RetrieveResult() method
-		// when c_countOfImagesToGrab images have been retrieved.
-	      }
-	    } // while (m_cam.Camera_->IsGrabbing())
-	  }
-	    
-	  m_cam._stopAcq(true);		
+	    }
 	}
-        catch (Pylon::GenericException &e) {
-	  // Error handling
-	  DEB_ERROR() << "GeniCam Error! "<< e.GetDescription();
-	  m_cam._setStatus(Camera::Fault, true);
-	}
-        aLock.lock();
-        m_cam.m_wait_flag = true;
     }
-}
-
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-Camera::_AcqThread::_AcqThread(Camera &aCam) :
-                    m_cam(aCam)
-{
-    pthread_attr_setscope(&m_thread_attr,PTHREAD_SCOPE_PROCESS);
-}
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-
-Camera::_AcqThread::~_AcqThread()
-{
-    AutoMutex aLock(m_cam.m_cond.mutex());
-    m_cam.m_quit = true;
-    m_cam.m_cond.broadcast();
-    aLock.unlock();
-    
-    join();
+  catch (Pylon::GenericException &e)
+    {
+      // Error handling
+      DEB_ERROR() << "GeniCam Error! "<< e.GetDescription();
+      m_cam._setStatus(Camera::Fault, true);
+    }
 }
 
 //-----------------------------------------------------
