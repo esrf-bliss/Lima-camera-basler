@@ -294,6 +294,24 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
     }
     catch (Pylon::GenericException &e)
     {
+      DeviceInfoList_t list;
+      CTlFactory::GetInstance().EnumerateDevices(list);
+      if(!list.empty())
+	DEB_ALWAYS() << "Device founds:";
+      else
+	DEB_ALWAYS() << "No Camera found!";
+      for(auto dev: list)
+	{
+	  DEB_ALWAYS() << "------------------------------------";
+	  DEB_ALWAYS() << "SerialNumber    = " << dev.GetSerialNumber();
+	  DEB_ALWAYS() << "UserDefinedName = " << dev.GetUserDefinedName();
+	  DEB_ALWAYS() << "DeviceVersion   = " << dev.GetDeviceVersion();
+	  DEB_ALWAYS() << "DeviceFactory   = " << dev.GetDeviceFactory();
+	  DEB_ALWAYS() << "FriendlyName    = " << dev.GetFriendlyName();
+	  DEB_ALWAYS() << "FullName        = " << dev.GetFullName();
+	  DEB_ALWAYS() << "DeviceClass     = " << dev.GetDeviceClass();
+	  DEB_ALWAYS() << "\n";
+	}
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
