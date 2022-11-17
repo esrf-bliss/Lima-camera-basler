@@ -532,7 +532,7 @@ void Camera::_AcqThread::threadFunction()
 	    
 	    while (m_cam.Camera_->IsGrabbing()) {
 	      // Wait for an image and then retrieve it. A timeout of 3000 ms is used.
-	      if (! m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException)) {
+	      if (! m_cam.Camera_->RetrieveResult(INFINITE, ptrGrabResult, TimeoutHandling_ThrowException)) {
 		// Grabbing has been stopped
 		break;
 	      }
