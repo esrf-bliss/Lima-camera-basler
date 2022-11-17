@@ -294,6 +294,24 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
     }
     catch (Pylon::GenericException &e)
     {
+      DeviceInfoList_t list;
+      CTlFactory::GetInstance().EnumerateDevices(list);
+      if(!list.empty())
+	DEB_ALWAYS() << "Device founds:";
+      else
+	DEB_ALWAYS() << "No Camera found!";
+      for(auto dev: list)
+	{
+	  DEB_ALWAYS() << "------------------------------------";
+	  DEB_ALWAYS() << "SerialNumber    = " << dev.GetSerialNumber();
+	  DEB_ALWAYS() << "UserDefinedName = " << dev.GetUserDefinedName();
+	  DEB_ALWAYS() << "DeviceVersion   = " << dev.GetDeviceVersion();
+	  DEB_ALWAYS() << "DeviceFactory   = " << dev.GetDeviceFactory();
+	  DEB_ALWAYS() << "FriendlyName    = " << dev.GetFriendlyName();
+	  DEB_ALWAYS() << "FullName        = " << dev.GetFullName();
+	  DEB_ALWAYS() << "DeviceClass     = " << dev.GetDeviceClass();
+	  DEB_ALWAYS() << "\n";
+	}
         // Error handling
         THROW_HW_ERROR(Error) << e.GetDescription();
     }
@@ -514,7 +532,7 @@ void Camera::_AcqThread::threadFunction()
 	    
 	    while (m_cam.Camera_->IsGrabbing()) {
 	      // Wait for an image and then retrieve it. A timeout of 3000 ms is used.
-	      if (! m_cam.Camera_->RetrieveResult(3000, ptrGrabResult, TimeoutHandling_ThrowException)) {
+	      if (! m_cam.Camera_->RetrieveResult(INFINITE, ptrGrabResult, TimeoutHandling_ThrowException)) {
 		// Grabbing has been stopped
 		break;
 	      }
