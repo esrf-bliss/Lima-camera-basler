@@ -205,8 +205,8 @@ class BASLER_EXPORT Camera
     
  private:
     enum BufferMode {TmpBuffer, SoftBuffer};
-    class _AcqThread;
-    friend class _AcqThread;
+    class _EventHandler;
+    friend class _EventHandler;
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
     void _allocTmpBuffer();
@@ -220,10 +220,7 @@ class BASLER_EXPORT Camera
     SoftBufferCtrlObj		m_buffer_ctrl_obj;
     int                         m_nb_frames;    
     Camera::Status              m_status;
-    volatile bool               m_wait_flag;
-    volatile bool               m_quit;
-    volatile bool               m_thread_running;
-    bool                        m_acq_started;
+    bool			m_acq_started;
     int                         m_image_number;
     double                      m_exp_time;
     int                         m_timeout;
@@ -242,7 +239,7 @@ class BASLER_EXPORT Camera
     DeviceInfoList_t              devices_;
     Camera_t*                     Camera_;
     size_t                        ImageSize_;
-    _AcqThread*                   m_acq_thread;
+    _EventHandler*                m_event_handler;
     Cond                          m_cond;
     int                           m_receive_priority;
     bool			  m_color_flag;
