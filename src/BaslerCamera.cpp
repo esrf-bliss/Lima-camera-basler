@@ -89,6 +89,7 @@ public:
 
   virtual void 	OnImageGrabbed(CBaslerUniversalInstantCamera &camera,
 			       const CBaslerUniversalGrabResultPtr &grabResult);
+  unsigned short m_block_id;
 private:
   Camera& m_cam;
   StdBufferCbMgr& m_buffer_mgr;
@@ -367,6 +368,7 @@ void Camera::prepareAcq()
     // startAcq can be recalled before the threadFunction has processed the new image and
     // incremented the counter m_image_number
     m_acq_started = false;
+    m_event_handler->m_block_id = 0; // reset block id counter
 }
 
 //---------------------------
@@ -499,12 +501,28 @@ void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera
 	      void* srcPt = ((char*)pImageBuffer);
 	      DEB_TRACE() << "memcpy:" << DEB_VAR2(srcPt,framePt);
 	      memcpy(framePt,srcPt,fDim.getMemSize());
-		
+
 	      if(!m_buffer_mgr.newFrameReady(frame_info))
 		m_cam._stopAcq(true);
 
 	      ++m_cam.m_image_number;
-		      
+	      if(!m_cam.m_is_usb) // GigE Camera
+		{
+		  auto block_id = ptrGrabResult->GetBlockID();
+		  if(block_id)	// 0 -> not available for this camera
+		    {
+		      ++m_block_id;
+		      if(!m_block_id) ++m_block_id; // overflow to 0
+		      if(block_id != m_block_id) // missed a frame
+			{
+			  DEB_WARNING() << "Missed frame expected : "
+					<< m_block_id
+					<< " get : "
+					<< block_id;
+			  m_block_id = block_id;
+			}
+		    }
+		}
 	    }
 	}
     }
