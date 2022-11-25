@@ -89,10 +89,11 @@ public:
 
   virtual void 	OnImageGrabbed(CBaslerUniversalInstantCamera &camera,
 			       const CBaslerUniversalGrabResultPtr &grabResult);
-  unsigned short m_block_id;
+  
+  unsigned short	m_block_id;
 private:
-  Camera& m_cam;
-  StdBufferCbMgr& m_buffer_mgr;
+  Camera&		m_cam;
+  StdBufferCbMgr&	m_buffer_mgr;
 };
 
 
@@ -109,6 +110,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
           m_socketBufferSize(0),
           m_is_usb(false),
           Camera_(NULL),
+	  m_event_handler(NULL),
           m_receive_priority(receive_priority),
 	  m_video_flag_mode(false),
 	  m_video(NULL)
@@ -465,7 +467,7 @@ void Camera::_allocTmpBuffer()
 
 
 //---------------------------
-//- Camera::_AcqThread::threadFunction()
+//- Camera::_EventHandler::OnImageGrabbed()
 //---------------------------
 void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera,
 					   const CBaslerUniversalGrabResultPtr &ptrGrabResult)
