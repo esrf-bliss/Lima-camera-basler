@@ -204,18 +204,14 @@ class BASLER_EXPORT Camera
     void getTestImageSelector(TestImageSelector& sel) const;
     
  private:
-    enum BufferMode {TmpBuffer, SoftBuffer};
     class _EventHandler;
     friend class _EventHandler;
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
-    void _allocTmpBuffer();
     void _startAcq();
     void _readTrigMode();
     void _forceVideoMode(bool force);
 
-    static const int NB_TMP_BUFFER = 2;
-    
     //- lima stuff
     SoftBufferCtrlObj		m_buffer_ctrl_obj;
     int                         m_nb_frames;    
@@ -244,7 +240,6 @@ class BASLER_EXPORT Camera
     int                           m_receive_priority;
     bool			  m_color_flag;
     bool			  m_video_flag_mode;
-    void*			  m_tmp_buffer[NB_TMP_BUFFER];
     VideoCtrlObj*		  m_video;
     TrigMode			  m_trigger_mode;
 };

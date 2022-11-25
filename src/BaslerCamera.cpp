@@ -89,10 +89,11 @@ public:
 
   virtual void 	OnImageGrabbed(CBaslerUniversalInstantCamera &camera,
 			       const CBaslerUniversalGrabResultPtr &grabResult);
-  unsigned short m_block_id;
+  
+  unsigned short	m_block_id;
 private:
-  Camera& m_cam;
-  StdBufferCbMgr& m_buffer_mgr;
+  Camera&		m_cam;
+  StdBufferCbMgr&	m_buffer_mgr;
 };
 
 
@@ -109,6 +110,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
           m_socketBufferSize(0),
           m_is_usb(false),
           Camera_(NULL),
+	  m_event_handler(NULL),
           m_receive_priority(receive_priority),
 	  m_video_flag_mode(false),
 	  m_video(NULL)
@@ -324,9 +326,6 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 
     // if color camera video capability will be available
     m_video_flag_mode = m_color_flag;
-    
-    // alloc a temporary buffer used for live mode and color camera
-    _allocTmpBuffer();
 }
 
 //---------------------------
@@ -346,12 +345,6 @@ Camera::~Camera()
         DEB_TRACE() << "Close camera";
         delete Camera_;
         Camera_ = NULL;
-	for(int i = 0;i < NB_TMP_BUFFER;++i)
-#ifdef __unix
-	  free(m_tmp_buffer[i]);
-#else
-	  _aligned_free(m_tmp_buffer[i]);
-#endif
     }
     catch (Pylon::GenericException &e)
     {
@@ -446,26 +439,8 @@ void Camera::_forceVideoMode(bool force)
   m_video_flag_mode = force;
   
 }
-void Camera::_allocTmpBuffer()
-{
-  DEB_MEMBER_FUNCT();
-  for(int i = 0;i < NB_TMP_BUFFER;++i)
-    {
-#ifdef __unix
-      int ret=posix_memalign(&m_tmp_buffer[i],16,ImageSize_);
-      if (ret)
-	THROW_HW_ERROR(Error) << "posix_memalign(): request for aligned memory allocation failed";
-#else
-      m_tmp_buffer[i] = _aligned_malloc(ImageSize_,16);
-      if (m_tmp_buffer[i] == NULL)
-	THROW_HW_ERROR(Error) << "_aligned_malloc(): request for aligned memory allocation failed";	
-#endif
-    }
-}
-
-
 //---------------------------
-//- Camera::_AcqThread::threadFunction()
+//- Camera::_EventHandler::OnImageGrabbed()
 //---------------------------
 void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera,
 					   const CBaslerUniversalGrabResultPtr &ptrGrabResult)
