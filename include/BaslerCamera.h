@@ -207,6 +207,9 @@ class BASLER_EXPORT Camera
     enum BufferMode {TmpBuffer, SoftBuffer};
     class _EventHandler;
     friend class _EventHandler;
+    class _BufferFactory;
+    friend class _BufferFactory;
+    
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
     void _allocTmpBuffer();
@@ -240,6 +243,7 @@ class BASLER_EXPORT Camera
     Camera_t*                     Camera_;
     size_t                        ImageSize_;
     _EventHandler*                m_event_handler;
+    _BufferFactory*               m_buffer_factory;
     Cond                          m_cond;
     int                           m_receive_priority;
     bool			  m_color_flag;

@@ -96,6 +96,27 @@ private:
   StdBufferCbMgr&	m_buffer_mgr;
 };
 
+//---------------------------
+//- Buffer Factory
+//---------------------------
+class Camera::_BufferFactory : public IBufferFactory
+{
+  DEB_CLASS_NAMESPC(DebModCamera, "Camera", "_BufferFactory");
+public:
+  _BufferFactory(Camera &aCam):
+    m_cpt_context(-1),
+    m_cam(aCam),
+    m_buffer_mgr(m_cam.m_buffer_ctrl_obj.getBuffer()) {}
+  virtual void AllocateBuffer(size_t bufferSize,void** pCreatedBuffer,
+			      intptr_t& bufferContext);
+  virtual void FreeBuffer(void* pCreatedBuffer,intptr_t bufferContext) {} // Nothing to do
+  virtual void DestroyBufferFactory() {} // Noting to do
+
+  long long		m_cpt_context;
+private:
+  Camera&		m_cam;
+  StdBufferCbMgr&	m_buffer_mgr;
+};
 
 //---------------------------
 //- Ctor
@@ -111,6 +132,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
           m_is_usb(false),
           Camera_(NULL),
 	  m_event_handler(NULL),
+	  m_buffer_factory(NULL),
           m_receive_priority(receive_priority),
 	  m_video_flag_mode(false),
 	  m_video(NULL)
@@ -329,6 +351,9 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
     
     // alloc a temporary buffer used for live mode and color camera
     _allocTmpBuffer();
+    // Set our own buffer factory to avoid memcpy
+    m_buffer_factory = new _BufferFactory(*this);
+    Camera_->SetBufferFactory(m_buffer_factory,Cleanup_None);
 }
 
 //---------------------------
@@ -348,6 +373,8 @@ Camera::~Camera()
         DEB_TRACE() << "Close camera";
         delete Camera_;
         Camera_ = NULL;
+	
+	delete m_buffer_factory;
 	for(int i = 0;i < NB_TMP_BUFFER;++i)
 #ifdef __unix
 	  free(m_tmp_buffer[i]);
@@ -371,6 +398,8 @@ void Camera::prepareAcq()
     // incremented the counter m_image_number
     m_acq_started = false;
     m_event_handler->m_block_id = 0; // reset block id counter
+    m_buffer_factory->m_cpt_context = -1; // reset frame counter
+    Camera_->MaxNumBuffer = !m_nb_frames ? NB_TMP_BUFFER : m_nb_frames;
 }
 
 //---------------------------
@@ -498,12 +527,25 @@ void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera
 		      
 	      HwFrameInfoType frame_info;
 	      frame_info.acq_frame_nb = m_cam.m_image_number;
-	      void *framePt = m_buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
-	      const FrameDim& fDim = m_buffer_mgr.getFrameDim();
-	      void* srcPt = ((char*)pImageBuffer);
-	      DEB_TRACE() << "memcpy:" << DEB_VAR2(srcPt,framePt);
-	      memcpy(framePt,srcPt,fDim.getMemSize());
-
+	      if(!m_cam.m_nb_frames) // Acquisition continuous need memcpy
+		{
+		  void *framePt = m_buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
+		  const FrameDim& fDim = m_buffer_mgr.getFrameDim();
+		  void* srcPt = ((char*)pImageBuffer);
+		  DEB_TRACE() << "memcpy:" << DEB_VAR2(srcPt,framePt);
+		  ::memcpy(framePt,srcPt,fDim.getMemSize());
+		}
+	      else
+		{
+		  auto cpt_context = ptrGrabResult->GetBufferContext();
+		  if(cpt_context != m_cam.m_image_number)
+		    THROW_HW_ERROR(Error)
+		      << "Buffer misaligned expected: "
+		      << m_cam.m_image_number
+		      << ", get: "
+		      << cpt_context;
+		}
+	      
 	      if(!m_buffer_mgr.newFrameReady(frame_info))
 		m_cam._stopAcq(true);
 
@@ -533,6 +575,32 @@ void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera
       // Error handling
       DEB_ERROR() << "GeniCam Error! "<< e.GetDescription();
       m_cam._setStatus(Camera::Fault, true);
+    }
+}
+
+
+//-----------------------------------------------------
+// Buffer Factory
+//-----------------------------------------------------
+void Camera::_BufferFactory::AllocateBuffer(size_t bufferSize,void** pCreatedBuffer,
+					    intptr_t& bufferContext)
+{
+  DEB_MEMBER_FUNCT();
+
+  bufferContext = ++m_cpt_context;
+  if(m_cam.m_video_flag_mode || !m_cam.m_nb_frames)
+    *pCreatedBuffer = m_cam.m_tmp_buffer[m_cpt_context % NB_TMP_BUFFER];
+  else
+    {
+      const FrameDim& fDim = m_buffer_mgr.getFrameDim();
+      void *framePt = m_buffer_mgr.getFrameBufferPtr(m_cpt_context);
+      if(fDim.getMemSize() != bufferSize)
+	THROW_HW_ERROR(Error)
+	  << "Allocated memory is: "
+	  << fDim.getMemSize()
+	  << "and ask: "
+	  << bufferSize;
+      *pCreatedBuffer = framePt;
     }
 }
 
