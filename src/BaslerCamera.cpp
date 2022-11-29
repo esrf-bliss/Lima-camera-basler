@@ -1020,9 +1020,12 @@ void Camera::getStatus(Camera::Status& status)
     DEB_MEMBER_FUNCT();
     AutoMutex aLock(m_cond.mutex());
     status = m_status;
+    aLock.unlock();
+    if(status != Camera::Fault)
+      status = Camera_->IsGrabbing() ? Camera::Exposure : Camera::Ready;
     //Check if camera is not waiting for trigger
-    if((status == Camera::Exposure || status == Camera::Readout) && 
-       m_trigger_mode == IntTrigMult)
+    if(m_trigger_mode == IntTrigMult &&
+       status == Camera::Exposure)
       {
 	// Check the frame start trigger acquisition status
 	// Set the acquisition status selector
