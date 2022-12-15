@@ -346,7 +346,7 @@ Camera::~Camera()
     catch (Pylon::GenericException &e)
     {
         // Error handling
-        THROW_HW_ERROR(Error) << e.GetDescription();
+        DEB_ERROR() << e.GetDescription();
     }
 }
 
