@@ -163,7 +163,6 @@ class BASLER_EXPORT Camera
     void getFrameRate(double& frame_rate) const;
     bool isBinningAvailable() const;
     bool isRoiAvailable() const;
-    void setTimeout(int TO);
     void reset();
 
     bool isGainAvailable() const;
@@ -219,7 +218,6 @@ class BASLER_EXPORT Camera
     bool			m_acq_started;
     int                         m_image_number;
     double                      m_exp_time;
-    int                         m_timeout;
     double                      m_latency_time;
     int                         m_socketBufferSize;
     bool                        m_is_usb;
