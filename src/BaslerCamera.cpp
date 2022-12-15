@@ -48,8 +48,6 @@ using namespace std;
 #define max(A,B) std::max(A,B)
 #endif
 
-const static int DEFAULT_TIME_OUT = 600000; // 10 minutes
-
 const static std::string IP_PREFIX = "ip://";
 const static std::string SN_PREFIX = "sn://";
 const static std::string UNAME_PREFIX = "uname://";
@@ -105,7 +103,6 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
           m_status(Ready),
 	  m_image_number(0),
           m_exp_time(1.),
-          m_timeout(DEFAULT_TIME_OUT),
           m_latency_time(0.),
           m_socketBufferSize(0),
           m_is_usb(false),
@@ -1069,15 +1066,6 @@ void Camera::getFrameRate(double& frame_rate) const
         THROW_HW_ERROR(Error) << e.GetDescription();
     }        
     DEB_RETURN() << DEB_VAR1(frame_rate);
-}
-//-----------------------------------------------------
-//
-//-----------------------------------------------------
-void Camera::setTimeout(int TO)
-{
-    DEB_MEMBER_FUNCT();
-    DEB_PARAM() << DEB_VAR1(TO);    
-    m_timeout = TO;
 }
 //-----------------------------------------------------
 //
