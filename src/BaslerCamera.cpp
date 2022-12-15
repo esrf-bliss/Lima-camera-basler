@@ -400,6 +400,17 @@ void Camera::_startAcq()
 	Camera_->StartGrabbing(GrabStrategy_OneByOne,GrabLoop_ProvidedByInstantCamera);
       m_acq_started = true;
     }
+  
+  try
+    {
+      if(m_trigger_mode != IntTrig)
+	Camera_->WaitForFrameTriggerReady(1000, TimeoutHandling_ThrowException);
+    }
+  catch(GenICam::GenericException &e)
+    {
+      THROW_HW_ERROR(Error) << "Wait ready for trigger failed: "
+			    << e.GetDescription();
+    }
 }
 //---------------------------
 //- Camera::stopAcq()
