@@ -150,6 +150,9 @@ class BaslerClass(PyTango.DeviceClass):
         'force_video_mode':
         [PyTango.DevBoolean,
          "For B/W camera force to color-video mode",False],
+        'blank_image_for_missed':
+        [PyTango.DevBoolean,
+         "blank image when frame missed",False],
         }
 
     cmd_list = {
@@ -222,7 +225,8 @@ _BaslerInterface = None
 # directory for for details about network optimization.
 
 def get_control(frame_transmission_delay = 0, inter_packet_delay = 0,
-                packet_size = 8000,force_video_mode= 'false', **keys) :
+                packet_size = 8000,force_video_mode= 'false',blank_image_for_missed = 'false',
+                **keys) :
     global _BaslerCam
     global _BaslerInterface
 
@@ -253,6 +257,10 @@ def get_control(frame_transmission_delay = 0, inter_packet_delay = 0,
         _BaslerCam.setInterPacketDelay(int(inter_packet_delay))
         _BaslerCam.setFrameTransmissionDelay(int(frame_transmission_delay))
         _BaslerInterface = BaslerAcq.Interface(_BaslerCam, force)
+
+    if blank_image_for_missed == 'true':
+        _BaslerInterface.setBlankImageForMissed(True)
+        
     return Core.CtControl(_BaslerInterface)
 
 def get_tango_specific_class_n_device():
