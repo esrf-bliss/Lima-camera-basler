@@ -163,6 +163,7 @@ class BASLER_EXPORT Camera
     void getFrameRate(double& frame_rate) const;
     bool isBinningAvailable() const;
     bool isRoiAvailable() const;
+    void setBlankImageForMissed(bool);
     void reset();
 
     bool isGainAvailable() const;
@@ -221,7 +222,7 @@ class BASLER_EXPORT Camera
     double                      m_latency_time;
     int                         m_socketBufferSize;
     bool                        m_is_usb;
-    
+    bool			m_blank_image_for_missed; /* blank image for missed frames */
     //- basler stuff 
     std::string                 m_camera_id;
     std::string                 m_detector_model;

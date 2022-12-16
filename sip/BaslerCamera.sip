@@ -92,6 +92,7 @@ namespace Basler
     void getFrameRate(double& frame_rate /Out/) const;
     bool isBinningAvailable() const;
     bool isRoiAvailable() const;
+    void setBlankImageForMissed(bool);
     void reset();
 
     void setAutoGain(bool auto_gain);

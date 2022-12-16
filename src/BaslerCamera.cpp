@@ -90,6 +90,8 @@ public:
   
   unsigned short	m_block_id;
 private:
+  void _check_missing_frame(const CBaslerUniversalGrabResultPtr &ptrGrabResult);
+  
   Camera&		m_cam;
   StdBufferCbMgr&	m_buffer_mgr;
 };
@@ -106,6 +108,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
           m_latency_time(0.),
           m_socketBufferSize(0),
           m_is_usb(false),
+	  m_blank_image_for_missed(false),
           Camera_(NULL),
 	  m_event_handler(NULL),
           m_receive_priority(receive_priority),
@@ -476,7 +479,9 @@ void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera
 	    {
 	      // Access the image data.
 	      uint8_t* pImageBuffer = (uint8_t*) ptrGrabResult->GetBuffer();
-		      
+
+	      _check_missing_frame(ptrGrabResult);
+
 	      HwFrameInfoType frame_info;
 	      frame_info.acq_frame_nb = m_cam.m_image_number;
 	      void *framePt = m_buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
@@ -489,23 +494,6 @@ void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera
 		m_cam._stopAcq(true);
 
 	      ++m_cam.m_image_number;
-	      if(!m_cam.m_is_usb) // GigE Camera
-		{
-		  auto block_id = ptrGrabResult->GetBlockID();
-		  if(block_id)	// 0 -> not available for this camera
-		    {
-		      ++m_block_id;
-		      if(!m_block_id) ++m_block_id; // overflow to 0
-		      if(block_id != m_block_id) // missed a frame
-			{
-			  DEB_WARNING() << "Missed frame expected : "
-					<< m_block_id
-					<< " get : "
-					<< block_id;
-			  m_block_id = block_id;
-			}
-		    }
-		}
 	    }
 	}
     }
@@ -517,6 +505,49 @@ void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera
     }
 }
 
+void Camera::_EventHandler::_check_missing_frame(const CBaslerUniversalGrabResultPtr &ptrGrabResult)
+{
+  DEB_MEMBER_FUNCT();
+  
+  if(!m_cam.m_is_usb) // GigE Camera
+    {
+      auto block_id = ptrGrabResult->GetBlockID();
+      if(block_id)	// 0 -> not available for this camera
+	{
+	  ++m_block_id;
+	  if(!m_block_id) ++m_block_id; // overflow to 0
+	  if(block_id != m_block_id) // missed a frame
+	    {
+	      DEB_WARNING() << "Missed frame expected : "
+			    << m_block_id
+			    << " get : "
+			    << block_id;
+	      if(m_cam.m_blank_image_for_missed)
+		{
+		  unsigned short missed_frames = block_id - m_block_id;
+		  if(m_block_id > block_id)  --missed_frames; // overflow
+		  //missing frames are blank
+		  for(int i = 0;i < missed_frames;++i)
+		    {
+		      void *framePt = m_buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
+		      const FrameDim& fDim = m_buffer_mgr.getFrameDim();
+		      memset(framePt,0,fDim.getMemSize());
+		      HwFrameInfoType frame_info;
+		      frame_info.acq_frame_nb = m_cam.m_image_number;
+		      DEB_WARNING() << "Frame " << m_cam.m_image_number << " is blank";
+		      if(!m_buffer_mgr.newFrameReady(frame_info))
+			{
+			  m_cam._stopAcq(true);
+			  break;
+			}
+		      ++m_cam.m_image_number;
+		    }
+		}
+	      m_block_id = block_id;
+	    }
+	}
+    }
+}
 //-----------------------------------------------------
 //
 //-----------------------------------------------------
@@ -1077,6 +1108,15 @@ void Camera::getFrameRate(double& frame_rate) const
         THROW_HW_ERROR(Error) << e.GetDescription();
     }        
     DEB_RETURN() << DEB_VAR1(frame_rate);
+}
+//-----------------------------------------------------
+//
+//-----------------------------------------------------
+void Camera::setBlankImageForMissed(bool active)
+{
+  /** This will create blank images when missing an image.
+   */
+  m_blank_image_for_missed = active;
 }
 //-----------------------------------------------------
 //
