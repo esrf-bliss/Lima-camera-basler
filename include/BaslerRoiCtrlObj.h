@@ -38,7 +38,7 @@ namespace lima
 
     class RoiCtrlObj : public HwRoiCtrlObj
     {
-      DEB_CLASS_NAMESPC(DebModCamera,"RoiCtrlObj","Balser");
+      DEB_CLASS_NAMESPC(DebModCamera,"RoiCtrlObj","Basler");
     public:
       RoiCtrlObj(Camera&);
       virtual ~RoiCtrlObj();

@@ -38,7 +38,7 @@ namespace lima
 
     class BinCtrlObj : public HwBinCtrlObj
     {
-      DEB_CLASS_NAMESPC(DebModCamera,"BinCtrlObj","Balser");
+      DEB_CLASS_NAMESPC(DebModCamera,"BinCtrlObj","Basler");
     public:
       BinCtrlObj(Camera&);
       virtual ~BinCtrlObj();

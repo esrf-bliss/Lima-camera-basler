@@ -38,7 +38,7 @@ namespace lima
 
     class SyncCtrlObj : public HwSyncCtrlObj
     {
-      DEB_CLASS_NAMESPC(DebModCamera,"SyncCtrlObj","Balser");
+      DEB_CLASS_NAMESPC(DebModCamera,"SyncCtrlObj","Basler");
     public:
       SyncCtrlObj(Camera&);
       virtual ~SyncCtrlObj();
