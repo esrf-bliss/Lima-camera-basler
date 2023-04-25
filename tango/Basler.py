@@ -246,7 +246,10 @@ def get_control(frame_transmission_delay = 0, inter_packet_delay = 0,
     # so need to be converted to correct type
     if force_video_mode == 'true':
         force = True
-    else: force = False
+    elif force_video_mode == 'false':
+        force = False
+    else:
+        raise ValueError("Invalid force_video_mode value, expecting 'true' or ' false'")
 
     if _BaslerCam is None:
         _BaslerCam = BaslerAcq.Camera(camera_id, int(packet_size))

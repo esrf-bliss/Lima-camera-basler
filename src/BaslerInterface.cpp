@@ -38,6 +38,7 @@ Interface::Interface(Camera& cam,bool force_video_mode) :
   m_cam(cam)
 {
   DEB_CONSTRUCTOR();
+  DEB_ALWAYS() << DEB_VAR1(force_video_mode);
   m_det_info = new DetInfoCtrlObj(cam);
   m_sync = new SyncCtrlObj(cam);
   m_roi = new RoiCtrlObj(cam);
