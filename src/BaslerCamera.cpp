@@ -195,7 +195,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
         Camera_->Open();
     
         if(packet_size > 0 && !m_is_usb) {
-          Camera_->GevSCPSPacketSize.SetValue(1000);
+          Camera_->GevSCPSPacketSize.SetValue(packet_size);
 
         }
     
