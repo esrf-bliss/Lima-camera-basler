@@ -24,9 +24,9 @@ namespace Basler
 	//backward compatibility
 	sipCpp->getCamera().getFrameRate(a0);
 %End
-    void		setTimeout(int);
+    void		setBlankImageForMissed(bool);
 %MethodCode
-	sipCpp->getCamera().setTimeout(a0);
+	sipCpp->getCamera().setBlankImageForMissed(a0);
 %End
     void		setGain(double gain);
 %MethodCode

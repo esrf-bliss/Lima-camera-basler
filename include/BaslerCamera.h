@@ -163,7 +163,7 @@ class BASLER_EXPORT Camera
     void getFrameRate(double& frame_rate) const;
     bool isBinningAvailable() const;
     bool isRoiAvailable() const;
-    void setTimeout(int TO);
+    void setBlankImageForMissed(bool);
     void reset();
 
     bool isGainAvailable() const;
@@ -204,33 +204,25 @@ class BASLER_EXPORT Camera
     void getTestImageSelector(TestImageSelector& sel) const;
     
  private:
-    enum BufferMode {TmpBuffer, SoftBuffer};
-    class _AcqThread;
-    friend class _AcqThread;
+    class _EventHandler;
+    friend class _EventHandler;
     void _stopAcq(bool);
     void _setStatus(Camera::Status status,bool force);
-    void _allocTmpBuffer();
     void _startAcq();
     void _readTrigMode();
     void _forceVideoMode(bool force);
 
-    static const int NB_TMP_BUFFER = 2;
-    
     //- lima stuff
     SoftBufferCtrlObj		m_buffer_ctrl_obj;
     int                         m_nb_frames;    
     Camera::Status              m_status;
-    volatile bool               m_wait_flag;
-    volatile bool               m_quit;
-    volatile bool               m_thread_running;
-    bool                        m_acq_started;
+    bool			m_acq_started;
     int                         m_image_number;
     double                      m_exp_time;
-    int                         m_timeout;
     double                      m_latency_time;
     int                         m_socketBufferSize;
     bool                        m_is_usb;
-    
+    bool			m_blank_image_for_missed; /* blank image for missed frames */
     //- basler stuff 
     std::string                 m_camera_id;
     std::string                 m_detector_model;
@@ -242,12 +234,11 @@ class BASLER_EXPORT Camera
     DeviceInfoList_t              devices_;
     Camera_t*                     Camera_;
     size_t                        ImageSize_;
-    _AcqThread*                   m_acq_thread;
+    _EventHandler*                m_event_handler;
     Cond                          m_cond;
     int                           m_receive_priority;
     bool			  m_color_flag;
     bool			  m_video_flag_mode;
-    void*			  m_tmp_buffer[NB_TMP_BUFFER];
     VideoCtrlObj*		  m_video;
     TrigMode			  m_trigger_mode;
 };
