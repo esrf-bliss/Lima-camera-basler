@@ -22,7 +22,6 @@ requirements:
     - lima-core
     - pylon6-sdk
   build:
-    - git
     - cmake
     - ninja
     - {{ compiler('cxx') }}
