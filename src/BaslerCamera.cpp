@@ -882,10 +882,27 @@ void Camera::setExpTime(double exp_time)
         }
         else
         {
-            double periode = m_latency_time + m_exp_time;
+            double rate = 1/ (m_latency_time + m_exp_time);
             Camera_->AcquisitionFrameRateEnable.SetValue(true);
-            Camera_->AcquisitionFrameRate.SetValue(1 / periode);
-            DEB_TRACE() << DEB_VAR1(Camera_->AcquisitionFrameRate.GetValue());
+            DEB_TRACE() << DEB_VAR1(rate);
+	    if (IsAvailable(Camera_->AcquisitionFrameRate) || m_is_usb)
+	    {
+	        double minrate = Camera_->AcquisitionFrameRate.GetMin();
+	        double maxrate = Camera_->AcquisitionFrameRate.GetMax();
+		if (rate < minrate) rate = minrate;
+		if (rate > maxrate) rate = maxrate;
+	        Camera_->AcquisitionFrameRate.SetValue(rate);
+		DEB_TRACE() << DEB_VAR1(Camera_->AcquisitionFrameRate.GetValue());
+	    }
+            else
+	    {
+	        double minrate = Camera_->AcquisitionFrameRateAbs.GetMin();
+	        double maxrate = Camera_->AcquisitionFrameRateAbs.GetMax();
+		if (rate < minrate) rate = minrate;
+		if (rate > maxrate) rate = maxrate;
+	        Camera_->AcquisitionFrameRateAbs.SetValue(rate);
+		DEB_TRACE() << DEB_VAR1(Camera_->AcquisitionFrameRateAbs.GetValue());
+	    }            
         }
 
     }
@@ -1097,7 +1114,7 @@ void Camera::getFrameRate(double& frame_rate) const
     DEB_MEMBER_FUNCT();
     try
     {
-        if (m_is_usb)
+        if (GenApi::IsAvailable(Camera_->ResultingFrameRate) || m_is_usb)
             frame_rate = static_cast<double>(Camera_->ResultingFrameRate.GetValue());        
         else 
             frame_rate = static_cast<double>(Camera_->ResultingFrameRateAbs.GetValue());        
