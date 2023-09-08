@@ -1080,7 +1080,9 @@ void Camera::getStatus(Camera::Status& status)
     if(status != Camera::Fault)
       status = Camera_->IsGrabbing() ? Camera::Exposure : Camera::Ready;
     //Check if camera is not waiting for trigger
-    if(m_trigger_mode == IntTrigMult &&
+    if((m_trigger_mode == IntTrigMult ||
+	m_trigger_mode == ExtTrigMult ||
+	m_trigger_mode == ExtGate) &&
        status == Camera::Exposure)
       {
 	// Check the frame start trigger acquisition status
