@@ -1150,14 +1150,31 @@ void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
         {
 	    // Taking care of the value increment, round up the ROI, 
 	    // some cameras have increment > 1, ie. acA1920-50gm (Sony CMOS) Inc is 4 for width and offset X
-	    const Roi rup_roi (
-			       ceil(set_roi.getTopLeft().x*1.0/Camera_->OffsetX.GetInc()) * Camera_->OffsetX.GetInc(),
-			       ceil(set_roi.getTopLeft().y*1.0/Camera_->OffsetY.GetInc()) * Camera_->OffsetY.GetInc(),
-			       ceil(set_roi.getSize().getWidth()*1.0/Camera_->Width.GetInc()) * Camera_->Width.GetInc(),
-			       ceil(set_roi.getSize().getHeight()*1.0/Camera_->Height.GetInc()) * Camera_->Height.GetInc());
-	    
+	    int x_inc =  Camera_->OffsetX.GetInc();
+	    int y_inc =  Camera_->OffsetY.GetInc();
+	    DEB_TRACE() << DEB_VAR2(x_inc, y_inc);
+
+	    Roi rup_roi (
+			       max(int((floor(set_roi.getTopLeft().x*1.0/x_inc) * x_inc)), int(Camera_->OffsetX.GetMin())),
+			       max(int((floor(set_roi.getTopLeft().y*1.0/y_inc) * y_inc)), int(Camera_->OffsetY.GetMin())),
+			       (ceil(set_roi.getSize().getWidth()*1.0/x_inc) * x_inc),
+			       (ceil(set_roi.getSize().getHeight()*1.0/y_inc) * y_inc)
+			       );
+	    // increase the height/width by one increment size if top_left has been changed
+	    // to allow lima soft_roi to crop inside bigger hw_roi
+	    if (x_inc !=1)
+	    {
+	      Size asize = Size(rup_roi.getSize().getWidth()+x_inc, rup_roi.getSize().getHeight());
+	      rup_roi.setSize(asize);
+	    }
+	    if (y_inc !=1)
+	    {
+	      Size asize = Size(rup_roi.getSize().getWidth(), rup_roi.getSize().getHeight()+y_inc);
+	      rup_roi.setSize(asize);
+	    }
 	    hw_roi = rup_roi;
 
+	    DEB_TRACE() << DEB_VAR1(hw_roi);
 	    // size at minimum 
             const Size& aSetRoiSize = hw_roi.getSize();
             Size aRoiSize = Size(max(aSetRoiSize.getWidth(),
