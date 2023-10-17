@@ -1154,24 +1154,14 @@ void Camera::checkRoi(const Roi& set_roi, Roi& hw_roi)
 	    int y_inc =  Camera_->OffsetY.GetInc();
 	    DEB_TRACE() << DEB_VAR2(x_inc, y_inc);
 
-	    Roi rup_roi (
-			       max(int((floor(set_roi.getTopLeft().x*1.0/x_inc) * x_inc)), int(Camera_->OffsetX.GetMin())),
-			       max(int((floor(set_roi.getTopLeft().y*1.0/y_inc) * y_inc)), int(Camera_->OffsetY.GetMin())),
-			       (ceil(set_roi.getSize().getWidth()*1.0/x_inc) * x_inc),
-			       (ceil(set_roi.getSize().getHeight()*1.0/y_inc) * y_inc)
-			       );
-	    // increase the height/width by one increment size if top_left has been changed
-	    // to allow lima soft_roi to crop inside bigger hw_roi
-	    if (x_inc !=1)
-	    {
-	      Size asize = Size(rup_roi.getSize().getWidth()+x_inc, rup_roi.getSize().getHeight());
-	      rup_roi.setSize(asize);
-	    }
-	    if (y_inc !=1)
-	    {
-	      Size asize = Size(rup_roi.getSize().getWidth(), rup_roi.getSize().getHeight()+y_inc);
-	      rup_roi.setSize(asize);
-	    }
+	    int x_left = int(set_roi.getTopLeft().x) / x_inc * x_inc;
+	    int y_left = int(set_roi.getTopLeft().y) / y_inc * y_inc;
+	    int x_right = int(set_roi.getTopLeft().x + set_roi.getSize().getWidth() + x_inc - 1) / x_inc * x_inc;
+	    int y_right = int(set_roi.getTopLeft().y + set_roi.getSize().getHeight() + y_inc - 1) / y_inc * y_inc;
+	    Roi rup_roi(x_left,y_left,
+			x_right - x_left,
+			y_right - y_left);
+
 	    hw_roi = rup_roi;
 
 	    DEB_TRACE() << DEB_VAR1(hw_roi);
