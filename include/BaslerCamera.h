@@ -160,7 +160,11 @@ class BASLER_EXPORT Camera
     void setFrameTransmissionDelay(int ftd);
 
     // -- basler specific, LIMA don't worry about it !
+    
+    // Maximum frame acquisition rate with current camera settings (in frames per second).
+    // taking care of the Roi/Bin, exposure and bandwidth settings.
     void getFrameRate(double& frame_rate) const;
+
     bool isBinningAvailable() const;
     bool isRoiAvailable() const;
     void setBlankImageForMissed(bool);

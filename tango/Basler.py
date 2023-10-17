@@ -207,6 +207,15 @@ class BaslerClass(PyTango.DeviceClass):
              'format': '',
              'description': 'camera core temperature',
          }],        
+        'frame_rate':
+        [[PyTango.DevDouble,
+          PyTango.SCALAR,
+          PyTango.READ],
+         {
+             'unit': 'fps',
+             'format': '',
+             'description': 'Maximum frame acquisition rate with in frames per second, givent the current the Roi/Bin, exposure and bandwidth settings.',
+         }],        
     }
 
     def __init__(self,name) :

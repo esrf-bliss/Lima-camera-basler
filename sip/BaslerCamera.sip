@@ -89,7 +89,10 @@ namespace Basler
 
     void setFrameTransmissionDelay(int ftd);
 
+    // Maximum frame acquisition rate with current camera settings (in frames per second).
+    // taking care of the Roi/Bin, exposure and bandwidth settings. 
     void getFrameRate(double& frame_rate /Out/) const;
+    
     bool isBinningAvailable() const;
     bool isRoiAvailable() const;
     void setBlankImageForMissed(bool);
@@ -124,7 +127,7 @@ namespace Basler
     // -- change acq frame count
     void setAcquisitionFrameRateAbs(int AFC);
     void getAcquisitionFrameRateAbs(int& AFC /Out/) const;
-
+    
     // -- Pylon buffers statistics
     void getStatisticsTotalBufferCount(long& count /Out/);    
     void getStatisticsFailedBufferCount(long& count /Out/);
