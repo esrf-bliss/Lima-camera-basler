@@ -1025,7 +1025,19 @@ void Camera::getLatTimeRange(double& min_lat, double& max_lat) const
         if (IsAvailable(Camera_->AcquisitionFrameRate) || m_is_usb)
             minAcqFrameRate = Camera_->AcquisitionFrameRate.GetMin();
         else
-            minAcqFrameRate = Camera_->AcquisitionFrameRateAbs.GetMin();
+	  {
+	    if(m_detector_model.find("sc") != std::string::npos &&
+	       ! Camera_->AcquisitionFrameRateEnable.GetValue())
+	      {
+		// The scout model firmware does not support the reading of this param
+		// if the Frame Rate is not enable first 
+		Camera_->AcquisitionFrameRateEnable.SetValue(true);
+		minAcqFrameRate = Camera_->AcquisitionFrameRateAbs.GetMin();
+		Camera_->AcquisitionFrameRateEnable.SetValue(false);
+	      }
+	    else
+		minAcqFrameRate = Camera_->AcquisitionFrameRateAbs.GetMin();
+	  }
         if (minAcqFrameRate > 0)
             max_lat = 1 / minAcqFrameRate;
         else
