@@ -20,7 +20,7 @@ requirements:
   build:
     - ninja
     - cmake
-    - lima-core
+    - lima-core 1.9
   run:
     - lima-tango-server
     - lima-camera-basler
