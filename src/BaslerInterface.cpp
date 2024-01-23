@@ -124,24 +124,41 @@ void Interface::stopAcq()
 
 void Interface::getStatus(StatusType& status)
 {
-  Camera::Status basler_status = Camera::Ready;
+  status.det = DetIdle;
+  Camera::Status basler_status;
   m_cam.getStatus(basler_status);
   switch (basler_status)
     {
-    case Camera::Ready:
-      status.set(HwInterface::StatusType::Ready);
-      break;
     case Camera::Exposure:
-      status.set(HwInterface::StatusType::Exposure);
+      status.det = DetExposure;
+      status.acq = AcqRunning;
       break;
     case Camera::Readout:
-      status.set(HwInterface::StatusType::Readout);
+      status.det = DetReadout;
+      status.acq = AcqRunning; 
       break;
     case Camera::Latency:
-      status.set(HwInterface::StatusType::Latency);
+      status.det = DetLatency;
+      status.acq = AcqRunning;
+      break;
+    case Camera::WaitForTrigger:
+      status.det = DetWaitForTrigger;
+      TrigMode trig_mode;
+      m_cam.getTrigMode(trig_mode);
+      if (trig_mode  == IntTrigMult)
+	status.det = DetIdle;
+      else
+	status.det = DetExposure;
+      status.acq = AcqRunning;
+      break;
+    case Camera::Ready:
+      status.acq = AcqReady;
+      status.det = DetIdle;
       break;
     case Camera::Fault:
-      status.set(HwInterface::StatusType::Fault);
+      status.acq = AcqFault;
+      status.det = DetFault;
+      break;
     }
 }
 
