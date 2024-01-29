@@ -19,7 +19,7 @@ requirements:
   host:
     - python {{ python }}
     - sip 4.19* # API v12.7
-    - lima-core 1.9.23
+    - lima-core 1.9.24
     - pylon6-sdk
   build:
     - cmake
