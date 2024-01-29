@@ -67,7 +67,7 @@ class BASLER_EXPORT Camera
  public:
 
     enum Status {
-      Ready, Exposure, Readout, Latency, Fault
+	 Ready, Exposure, Readout, Latency, Fault, WaitForTrigger
     };
 
     enum LineSource {
