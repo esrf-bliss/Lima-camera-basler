@@ -237,6 +237,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 	  {
 	    formatList.push_back(string("Mono16"));
 	    formatList.push_back(string("Mono12"));
+	    formatList.push_back(string("Mono10"));
 	    formatList.push_back(string("Mono8"));
 	    m_color_flag = false;
 	  }
@@ -595,7 +596,7 @@ void Camera::getImageType(ImageType& type)
       case PixelFormat_Mono10:
       case PixelFormat_BayerRG10:
       case PixelFormat_BayerBG10:
-	type = Bpp10;
+	type= Bpp10;
 	break;
 	
       case PixelFormat_Mono12:
@@ -628,6 +629,9 @@ void Camera::setImageType(ImageType type)
         {
             case Bpp8:
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono8);
+                break;
+            case Bpp10:
+                this->Camera_->PixelFormat.SetValue(PixelFormat_Mono10);
                 break;
             case Bpp12:
                 this->Camera_->PixelFormat.SetValue(PixelFormat_Mono12);
