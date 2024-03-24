@@ -63,6 +63,7 @@ void VideoCtrlObj::getSupportedVideoMode(std::list<VideoMode>& aList) const
       {"YUV444Packed",YUV444PACKED},
       {"Mono16",Y16},
       {"Mono12",Y16},
+      {"Mono10",Y16},
       {"Mono8",Y8},
       {NULL,Y8}
     };
