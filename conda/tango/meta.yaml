@@ -20,10 +20,10 @@ requirements:
   build:
     - ninja
     - cmake
-    - lima-core 1.9
+    - lima-core
   run:
     - lima-tango-server
-    - lima-camera-basler
+    - lima-camera-basler {{ version }}
 
 about:
   home: https://github.com/esrf-bliss/Lima
