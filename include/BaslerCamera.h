@@ -245,6 +245,8 @@ class BASLER_EXPORT Camera
     bool			  m_video_flag_mode;
     VideoCtrlObj*		  m_video;
     TrigMode			  m_trigger_mode;
+    unsigned long long            m_tick_start;
+    int                           m_tick_frequency;
 };
 } // namespace Basler
 } // namespace lima
