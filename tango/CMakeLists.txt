@@ -22,12 +22,12 @@
 #  along with this program; if not, see <http://www.gnu.org/licenses/>.
 ############################################################################
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 project(basler_tango NONE)
 
 # use lima toolbox function,
-# if cmake is ran out of camera mother project, check python environment  
+# if cmake is ran out of camera mother project, check python environment
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   find_package(Lima REQUIRED COMPONENTS tools)
   set(CMAKE_MODULE_PATH
