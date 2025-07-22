@@ -472,7 +472,12 @@ void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera
 					  mode);
 	      ++m_cam.m_image_number;
 	    }
-      
+        else
+        {
+            // Error handling
+            DEB_ERROR() << "GeniCam Error! "<< ptrGrabResult->GetErrorDescription();
+        }
+     
 	}
       else
 	{
@@ -496,6 +501,11 @@ void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera
 
 	      ++m_cam.m_image_number;
 	    }
+        else
+        {
+            // Error handling
+            DEB_ERROR() << "GeniCam Error! "<< ptrGrabResult->GetErrorDescription();
+        }
 	}
     }
   catch (Pylon::GenericException &e)
