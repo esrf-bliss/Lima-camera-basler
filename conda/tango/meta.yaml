@@ -22,6 +22,7 @@ requirements:
     - cmake
     - lima-core
   run:
+    - python
     - lima-tango-server
     - lima-camera-basler {{ version }}
 
