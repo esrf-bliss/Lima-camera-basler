@@ -327,6 +327,9 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 
     // if color camera video capability will be available
     m_video_flag_mode = m_color_flag;
+    // Camera tick frequency
+    m_tick_frequency = this->Camera_->GevTimestampTickFrequency();
+    DEB_ALWAYS() << DEB_VAR1(m_tick_frequency);
 }
 
 //---------------------------
@@ -488,7 +491,14 @@ void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera
 
 	      _check_missing_frame(ptrGrabResult);
 
+	      auto frame_tick = ptrGrabResult->GetTimeStamp();
+	      if(!m_cam.m_image_number)
+		m_cam.m_tick_start = frame_tick;
+
 	      HwFrameInfoType frame_info;
+	      double tick_diff = frame_tick - m_cam.m_tick_start;
+	      frame_info.frame_timestamp = tick_diff / m_cam.m_tick_frequency;
+	      DEB_ALWAYS() << DEB_VAR3(frame_tick,tick_diff,frame_info.frame_timestamp);
 	      frame_info.acq_frame_nb = m_cam.m_image_number;
 	      void *framePt = m_buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
 	      const FrameDim& fDim = m_buffer_mgr.getFrameDim();
