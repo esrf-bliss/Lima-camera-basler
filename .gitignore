@@ -23,5 +23,6 @@ install
 /.cproject
 /.pydevproject
 /.settings
-build/
+build*
+pyproject.toml
 tango/build/

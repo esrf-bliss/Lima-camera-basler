@@ -1,7 +1,7 @@
 ############################################################################
 # This file is part of LImA, a Library for Image Acquisition
 #
-# Copyright (C) : 2009-2022
+# Copyright (C) : 2009-2026
 # European Synchrotron Radiation Facility
 # CS40220 38043 Grenoble Cedex 9 
 # FRANCE
@@ -42,14 +42,14 @@
 #=============================================================================
 #
 import PyTango
-from Lima import Core
-from Lima import Basler as BaslerAcq
-from Lima.Server import AttrHelper
+from lima import core
+from lima import basler as BaslerAcq
+from lima.server import AttrHelper
 
 
 class Basler(PyTango.LatestDeviceImpl):
 
-    Core.DEB_CLASS(Core.DebModApplication, 'LimaCCDs')
+    core.DEB_CLASS(core.DebModule.DebModApplication, 'LimaCCDs')
 
 
 #------------------------------------------------------------------
@@ -58,23 +58,23 @@ class Basler(PyTango.LatestDeviceImpl):
     def __init__(self,*args) :
         PyTango.LatestDeviceImpl.__init__(self,*args)
 
-        self.__TestImageSelector = {'TESTIMAGE_OFF': BaslerAcq.Camera.TestImage_Off,
-                                    'TESTIMAGE_1': BaslerAcq.Camera.TestImage_1,
-                                    'TESTIMAGE_2': BaslerAcq.Camera.TestImage_2,
-                                    'TESTIMAGE_3': BaslerAcq.Camera.TestImage_3,
-                                    'TESTIMAGE_4': BaslerAcq.Camera.TestImage_4,
-                                    'TESTIMAGE_5': BaslerAcq.Camera.TestImage_5,
-                                    'TESTIMAGE_6': BaslerAcq.Camera.TestImage_6,
-                                    'TESTIMAGE_7': BaslerAcq.Camera.TestImage_7,
+        self.__TestImageSelector = {'TESTIMAGE_OFF': BaslerAcq.Camera.TestImageSelector.TestImage_Off,
+                                    'TESTIMAGE_1': BaslerAcq.Camera.TestImageSelector.TestImage_1,
+                                    'TESTIMAGE_2': BaslerAcq.Camera.TestImageSelector.TestImage_2,
+                                    'TESTIMAGE_3': BaslerAcq.Camera.TestImageSelector.TestImage_3,
+                                    'TESTIMAGE_4': BaslerAcq.Camera.TestImageSelector.TestImage_4,
+                                    'TESTIMAGE_5': BaslerAcq.Camera.TestImageSelector.TestImage_5,
+                                    'TESTIMAGE_6': BaslerAcq.Camera.TestImageSelector.TestImage_6,
+                                    'TESTIMAGE_7': BaslerAcq.Camera.TestImageSelector.TestImage_7,
         }
         self.__Output1LineSource = {
-            'LINESOURCE_OFF': BaslerAcq.Camera.Off,
-            'LINESOURCE_EXPOSURE_ACTIVE': BaslerAcq.Camera.ExposureActive,
-            'LINESOURCE_FRAME_TRIGGER_WAIT': BaslerAcq.Camera.FrameTriggerWait,
-            'LINESOURCE_LINE_TRIGGER_WAIT': BaslerAcq.Camera.LineTriggerWait,
-            'LINESOURCE_TIMER_ACTIVE': BaslerAcq.Camera.TimerActive,
-            'LINESOURCE_USER_OUTPUT': BaslerAcq.Camera.UserOutput,
-            'LINESOURCE_ACQUISITION_TRIGGER_WAIT': BaslerAcq.Camera.AcquisitionTriggerWait,
+            'LINESOURCE_OFF': BaslerAcq.Camera.LineSource.Off,
+            'LINESOURCE_EXPOSURE_ACTIVE': BaslerAcq.Camera.LineSource.ExposureActive,
+            'LINESOURCE_FRAME_TRIGGER_WAIT': BaslerAcq.Camera.LineSource.FrameTriggerWait,
+            'LINESOURCE_LINE_TRIGGER_WAIT': BaslerAcq.Camera.LineSource.LineTriggerWait,
+            'LINESOURCE_TIMER_ACTIVE': BaslerAcq.Camera.LineSource.TimerActive,
+            'LINESOURCE_USER_OUTPUT': BaslerAcq.Camera.LineSource.UserOutput,
+            'LINESOURCE_ACQUISITION_TRIGGER_WAIT': BaslerAcq.Camera.LineSource.AcquisitionTriggerWait,
         }
         self.__Attribute2FunctionBase = {
         }
@@ -90,7 +90,7 @@ class Basler(PyTango.LatestDeviceImpl):
 #------------------------------------------------------------------
 #    Device initialization
 #------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
+    @core.DEB_MEMBER_FUNCT
     def init_device(self):
         self.set_state(PyTango.DevState.ON)
         self.get_device_properties(self.get_device_class())
@@ -101,7 +101,7 @@ class Basler(PyTango.LatestDeviceImpl):
 #    Description: return a list of authorized values if any
 #    argout: DevVarStringArray
 #------------------------------------------------------------------
-    @Core.DEB_MEMBER_FUNCT
+    @core.DEB_MEMBER_FUNCT
     def getAttrStringValueList(self, attr_name):
         #use AttrHelper
         return AttrHelper.get_attr_string_value_list(self, attr_name)
@@ -273,7 +273,7 @@ def get_control(frame_transmission_delay = 0, inter_packet_delay = 0,
     if blank_image_for_missed == 'true':
         _BaslerInterface.setBlankImageForMissed(True)
         
-    return Core.CtControl(_BaslerInterface)
+    return core.CtControl(_BaslerInterface)
 
 def get_tango_specific_class_n_device():
     return BaslerClass,Basler
