@@ -498,7 +498,7 @@ void Camera::_EventHandler::OnImageGrabbed(CBaslerUniversalInstantCamera &camera
 	      HwFrameInfoType frame_info;
 	      double tick_diff = frame_tick - m_cam.m_tick_start;
 	      frame_info.frame_timestamp = tick_diff / m_cam.m_tick_frequency;
-	      DEB_ALWAYS() << DEB_VAR3(frame_tick,tick_diff,frame_info.frame_timestamp);
+	      DEB_TRACE() << DEB_VAR3(frame_tick,tick_diff,frame_info.frame_timestamp);
 	      frame_info.acq_frame_nb = m_cam.m_image_number;
 	      void *framePt = m_buffer_mgr.getFrameBufferPtr(m_cam.m_image_number);
 	      const FrameDim& fDim = m_buffer_mgr.getFrameDim();
