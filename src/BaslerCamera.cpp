@@ -329,7 +329,7 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
     m_video_flag_mode = m_color_flag;
     // Camera tick frequency
     m_tick_frequency = this->Camera_->GevTimestampTickFrequency();
-    DEB_ALWAYS() << DEB_VAR1(m_tick_frequency);
+    DEB_TRACE() << DEB_VAR1(m_tick_frequency);
 }
 
 //---------------------------
