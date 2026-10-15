@@ -300,6 +300,20 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
         // Get the image buffer size
         DEB_TRACE() << "Get the image buffer size";
         ImageSize_ = (size_t)(Camera_->PayloadSize.GetValue());
+
+        // Camera tick frequency
+        if (!m_is_usb)
+        {
+            // GevTimestampTickFrequency is a GigE Vision-only register, not
+            // available on the USB3 Vision nodemap
+            m_tick_frequency = this->Camera_->GevTimestampTickFrequency();
+        }
+        else
+        {
+            // USB3 Vision cameras have a fixed 1 GHz timestamp tick frequency
+            m_tick_frequency = 1000000000;
+        }
+        DEB_TRACE() << DEB_VAR1(m_tick_frequency);
     }
     catch (Pylon::GenericException &e)
     {
@@ -327,9 +341,6 @@ Camera::Camera(const std::string& camera_id,int packet_size,int receive_priority
 
     // if color camera video capability will be available
     m_video_flag_mode = m_color_flag;
-    // Camera tick frequency
-    m_tick_frequency = this->Camera_->GevTimestampTickFrequency();
-    DEB_TRACE() << DEB_VAR1(m_tick_frequency);
 }
 
 //---------------------------
