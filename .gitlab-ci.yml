@@ -14,6 +14,7 @@ stages:
 build-linux:
   <<: *build-conda
   script:
+    - conda config --set channel_priority flexible
     - conda mambabuild ./conda/camera --output-folder=dist/ -c conda-forge --channel=http://bcu-ci.esrf.fr/stable
   tags:
     - linux
@@ -21,6 +22,7 @@ build-linux:
 build-win:
   <<: *build-conda
   script:
+    - conda config --set channel_priority flexible
     - conda mambabuild ./conda/camera --output-folder=dist/ -c conda-forge --channel=http://bcu-ci.esrf.fr/stable
   tags:
     - win
@@ -29,6 +31,7 @@ build-noarch:
   <<: *build-conda
   stage: build-noarch
   script:
+    - conda config --set channel_priority flexible
     - conda mambabuild ./conda/tango --output-folder=dist/ -c conda-forge --channel=http://bcu-ci.esrf.fr/stable
   dependencies:
     - build-linux
