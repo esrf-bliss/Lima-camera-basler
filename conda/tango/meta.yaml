@@ -23,7 +23,7 @@ requirements:
     - lima-core
   run:
     - python
-    - lima-tango-server >=1.13.0*
+    - lima-tango-server >=1.13.0
     - lima-camera-basler {{ version }}
 
 about:
