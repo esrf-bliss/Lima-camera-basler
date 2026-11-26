@@ -22,8 +22,8 @@ build-linux:
 build-win:
   <<: *build-conda
   script:
-    - conda config --set channel_priority flexible
-    - conda mambabuild ./conda/camera --output-folder=dist/ -c conda-forge --channel=http://bcu-ci.esrf.fr/stable
+    - call conda config --set channel_priority flexible
+    - call conda mambabuild ./conda/camera --output-folder=dist/ -c conda-forge --channel=http://bcu-ci.esrf.fr/stable
   tags:
     - win
 
